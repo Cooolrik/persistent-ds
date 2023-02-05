@@ -4,14 +4,15 @@ project( persistent-ds )
 find_package(PythonInterp REQUIRED)
 find_package(Python REQUIRED)
 include(FetchContent)
-
+		
 # glm 
+# use a 0.9.9.9 from Aug-2020, because 0.9.9.8 triggers a deprecated feature warning in C++20 in GCC
 FetchContent_Declare(
 	glm
 	GIT_REPOSITORY https://github.com/g-truc/glm.git
-	GIT_TAG        bf71a834948186f4097caa076cd2663c69a10e1e # 0.9.9.8
+	GIT_TAG        6fdeff4d67f3db493d47c44da20aa1efaa6574ef # (0.9.9.9 Aug-2020)
 )
-			
+
 # ctle 
 FetchContent_Declare(
 	ctle
@@ -19,9 +20,9 @@ FetchContent_Declare(
 	GIT_TAG		   main 
 )
 
-# librocksha256 
+# librock_sha256 
 FetchContent_Declare( 
-	librocksha256
+	librock_sha256
 	GIT_REPOSITORY https://github.com/forrestcavalier/librock_sha256.git
 	GIT_TAG		   387f4cfff7c5913bcbeaf4c1c1f53f657cc4a6d0
 )
@@ -47,7 +48,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	FetchContent_MakeAvailable( 
 		glm
 		ctle 
-		librocksha256 
+		librock_sha256 
 		googletest 
 		)
 		
@@ -68,10 +69,6 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		add_compile_options(/bigobj)
 	else()
 		add_compile_options(-Wall -Wextra -pedantic -Werror ) 
-		if( CMAKE_CXX_STANDARD GREATER_EQUAL 20 )
-			# glm triggers a deprecated feature warning in C++20, so silence it
-			add_compile_options( -Wno-deprecated )
-		endif()
 	endif()
 	set( CMAKE_DEBUG_POSTFIX _d )
 
@@ -115,7 +112,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		systemtest 
 		PUBLIC ${PROJECT_SOURCE_DIR}/Include
 		PUBLIC ${glm_SOURCE_DIR}
-		PUBLIC ${librocksha256_SOURCE_DIR}
+		PUBLIC ${librock_sha256_SOURCE_DIR}
 		PUBLIC ${ctle_SOURCE_DIR}
 		PUBLIC ${PROJECT_SOURCE_DIR}/Tests 
 		) 
@@ -145,7 +142,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		tests 
 		PUBLIC ${PROJECT_SOURCE_DIR}/Include
 		PUBLIC ${glm_SOURCE_DIR}
-		PUBLIC ${librocksha256_SOURCE_DIR}
+		PUBLIC ${librock_sha256_SOURCE_DIR}
 		PUBLIC ${ctle_SOURCE_DIR}
 		PUBLIC ${PROJECT_SOURCE_DIR}/Tests	
 		)
