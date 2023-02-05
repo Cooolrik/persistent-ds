@@ -58,6 +58,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		RESULT_VARIABLE 	py_result
 	)
 	message(STATUS "Result of GenerateTestPacks.py: ${py_result}")
+	
+	set (CMAKE_CXX_STANDARD 14)
 
 	# lots of warnings and all warnings as errors
 	# big object files
@@ -65,10 +67,14 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		add_compile_options(/W4 /WX)
 		add_compile_options(/bigobj)
 	else()
-		add_compile_options(-Wall -Wextra -pedantic -Werror)
+		add_compile_options(-Wall -Wextra -pedantic -Werror ) 
+		if( CMAKE_CXX_STANDARD GREATER_EQUAL 20 )
+			# glm triggers a deprecated feature warning in C++20, so silence it
+			add_compile_options( -Wno-deprecated )
+		endif()
 	endif()
 	set( CMAKE_DEBUG_POSTFIX _d )
-	
+
 	# SystemTest run full system tests
 	add_executable( 
 		systemtest
