@@ -1,33 +1,12 @@
 cmake_minimum_required(VERSION 3.21)
 project( persistent-ds )
 
+option( BUILD_PERSISTENT_DS_TESTS "Build the persistent-ds tests" OFF )
+	
 find_package(PythonInterp REQUIRED)
 find_package(Python REQUIRED)
-include(FetchContent)
-		
-# glm 
-# use a 0.9.9.9 from Aug-2020, because 0.9.9.8 triggers a deprecated feature warning in C++20 in GCC
-FetchContent_Declare(
-	glm
-	GIT_REPOSITORY https://github.com/g-truc/glm.git
-	GIT_TAG        6fdeff4d67f3db493d47c44da20aa1efaa6574ef # (0.9.9.9 Aug-2020)
-)
 
-# ctle 
-FetchContent_Declare(
-	ctle
-	GIT_REPOSITORY https://github.com/Cooolrik/ctle.git
-	GIT_TAG		   main 
-)
-
-# librock_sha256 
-FetchContent_Declare( 
-	librock_sha256
-	GIT_REPOSITORY https://github.com/forrestcavalier/librock_sha256.git
-	GIT_TAG		   387f4cfff7c5913bcbeaf4c1c1f53f657cc4a6d0
-)
-	
-# generate the pds code
+# generate the generated pds code
 execute_process( 
 	COMMAND 			${PYTHON_EXECUTABLE} CodeGenerator.py
 	WORKING_DIRECTORY 	${CMAKE_CURRENT_LIST_DIR}/CodeGen
@@ -35,9 +14,35 @@ execute_process(
 )
 message(STATUS "Result of CodeGenerator.py: ${py_result}")
 	
-# if this is the main build of persistent-ds, build the testing code
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)			
+# if this is the main build of ctle, build the testing code
+if(BUILD_PERSISTENT_DS_TESTS)			
 				
+	message(STATUS "Building the persistent-ds tests...")
+
+	include(FetchContent)
+		
+	# glm 
+	# use a 0.9.9.9 from Aug-2020, because 0.9.9.8 triggers a deprecated feature warning in C++20 in GCC
+	FetchContent_Declare(
+		glm
+		GIT_REPOSITORY https://github.com/g-truc/glm.git
+		GIT_TAG        6fdeff4d67f3db493d47c44da20aa1efaa6574ef # (0.9.9.9 Aug-2020)
+	)
+
+	# ctle 
+	FetchContent_Declare(
+		ctle
+		GIT_REPOSITORY https://github.com/Cooolrik/ctle.git
+		GIT_TAG		   main 
+	)
+
+	# librock_sha256 
+	FetchContent_Declare( 
+		librock_sha256
+		GIT_REPOSITORY https://github.com/forrestcavalier/librock_sha256.git
+		GIT_TAG		   387f4cfff7c5913bcbeaf4c1c1f53f657cc4a6d0
+	)
+	
 	# googletest
 	FetchContent_Declare(
 		googletest
