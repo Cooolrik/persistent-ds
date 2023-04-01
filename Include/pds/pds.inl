@@ -334,9 +334,8 @@ namespace pds
 #endif
 
 		// calculate the sha256 hash on the data, and make sure it compares correctly with the hash
-		SHA256 sha( buffer, total_bytes_to_read );
 		hash digest = {};
-		sha.GetDigest( digest.digest );
+		SHA256::CalculateHash( digest, buffer, total_bytes_to_read );
 		if( digest != hash( ref ) )
 			{
 			// sha hash does not compare correctly, file is corrupted
@@ -449,9 +448,8 @@ namespace pds
 			return std::pair<entity_ref, Status>( {}, Status::EUndefined );
 
 		// calculate the sha256 hash on the data
-		SHA256 sha( (u8 *)wstream.GetData(), wstream.GetSize() );
 		hash digest = {};
-		sha.GetDigest( digest.digest );
+		SHA256::CalculateHash( digest, (u8*)wstream.GetData(), wstream.GetSize() );
 
 		// get file data
 		const u8 *writeBuffer = (u8 *)wstream.GetData();

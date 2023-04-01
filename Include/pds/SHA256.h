@@ -8,20 +8,13 @@
 #include <vector>
 
 namespace pds
-	{
-	class SHA256
-		{
-		private:
-			void *MDData = nullptr;
+{
+namespace SHA256
+{
 
-		public:
-			SHA256( const u8 *Data = nullptr , size_t DataLength = 0 );
-			~SHA256();
+// calculate the sha256 hash of the source data
+Status CalculateHash( hash &destHash, const u8 *srcData, size_t srcDataLength );
+Status CalculateHash( u8 destDigest[32], const u8 *srcData, size_t srcDataLength );
 
-			// update the SHA with the data at Data, length DataLength
-			void Update( const u8 *Data, size_t DataLength );
-
-			// get the calculated digest 
-			void GetDigest( u8 DestDigest[32] );
-		};
-	};
+}
+}

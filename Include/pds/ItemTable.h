@@ -268,7 +268,7 @@ namespace pds
 			{
 			if( obj.v_Entries.find( data_type_information<_Kty>::zero ) != obj.v_Entries.end() )
 				{
-				pdsValidationError( ValidationError::NullNotAllowed ) << "This Directory has a zero-value key, which is not allowed. (DictionaryFlags::NoZeroKeys)" << pdsErrorLogEnd;
+				pdsValidationError( ValidationError::NullNotAllowed ) << "This Directory has a zero-value key, which is not allowed. (DictionaryFlags::NoZeroKeys)" << pdsValidationErrorEnd;
 				}
 			}
 
@@ -283,7 +283,7 @@ namespace pds
 			else if( _MgmCl::type_no_null_entities )
 				{
 				// value is empty, and this is not allowed in this dictionary
-				pdsValidationError( ValidationError::NullNotAllowed ) << "Non allocated entities (values) are not allowed in this Directory. (DictionaryFlags::NoNullEntities)" << pdsErrorLogEnd;
+				pdsValidationError( ValidationError::NullNotAllowed ) << "Non allocated entities (values) are not allowed in this Directory. (DictionaryFlags::NoNullEntities)" << pdsValidationErrorEnd;
 				}
 			}
 
@@ -298,7 +298,7 @@ namespace pds
 			{
 			if( !_Table::MF::ContainsKey( otherTable, it->first ) )
 				{
-				pdsValidationError( ValidationError::MissingObject ) << "The key " << it->first << " is missing in " << otherTableName << pdsErrorLogEnd;
+				pdsValidationError( ValidationError::MissingObject ) << "The key " << it->first << " is missing in " << otherTableName << pdsValidationErrorEnd;
 				}
 			}
 		return true;

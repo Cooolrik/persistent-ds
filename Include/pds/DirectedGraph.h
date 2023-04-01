@@ -454,7 +454,7 @@ namespace pds
 				{
 				if( !_Table::MF::ContainsKey( otherTable, (*it) ) )
 					{
-					pdsValidationError( ValidationError::MissingObject ) << "The key " << (*it) << " is missing in " << otherTableName << pdsErrorLogEnd;
+					pdsValidationError( ValidationError::MissingObject ) << "The key " << (*it) << " is missing in " << otherTableName << pdsValidationErrorEnd;
 					}
 				}
 

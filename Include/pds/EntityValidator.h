@@ -22,18 +22,51 @@ namespace pds
 		{
 		uint ErrorCount = 0;
 		u64 ErrorIds = 0;
+		std::vector<std::string> ErrorStrings;
+
+		bool RecordErrorStrings = true;
 
 		public:
-			std::ostream &ReportError( u64 errorid , const char */*funcsig*/, const char */*filename*/, int /*fileline*/ ) 
-				{ 
-				std::cout << "Validation error: errorid=" << errorid << "\n" << "\t";
+			void ReportError( u64 errorid )
+				{
 				++this->ErrorCount;
 				this->ErrorIds |= errorid;
-				return std::cout; 
 				}
 
-			void ClearErrorCount() { this->ErrorCount = 0; }
+			void ReportError( u64 errorid , const std::string &errorDescription , const char *filename, int fileline, const char *funcsig ) 
+				{ 
+				this->ReportError( errorid );
+
+				// if set, reports individual error strings to the error strings log
+				if( this->RecordErrorStrings )
+					{
+					std::stringstream errorStream;
+
+					errorStream << "Validation error:\n"
+						<< "\tfilename=" << filename << "\n" 
+						<< "\tfileline=" << fileline << "\n" 
+						<< "\tfuncsig=" << funcsig << "\n" 
+						<< "\terrorid=" << errorid << "\n" 
+						<< "\terrorDescription=" << errorDescription << "\n";
+
+					this->ErrorStrings.resize(this->ErrorCount);
+					this->ErrorStrings[this->ErrorCount-1] = errorStream.str();
+					}
+				}
+
+			void SetRecordErrorStrings( bool value ) { this->RecordErrorStrings = value; }
+			bool GetRecordErrorStrings() const { return this->RecordErrorStrings; }
+
+			void Clear() 
+				{ 
+				this->ErrorCount = 0; 
+				this->ErrorIds = 0; 
+				this->ErrorStrings.clear(); 
+				}
+
 			uint GetErrorCount() const { return this->ErrorCount; }
 			u64 GetErrorIds() const { return this->ErrorIds; }
+
+			const std::vector<std::string> &GetErrorStrings() const { return this->ErrorStrings; }
 		};
 	};

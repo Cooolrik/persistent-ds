@@ -71,7 +71,7 @@ TEST( DirectedGraphTests, DirectedGraphAcyclicTest )
 	dg.Edges().emplace( 2, 0 );
 
 	// make sure this is not valid anymore, and that the error is the cycle
-	validator.ClearErrorCount();
+	validator.Clear();
 	Graph::MF::Validate( dg, validator );
 	EXPECT_NE( validator.GetErrorCount() , uint(0) );
 	EXPECT_TRUE( validator.GetErrorIds() == ValidationError::InvalidSetup );
@@ -96,7 +96,7 @@ TEST( DirectedGraphTests, DirectedGraphSingleRootTest )
 	dg.Edges().emplace( random_value<i64>(), random_value<i64>() );
 
 	// make sure this is not valid anymore, and that the error is multiple roots
-	validator.ClearErrorCount();
+	validator.Clear();
 	Graph::MF::Validate( dg, validator );
 	EXPECT_NE( validator.GetErrorCount() , uint(0) );
 	EXPECT_TRUE( validator.GetErrorIds() == ValidationError::InvalidCount );
@@ -128,7 +128,7 @@ TEST( DirectedGraphTests, DirectedGraphRootedTest )
 	dg.Roots().erase( dg.Roots().begin() );
 
 	// make sure this is not valid anymore, and that the error the missing root node in the Roots list
-	validator.ClearErrorCount();
+	validator.Clear();
 	Graph::MF::Validate( dg, validator );
 	EXPECT_NE( validator.GetErrorCount() , uint(0) );
 	EXPECT_EQ( validator.GetErrorIds() , (ValidationError::InvalidSetup | ValidationError::MissingObject) );
@@ -162,10 +162,6 @@ TEST( DirectedGraphTests, DirectedGraphSceneGraphTest )
 		dg.Edges().insert( std::pair<uuid, uuid>( p, leaf_node ) );
 		}
 
-	uuid id = uuid::generate();
-
-	std::cout << id << std::endl;
-
 	// make sure this is valid (no cycles)
 	EntityValidator validator;
 	Graph::MF::Validate( dg, validator );
@@ -178,7 +174,7 @@ TEST( DirectedGraphTests, DirectedGraphSceneGraphTest )
 	dg.Edges().insert( std::pair<uuid, uuid>( leaf_node, root_node ) );
 	
 	// make sure this is not valid anymore, and that the error the missing root node in the Roots list
-	validator.ClearErrorCount();
+	validator.Clear();
 	Graph::MF::Validate( dg, validator );
 	EXPECT_NE( validator.GetErrorCount() , uint(0) );
 	const u64 expected_error = (

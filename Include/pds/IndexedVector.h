@@ -104,7 +104,7 @@ namespace pds
 		{
 		if( obj.values().size() > (size_t)i32_sup )
 			{
-			pdsValidationError( ValidationError::InvalidCount ) << "This IndexedVector has too many values in the values vector. The limit is 2^31 values, which can be indexed by a 32-bit int." << pdsErrorLogEnd;
+			pdsValidationError( ValidationError::InvalidCount ) << "This IndexedVector has too many values in the values vector. The limit is 2^31 values, which can be indexed by a 32-bit int." << pdsValidationErrorEnd;
 			}
 
 		// cap the count to 32 bit int
@@ -113,7 +113,7 @@ namespace pds
 			{
 			if( (u32)obj.index()[i] >= values_count )
 				{
-				pdsValidationError( ValidationError::InvalidValue ) << "The value " << obj.index()[i] << " at position " << i << " of the index vector is out of bounds." << pdsErrorLogEnd;
+				pdsValidationError( ValidationError::InvalidValue ) << "The value " << obj.index()[i] << " at position " << i << " of the index vector is out of bounds." << pdsValidationErrorEnd;
 				}
 			}
 

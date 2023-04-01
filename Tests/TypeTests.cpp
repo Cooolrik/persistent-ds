@@ -122,7 +122,7 @@ TEST( TypeTests , SHA256Hashing )
 	{
 	if( true )
 		{
-		SHA256 sha;
+		hash sha;
 
 		u8 testdata[] = {
 			0x34,0x2b,0x1f,0x3e,0x61,
@@ -147,10 +147,7 @@ TEST( TypeTests , SHA256Hashing )
 			0x48,0x2f,0x4a,0x33,0x06
 			};
 
-		sha.Update( testdata, sizeof( testdata ) );
-
-		u8 calc_hash[32];
-		sha.GetDigest( calc_hash );
+		SHA256::CalculateHash( sha, testdata, sizeof( testdata ) );
 
 		u8 expected_hash[32] = {
 			0xf6,0x48,0x54,0x2d,0xf8,0xcc,0xf2,0x1f,
@@ -159,7 +156,7 @@ TEST( TypeTests , SHA256Hashing )
 			0x0c,0xc4,0x76,0x6f,0xe2,0x78,0xc4,0xb5
 			};
 
-		EXPECT_EQ( memcmp( calc_hash, expected_hash, 32 ) , 0 );
+		EXPECT_EQ( memcmp( sha.digest, expected_hash, 32 ) , 0 );
 		}
 	}
 

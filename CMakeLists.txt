@@ -22,25 +22,25 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	include(FetchContent)
 		
 	# glm 
-	# use a 0.9.9.9 from Aug-2020, because 0.9.9.8 triggers a deprecated feature warning in C++20 in GCC
+	# (use a 0.9.9.9 from Aug-2020, because 0.9.9.8 triggers a deprecated feature warning in C++20 in GCC)
 	FetchContent_Declare(
 		glm
 		GIT_REPOSITORY https://github.com/g-truc/glm.git
-		GIT_TAG        6fdeff4d67f3db493d47c44da20aa1efaa6574ef # (0.9.9.9 Aug-2020)
+		GIT_TAG        6fdeff4d67f3db493d47c44da20aa1efaa6574ef # (2020 Aug 06)
 	)
 
 	# ctle 
 	FetchContent_Declare(
 		ctle
 		GIT_REPOSITORY https://github.com/Cooolrik/ctle.git
-		GIT_TAG		   main 
+		GIT_TAG		   main # (latest)
 	)
 
-	# librock_sha256 
+	# picosha2 
 	FetchContent_Declare( 
-		librock_sha256
-		GIT_REPOSITORY https://github.com/forrestcavalier/librock_sha256.git
-		GIT_TAG		   387f4cfff7c5913bcbeaf4c1c1f53f657cc4a6d0
+		picosha2
+		GIT_REPOSITORY https://github.com/okdshin/PicoSHA2.git
+		GIT_TAG		   27fcf6979298949e8a462e16d09a0351c18fcaf2 # (2022 Aug 08)
 	)
 	
 	# googletest
@@ -53,7 +53,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	FetchContent_MakeAvailable( 
 		glm
 		ctle 
-		librock_sha256 
+		picosha2 
 		googletest 
 		)
 		
@@ -100,7 +100,6 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Include/pds/EntityWriterTemplates.inl
 		./Include/pds/IndexedVector.h
 		./Include/pds/ItemTable.h
-		./Include/pds/Log.h
 		./Include/pds/MemoryReadStream.h
 		./Include/pds/MemoryWriteStream.h
 		./Include/pds/pds.h
@@ -112,16 +111,16 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Include/pds/Varying.h
 		./Include/pds/Varying.inl
 		)	
-# 
+
 	target_include_directories(	
 		systemtest 
 		PUBLIC ${PROJECT_SOURCE_DIR}/Include
 		PUBLIC ${glm_SOURCE_DIR}
-		PUBLIC ${librock_sha256_SOURCE_DIR}
+		PUBLIC ${picosha2_SOURCE_DIR}
 		PUBLIC ${ctle_SOURCE_DIR}
 		PUBLIC ${PROJECT_SOURCE_DIR}/Tests 
 		) 
-#
+
 	target_link_libraries( 	
 		systemtest 
 		)
@@ -147,15 +146,18 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		tests 
 		PUBLIC ${PROJECT_SOURCE_DIR}/Include
 		PUBLIC ${glm_SOURCE_DIR}
-		PUBLIC ${librock_sha256_SOURCE_DIR}
+		PUBLIC ${picosha2_SOURCE_DIR}
 		PUBLIC ${ctle_SOURCE_DIR}
 		PUBLIC ${PROJECT_SOURCE_DIR}/Tests	
 		)
 
 	target_link_libraries( 	
 		tests 
-		gtest_main 
+		gtest 
 		)
 
-# enable_testing()	
-endif()
+else() # BUILD_PERSISTENT_DS_TESTS
+
+	message(NOTICE "Not building the persistent-ds tests. To enable, use -DBUILD_PERSISTENT_DS_TESTS=ON")
+
+endif() # BUILD_PERSISTENT_DS_TESTS
