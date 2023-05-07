@@ -9,6 +9,10 @@ __pycache__
 x64
 *.user
 /build
+/build_c++14
+/build_c++17
+/build_c++20
+/build_c++11
 /out
 
 /Include/pds/DataTypes.inl
@@ -22,3 +26,8 @@ x64
 /Tests/TestPackB
 /Tests/TestPackC
 /CodeGen/.vscode
+
+/results_c++11
+/results_c++14
+/results_c++17
+/results_c++20

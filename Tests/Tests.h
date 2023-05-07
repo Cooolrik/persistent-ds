@@ -5,8 +5,6 @@
 
 #include <gtest/gtest.h>
 
-#include <pds/pds.h>
-
 // silence warnings which we can't control
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -15,6 +13,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
+
+#include <pds/pds.h>
 
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>

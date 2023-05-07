@@ -2,8 +2,6 @@
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 #define PDS_MAIN_BUILD_FILE
 
-#include <pds/pds.h>
-
 #ifdef _MSC_VER
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -39,6 +37,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <ctle/file_funcs.h>
+
 using std::pair;
 using std::make_pair;
 
@@ -68,46 +68,6 @@ namespace pds
 		// The hash is always ordered the same, regardless of the hardware (basically a big-endian 256 bit value)
 		return value;
 		}
-
-//#ifdef _MSC_VER
-//	std::wstring widen( const std::string &str )
-//		{
-//		std::wstring ret;
-//
-//		if( !str.empty() )
-//			{
-//			size_t wsize;
-//			mbstowcs_s( &wsize, nullptr, 0, str.c_str(), 0 );
-//
-//			size_t alloc_wsize = wsize + 1;
-//			wchar_t *wstr = new wchar_t[alloc_wsize];
-//			size_t conv_count;
-//			mbstowcs_s( &conv_count, wstr, alloc_wsize, str.c_str(), wsize );
-//
-//			ret = std::wstring( wstr );
-//			delete[] wstr;
-//			}
-//
-//		return ret;
-//		}
-//
-//
-//	std::wstring full_path( const std::wstring &path )
-//		{
-//		std::wstring ret;
-//
-//		wchar_t *buffer = new wchar_t[32768];
-//		DWORD len = GetFullPathNameW( path.c_str(), 32768, buffer, nullptr );
-//		if( len > 0 )
-//			{
-//			ret = std::wstring( buffer );
-//			}
-//		delete[] buffer;
-//
-//		return ret;
-//		}
-//
-//#endif
 
 	static std::shared_ptr<Entity> entityNew( const std::vector<const EntityHandler::PackageRecord*> &records , const char *entityTypeString )
 		{
@@ -204,10 +164,6 @@ namespace pds
 			}
 
 #ifdef _MSC_VER
-		//std::wstring wpath = widen( path );
-		//
-		//// make path absolute
-		//wpath = full_path( wpath );
 
 		// make sure it is a directory 
 		DWORD file_attributes = GetFileAttributesA( path.c_str() );
@@ -241,101 +197,24 @@ namespace pds
 		const std::string fileName = value_to_hex_string( hash( ref ) ) + ".dat";
 		const std::string filePath = pThis->Path + "/" + fileName;
 
-#ifdef _MSC_VER
-
-		// open the file
-		HANDLE file_handle = ::CreateFileA( filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, nullptr );
-		if( file_handle == INVALID_HANDLE_VALUE )
+		std::vector<u8> allocation;
+		if( !ctle::read_file( filePath, allocation ) )
 			{
-			// failed to open the file
-			return Status::ECantOpen;
+			return Status::ECantRead;
 			}
-
-		// get the size
-		LARGE_INTEGER dfilesize = {};
-		if( !::GetFileSizeEx( file_handle, &dfilesize ) )
-			{
-			// failed to get the size
-			return Status::ECantOpen;
-			}
-		u64 total_bytes_to_read = dfilesize.QuadPart;
 
 		// cant be less in size than the size of the hash at the end
-		if( total_bytes_to_read < hash_size )
+		if( allocation.size() < hash_size )
 			{
 			return Status::ECorrupted;
 			}
 
-		// read in all of the file
-		std::vector<u8> allocation;
-		allocation.resize( total_bytes_to_read );
-		if( allocation.size() != total_bytes_to_read )
-			{
-			// failed to allocate the memory
-			return Status::ECantAllocate;
-			}
 		u8 *buffer = allocation.data();
-
-		u64 bytes_read = 0;
-		while( bytes_read < total_bytes_to_read )
-			{
-			// check how much to read and cap each read at UINT_MAX
-			u64 bytes_left = total_bytes_to_read - bytes_read;
-			u32 bytes_to_read_this_time = UINT_MAX;
-			if( bytes_left < UINT_MAX )
-				bytes_to_read_this_time = (u32)bytes_left;
-
-			// read in bytes into the memory allocation
-			DWORD bytes_that_were_read = 0;
-			if( !::ReadFile( file_handle, &buffer[bytes_read], bytes_to_read_this_time, &bytes_that_were_read, nullptr ) )
-				{
-				// failed to read
-				return Status::ECantRead;
-				}
-
-			// update number of bytes that were read
-			bytes_read += bytes_that_were_read;
-			}
-
-		::CloseHandle( file_handle );
-#else
-
-		// open the file at the end
-		std::ifstream file( filePath.c_str(), std::ios::in | std::ios::binary | std::ios::ate );
-		if( !file.is_open() )
-			{
-			// failed to open the file
-			return Status::ECantOpen;
-			}
-
-		// get the size of the file, and move to the beginning
-		u64 total_bytes_to_read = file.tellg();
-		file.seekg(0, std::ios::beg);
-
-		// cant be less in size than the size of the hash at the end
-		if( total_bytes_to_read < hash_size )
-			{
-			return Status::ECorrupted;
-			}
-
-		// allocate the data
-		std::vector<u8> allocation;
-		allocation.resize( total_bytes_to_read );
-		if( allocation.size() != total_bytes_to_read )
-			{
-			// failed to allocate the memory
-			return Status::ECantAllocate;
-			}
-		u8 *buffer = allocation.data();
-
-		// read the data
-		file.read( (char*)buffer, total_bytes_to_read);
-		file.close();
-#endif
+		u64 total_size = allocation.size();
 
 		// calculate the sha256 hash on the data, and make sure it compares correctly with the hash
 		hash digest = {};
-		SHA256::CalculateHash( digest, buffer, total_bytes_to_read );
+		SHA256::CalculateHash( digest, buffer, total_size );
 		if( digest != hash( ref ) )
 			{
 			// sha hash does not compare correctly, file is corrupted
@@ -343,7 +222,7 @@ namespace pds
 			}
 
 		// set up a memory stream and deserializer
-		MemoryReadStream rstream( buffer, total_bytes_to_read, false );
+		MemoryReadStream rstream( buffer, total_size, false );
 		EntityReader reader( rstream );
 
 		// read file header and deserialize the entity
@@ -459,60 +338,14 @@ namespace pds
 		const std::string fileName = value_to_hex_string( digest ) + ".dat";
 		const std::string filePath = pThis->Path + "/" + fileName;
 
-#ifdef _MSC_VER
-		// open the file
-		HANDLE fileHandle = ::CreateFileA( filePath.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr );
-		if( fileHandle == INVALID_HANDLE_VALUE )
+		// if the file does not exist, create and write it
+		if( !ctle::file_exists(filePath) )
 			{
-			// file open failed. if it is because the file already exists, that is ok
-			// all other issues, return error
-			DWORD errorCode = GetLastError();
-			if( errorCode != ERROR_FILE_EXISTS )
+			if( !ctle::write_file(filePath, writeBuffer, (size_t)totalBytesToWrite, true ) )
 				{
-				// failed to open the file
-				return std::pair<entity_ref, Status>( {}, Status::ECantOpen );
-				}
-			}
-
-		// write the file
-		u64 bytesWritten = 0;
-		while( bytesWritten < totalBytesToWrite )
-			{
-			// check how much to write, capped at UINT_MAX
-			u64 bytesToWrite = std::min<u64>( totalBytesToWrite - bytesWritten, UINT_MAX );
-
-			// write the bytes to file
-			DWORD numBytesWritten = 0;
-			if( !::WriteFile( fileHandle, &writeBuffer[bytesWritten], (DWORD)bytesToWrite, &numBytesWritten, nullptr ) )
-				{
-				// failed to write
 				return std::pair<entity_ref, Status>( {}, Status::ECantWrite );
 				}
-
-			// update number of bytes that were read
-			bytesWritten += numBytesWritten;
 			}
-
-		::CloseHandle( fileHandle );
-#else
-		// create the file
-		// we can't check if the file already exists (need to use Linux specific code)
-		std::ofstream file( filePath.c_str(), std::ios::out | std::ios::binary );
-		if( !file.is_open() )
-			{
-			// failed to open the file
-			return std::pair<entity_ref, Status>( {}, Status::ECantOpen );
-			}
-
-		// write the file
-		file.write( (const char*)writeBuffer , totalBytesToWrite );
-		if( (u64)file.tellp() != totalBytesToWrite )
-			{
-			// failed to write full file
-			return std::pair<entity_ref, Status>( {}, Status::ECantWrite );
-			}
-		file.close();
-#endif
 
 		// transfer into the Entities map 
 		pThis->InsertEntity( entity_ref( digest ), entity );
