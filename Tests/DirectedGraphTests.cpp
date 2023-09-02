@@ -29,6 +29,29 @@ TEST( DirectedGraphTests, DirectedGraphBasicTest )
 	EXPECT_EQ( validator.GetErrorCount() , uint(0) );
 	}
 
+TEST( DirectedGraphTests, DirectedGraphItemRefTest )
+	{
+	setup_random_seed();
+
+	// create basic graph
+	typedef DirectedGraph<item_ref, Acyclic> Graph;
+	Graph dg;
+
+	item_ref A = item_ref::make_ref();
+	item_ref B = item_ref::make_ref();
+	item_ref C = item_ref::make_ref();
+	item_ref D = item_ref::make_ref();
+
+	dg.Edges().emplace( A, B );
+	dg.Edges().emplace( B, C );
+	dg.Edges().emplace( C, A );
+	dg.Edges().emplace( A, D );
+
+	EntityValidator validator;
+	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( validator.GetErrorCount() , uint(1) ); // should report a cycle
+	}
+
 TEST( DirectedGraphTests, DirectedGraphDuplicateEdgesTest )
 	{
 	setup_random_seed();
