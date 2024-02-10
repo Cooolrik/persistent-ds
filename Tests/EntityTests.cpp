@@ -7,8 +7,8 @@
 
 #include "TestPackA/TestEntityA.h"
 
-TEST( EntityTests , EntityManagementBasicTests )
-	{
+TEST( EntityTests, EntityManagementBasicTests )
+{
 	// only using TestPack1 in this test
 	using TestPackA::TestEntityA;
 
@@ -26,15 +26,15 @@ TEST( EntityTests , EntityManagementBasicTests )
 
 	// set values, validate, should be fine
 	ent1.Name() = random_value<string>();
-	ent1.OptionalText().set(random_value<string>());
-	EXPECT_TRUE( TestEntityA::MF::Validate( ent1 , validator ) );
-	EXPECT_EQ( validator.GetErrorCount() , uint(0) );
+	ent1.OptionalText().set( random_value<string>() );
+	EXPECT_TRUE( TestEntityA::MF::Validate( ent1, validator ) );
+	EXPECT_EQ( validator.GetErrorCount(), uint( 0 ) );
 
 	// set random values on ent2, should differ
 	ent2.Name() = random_value<string>();
-	ent2.OptionalText().set(random_value<string>());
+	ent2.OptionalText().set( random_value<string>() );
 	EXPECT_FALSE( TestEntityA::MF::Equals( &ent1, &ent2 ) );
-	
+
 	// copy ent1 to ent2, compare, should be the same
 	ent2 = ent1;
 	EXPECT_TRUE( TestEntityA::MF::Equals( &ent1, &ent2 ) );
@@ -52,4 +52,4 @@ TEST( EntityTests , EntityManagementBasicTests )
 	// clear ent2, should be the same
 	TestEntityA::MF::Clear( ent2 );
 	EXPECT_TRUE( TestEntityA::MF::Equals( &ent1, &ent2 ) );
-	}
+}

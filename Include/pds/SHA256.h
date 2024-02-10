@@ -9,6 +9,9 @@
 
 namespace pds
 {
+
+// The SHA256 functions are wrappers around picosha2, and generates hash object values
+
 namespace SHA256
 {
 
@@ -17,4 +20,8 @@ Status CalculateHash( hash &destHash, const u8 *srcData, size_t srcDataLength );
 Status CalculateHash( u8 destDigest[32], const u8 *srcData, size_t srcDataLength );
 
 }
+// namespace SHA256
+
+
 }
+//namespace pds

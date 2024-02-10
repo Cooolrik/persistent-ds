@@ -4,7 +4,7 @@
 
 #include "SHA256.h"
 
-// directly include librock_sha256.c
+// directly include picosha2.h
 // silence warning we can't control
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -27,21 +27,27 @@ namespace pds
 namespace SHA256
 {
 
+
+
 Status CalculateHash( u8 destDigest[32], const u8 *srcData, size_t srcDataLength )
-	{
+{
 	picosha2::hash256_one_by_one hasher;
-	
-	hasher.process(srcData, srcData + srcDataLength);
+
+	hasher.process( srcData, srcData + srcDataLength );
 	hasher.finish();
-	hasher.get_hash_bytes(destDigest, destDigest + 32);
+	hasher.get_hash_bytes( destDigest, destDigest + 32 );
 
 	return Status::Ok;
-	}
+}
 
 Status CalculateHash( hash &destHash, const u8 *srcData, size_t srcDataLength )
-	{
+{
 	return CalculateHash( destHash.digest, srcData, srcDataLength );
-	}
+}
 
 }
+// namespace SHA256
+
+
 }
+//namespace pds

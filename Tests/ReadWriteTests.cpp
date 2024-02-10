@@ -7,18 +7,18 @@
 #include <pds/EntityWriter.inl>
 
 template<class T> void ExpectReadValueIs( MemoryReadStream *rs, T ref_value )
-	{
+{
 	T val = rs->Read<T>();
-	EXPECT_EQ( val , ref_value );
-	}
+	EXPECT_EQ( val, ref_value );
+}
 
-TEST( ReadWriteTests , MemoryWriteReadStream )
-	{
+TEST( ReadWriteTests, MemoryWriteReadStream )
+{
 	setup_random_seed();
 
 	// run twice, one with flipped, one with non-flipped byte order, per pass
-	for( uint pass_index = 0; pass_index < 2*global_number_of_passes; ++pass_index )
-		{
+	for( uint pass_index = 0; pass_index < 2 * global_number_of_passes; ++pass_index )
+	{
 		// random values
 		const u8 u8val = u8_rand();
 		const u16 u16val = u16_rand();
@@ -36,15 +36,15 @@ TEST( ReadWriteTests , MemoryWriteReadStream )
 		// write random stuff to write stream
 		u64 expected_size = 0;
 		MemoryWriteStream *ws = new MemoryWriteStream();
-		ws->SetFlipByteOrder( (pass_index & 0x1) != 0 );
+		ws->SetFlipByteOrder( ( pass_index & 0x1 ) != 0 );
 
 		for( uint i = 0; i < num_values; ++i )
-			{
+		{
 			int item_type = rand() % 8;
 			order[i] = item_type;
 
 			switch( item_type )
-				{
+			{
 				case 0:
 					ws->Write( u8val ); expected_size += 1;
 					break;
@@ -69,11 +69,11 @@ TEST( ReadWriteTests , MemoryWriteReadStream )
 				case 7:
 					ws->Write( hs ); expected_size += 32;
 					break;
-				}
 			}
+		}
 
 		// check the expected size
-		EXPECT_EQ( expected_size , ws->GetSize() );
+		EXPECT_EQ( expected_size, ws->GetSize() );
 
 		// get the data, and set up a read stream
 		std::vector<u8> memdata;
@@ -84,15 +84,15 @@ TEST( ReadWriteTests , MemoryWriteReadStream )
 
 		// read back everything in the same order
 		MemoryReadStream *rs = new MemoryReadStream( memdata.data(), expected_size );
-		rs->SetFlipByteOrder( (pass_index & 0x1) != 0 );
+		rs->SetFlipByteOrder( ( pass_index & 0x1 ) != 0 );
 		for( uint i = 0; i < num_values; ++i )
-			{
+		{
 			int item_type = order[i];
 
 			switch( item_type )
-				{
+			{
 				case 0:
-					EXPECT_EQ( rs->Peek() , u8val ); // also test Peek functionality
+					EXPECT_EQ( rs->Peek(), u8val ); // also test Peek functionality
 					ExpectReadValueIs( rs, u8val );
 					break;
 				case 1:
@@ -116,11 +116,11 @@ TEST( ReadWriteTests , MemoryWriteReadStream )
 				case 7:
 					ExpectReadValueIs( rs, hs );
 					break;
-				}
 			}
+		}
 
-		EXPECT_EQ( rs->GetPosition() , expected_size );
+		EXPECT_EQ( rs->GetPosition(), expected_size );
 		delete rs;
 		rs = nullptr;
-		}
 	}
+}

@@ -6,15 +6,15 @@
 
 #include <ctle/log.h>
 
-static void silence_global_log_function( ctle::log_level /*level*/ , const char */*function_name*/ , const char */*message*/ )
-	{
-	}
-
-int main(int argc, char** argv)
+static void silence_global_log_function( ctle::log_level /*level*/, const char */*function_name*/, const char */*message*/ )
 {
-    testing::InitGoogleTest(&argc, argv);
+}
 
-	ctle::set_global_log_function(&silence_global_log_function);
+int main( int argc, char **argv )
+{
+	testing::InitGoogleTest( &argc, argv );
 
-    return RUN_ALL_TESTS();
+	ctle::set_global_log_function( &silence_global_log_function );
+
+	return RUN_ALL_TESTS();
 }

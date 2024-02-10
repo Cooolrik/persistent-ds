@@ -8,25 +8,28 @@
 #include <pds/EntityReader.h>
 #include <pds/EntityValidator.h>
 
-using namespace pds;
+namespace pds
+{
+
+
 
 Varying::Varying( const Varying &rval )
-	{
+{
 	this->type_m = {};
 	this->container_type_m = {};
 	this->data_m = {};
 
 	Varying::MF::DeepCopy( *this, &rval );
-	}
+}
 
 Varying &Varying::operator=( const Varying &rval )
-	{
+{
 	Varying::MF::DeepCopy( *this, &rval );
 	return *this;
-	}
+}
 
 Varying::Varying( Varying &&rval ) noexcept
-	{
+{
 	this->type_m = rval.type_m;
 	rval.type_m = {};
 
@@ -35,10 +38,10 @@ Varying::Varying( Varying &&rval ) noexcept
 
 	this->data_m = rval.data_m;
 	rval.data_m = {};
-	}
+}
 
 Varying &Varying::operator=( Varying &&rval ) noexcept
-	{
+{
 	this->type_m = rval.type_m;
 	rval.type_m = {};
 
@@ -49,70 +52,70 @@ Varying &Varying::operator=( Varying &&rval ) noexcept
 	rval.data_m = {};
 
 	return *this;
-	}
+}
 
 Varying::~Varying()
-	{
+{
 	this->Deinitialize();
-	}
+}
 
 bool Varying::operator==( const Varying &rval ) const
-	{
+{
 	return MF::Equals( this, &rval );
-	};
+};
 
 bool Varying::operator!=( const Varying &rval ) const
-	{
-	return !(operator==( rval ));
-	}
+{
+	return !( operator==( rval ) );
+}
 
 bool Varying::Deinitialize()
-	{
+{
 	// delete allocated data if nonempty
 	if( this->IsInitialized() )
-		{
+	{
 		bool success = dynamic_types::delete_type( this->type_m, this->container_type_m, this->data_m );
 		if( !success )
-			{
+		{
 			pdsErrorLog << "Error in call to dynamic_types::delete_type" << pdsErrorLogEnd;
 			return false;
-			}
+		}
 
 		// clear values
 		this->type_m = {};
 		this->container_type_m = {};
 		this->data_m = {};
-		}
+	}
 
 	return true;
-	}
+}
 
 bool Varying::Initialize( data_type_index dataType, container_type_index containerType )
-	{
+{
 	return MF::SetType( *this, dataType, containerType );
-	}
+}
 
 std::tuple<data_type_index, container_type_index> Varying::Type() const noexcept
-	{
+{
 	return std::pair<data_type_index, container_type_index>( this->type_m, this->container_type_m );
-	}
+}
 
 // Returns true if the object has been initialized (ie has a data object)
 bool Varying::IsInitialized() const noexcept
-	{
+{
 	return this->data_m != nullptr;
-	}
+}
 
 void Varying::MF::Clear( Varying &obj )
-	{
+{
 	if( obj.data_m == nullptr )
 		return;
 	bool success = dynamic_types::clear( obj.type_m, obj.container_type_m, obj.data_m );
 	pdsRuntimeCheck( success, Status::EUndefined, "Could not clear the dynamic type" );
-	}
+}
 
 void Varying::MF::DeepCopy( Varying &dest, const Varying *source )
-	{
+{
 	bool success = {};
 
 	// clear the current type of dest
@@ -130,10 +133,10 @@ void Varying::MF::DeepCopy( Varying &dest, const Varying *source )
 	// copy the data from source to dest
 	success = dynamic_types::copy( dest.type_m, dest.container_type_m, dest.data_m, source->data_m );
 	pdsRuntimeCheck( success, Status::EUndefined, "Cannot copy Varying type data." );
-	}
+}
 
 bool Varying::MF::Equals( const Varying *lvar, const Varying *rvar )
-	{
+{
 	// early out if the pointers are equal (includes nullptr)
 	if( lvar == rvar )
 		return true;
@@ -150,15 +153,15 @@ bool Varying::MF::Equals( const Varying *lvar, const Varying *rvar )
 
 	// types match, compare data in type
 	return dynamic_types::equals( lvar->type_m, lvar->container_type_m, lvar->data_m, rvar->data_m );
-	}
+}
 
 bool Varying::MF::Write( const Varying &obj, EntityWriter &writer )
-	{
+{
 	if( !obj.IsInitialized() )
-		{
+	{
 		pdsErrorLog << "Cannot write uninitialized Varying to stream. Use optional_value template for optional Varying data." << pdsErrorLogEnd;
 		return false;
-		}
+	}
 
 	// store the data type index
 	if( !writer.Write( pdsKeyMacro( "Type" ), (u16)obj.type_m ) )
@@ -173,10 +176,10 @@ bool Varying::MF::Write( const Varying &obj, EntityWriter &writer )
 		return false;
 
 	return true;
-	}
+}
 
 bool Varying::MF::Read( Varying &obj, EntityReader &reader )
-	{
+{
 	// if initialized, deinitalize
 	obj.Deinitialize();
 
@@ -200,31 +203,31 @@ bool Varying::MF::Read( Varying &obj, EntityReader &reader )
 		return false;
 
 	return true;
-	}
+}
 
 bool Varying::MF::Validate( const Varying &obj, EntityValidator &validator )
-	{
+{
 	if( !obj.IsInitialized() )
-		{
+	{
 		pdsValidationError( ValidationError::NullNotAllowed )
 			<< "Object is not initialized, and does not have a type set. All Varying objects need to be initialized to be valid. To have an optional Varying object, use the optional_value template."
 			<< pdsValidationErrorEnd;
-		}
-
-	return true;
 	}
 
+	return true;
+}
+
 bool Varying::MF::SetType( Varying &obj, data_type_index dataType, container_type_index containerType )
-	{
+{
 	bool success = {};
 
 	// clear current type if it is set
 	success = obj.Deinitialize();
 	if( !success )
-		{
+	{
 		pdsErrorLog << "Error in call to Varying::Deinitialize" << pdsErrorLogEnd;
 		return false;
-		}
+	}
 
 	// set type and allocate the data
 	obj.type_m = dataType;
@@ -232,4 +235,8 @@ bool Varying::MF::SetType( Varying &obj, data_type_index dataType, container_typ
 	std::tie( obj.data_m, success ) = dynamic_types::new_type( obj.type_m, obj.container_type_m );
 
 	return success;
-	}
+}
+
+
+}
+// namespace pds
