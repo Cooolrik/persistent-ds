@@ -10,6 +10,7 @@
 #pragma warning( push )
 #pragma warning( disable : 4201 )
 #pragma warning( disable : 4127 )
+#define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif

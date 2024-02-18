@@ -449,6 +449,8 @@ def CreateItemSource(item):
 				lines.append(f'#include "{versionName}_{dep.Name}.h"')
 
 	lines.append('')
+	lines.append('#include <pds/_pds_macros.inl>')
+	lines.append('')
 	lines.append(f'namespace {packageName}')
 	lines.append('    {')
 	lines.append(f'namespace {versionName}')
@@ -602,8 +604,12 @@ def CreateItemSource(item):
 		lines.append('        return success;')
 		lines.append('        }')
 
-	lines.append('    };')
-	lines.append('    };')	
+	lines.append('}')
+	lines.append(f'// namespace {versionName}')
+	lines.append('}') 	
+	lines.append(f'// namespace {packageName}')
+	lines.append('')
+	lines.append('#include <pds/_pds_undef_macros.inl>')
 	hlp.write_lines_to_file(f"{item.Package.Path}/{versionName}/{versionName}_{item.Name}.inl",lines)
 
 

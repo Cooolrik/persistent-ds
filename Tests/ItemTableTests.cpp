@@ -7,7 +7,7 @@
 #include <pds/EntityReader.inl>
 #include <pds/EntityWriter.inl>
 
-#include <pds/ItemTable.h>
+#include <pds/ItemTable_MF.h>
 
 #include "TestPackA/TestEntityA.h"
 #include "TestHelpers/structure_generation.h"

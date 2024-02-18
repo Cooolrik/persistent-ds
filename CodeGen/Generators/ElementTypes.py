@@ -42,10 +42,10 @@ def ElementTypes_h():
 	#lines.append('')
 	lines.append('#include <limits.h>')
 	lines.append('#include <float.h>')
-	lines.append('#include <glm/fwd.hpp>')
 	lines.append('#include <ctle/uuid.h>')
 	lines.append('#include <ctle/hash.h>') 
 	lines.append('#include <ctle/string_funcs.h>')
+	lines.append('#include <ctle/ntup.h>')
 	lines.append('')
 
 	lines.append('namespace pds')
@@ -100,41 +100,50 @@ def ElementTypes_h():
 	lines.append(f"\t// vector types")
 	for bit_size in int_bit_range:
 		for vec_dim in vector_dimension_range:
-			lines.append(f"\ttypedef glm::vec<{vec_dim},glm::i{bit_size},glm::packed_highp> i{bit_size}vec{vec_dim};")
+			lines.append(f"\tusing i{bit_size}vec{vec_dim} = ctle::i{bit_size}tup{vec_dim};")
 	lines.append('')
 	for bit_size in int_bit_range:
 		for vec_dim in vector_dimension_range:
-			lines.append(f"\ttypedef glm::vec<{vec_dim},glm::u{bit_size},glm::packed_highp> u{bit_size}vec{vec_dim};")
+			lines.append(f"\tusing u{bit_size}vec{vec_dim} = ctle::u{bit_size}tup{vec_dim};")
 	lines.append('')
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\ttypedef glm::vec<{vec_dim},glm::f32,glm::packed_highp> fvec{vec_dim};")
+		lines.append(f"\tusing fvec{vec_dim} = ctle::ftup{vec_dim};")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\ttypedef glm::vec<{vec_dim},glm::f64,glm::packed_highp> dvec{vec_dim};")
+		lines.append(f"\tusing dvec{vec_dim} = ctle::dtup{vec_dim};")
 	lines.append('')
 	
 	# typedef matrix types
 	lines.append(f"\t// matrix types")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\ttypedef glm::mat<{vec_dim},{vec_dim},glm::f32,glm::packed_highp> fmat{vec_dim};")
+		lines.append(f"\tusing fmat{vec_dim} = ctle::ftup{vec_dim}x{vec_dim};")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\ttypedef glm::mat<{vec_dim},{vec_dim},glm::f64,glm::packed_highp> dmat{vec_dim};")
+		lines.append(f"\tusing dmat{vec_dim} = ctle::dtup{vec_dim}x{vec_dim};")
 	lines.append('')
 
 	# typedef quaternions
 	lines.append(f"\t// quaternion types")
-	lines.append(f"\ttypedef glm::qua<glm::f32,glm::packed_highp> fquat;")
-	lines.append(f"\ttypedef glm::qua<glm::f64,glm::packed_highp> dquat;")
+	for ty in ['f','d']:
+		base_type = 'float' if ty == 'f' else 'double'
+		lines.append(f"\tclass {ty}quat : public ctle::{ty}tup4")
+		lines.append('\t{')
+		lines.append('\tpublic:')
+		lines.append(f'\t\t{ty}quat() : ctle::{ty}tup4() {{}}')
+		lines.append(f'\t\t{ty}quat( const {ty}quat &other ) : ctle::{ty}tup4( other ) {{}}')
+		lines.append(f'\t\t{ty}quat( {base_type} _a, {base_type} _b, {base_type} _c, {base_type} _d ) : ctle::{ty}tup4(_a,_b,_c,_d) {{}}')
+		lines.append(f'\t\t{ty}quat &operator=( const {ty}quat &other ) noexcept {{ x = other.x; y = other.y; z = other.z; w = other.w; return *this; }}')
+		lines.append('\t};')
+		lines.append('')
 	lines.append('')
 
-	# typedef standard types
+	# typedef standard precision types (32 bit ints and floats)
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\ttypedef glm::ivec{vec_dim} ivec{vec_dim};")
+		lines.append(f"\tusing ivec{vec_dim} = i32vec{vec_dim};")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\ttypedef glm::uvec{vec_dim} uvec{vec_dim};")
+		lines.append(f"\tusing uvec{vec_dim} = u32vec{vec_dim};")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\ttypedef glm::vec{vec_dim} vec{vec_dim};")
+		lines.append(f"\tusing vec{vec_dim} = fvec{vec_dim};")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\ttypedef glm::mat{vec_dim} mat{vec_dim};")
+		lines.append(f"\tusing mat{vec_dim} = fmat{vec_dim};")
 	lines.append('')
 
 	# inline entity_ref and item_ref
@@ -248,6 +257,36 @@ def print_type_information_source( type , value , value_count ):
 	lines.append('')
 	return lines
 
+def print_matrix_type_information_source( type , subtype , value , value_count ):
+	lines = []
+	
+	zero = inf = sup = ''
+	for t in range(value_count):
+		zero += f'{subtype}('		
+		inf += f'{subtype}('		
+		sup += f'{subtype}('		
+		for i in range(value_count):
+			zero += f'{value}_zero'
+			inf += f'{value}_inf'
+			sup += f'{value}_sup'
+			if i < value_count-1:
+				zero += ','
+				inf += ','
+				sup += ','
+		zero += ')'
+		inf += ')'
+		sup += ')'
+		if t < value_count-1:
+			zero += ','
+			inf += ','
+			sup += ','
+
+	lines.append(f'\tconst {type} data_type_information<{type}>::zero = {type}({zero}); // zero value of {type}')
+	lines.append(f'\tconst {type} data_type_information<{type}>::inf = {type}({inf}); // limit inferior (minimum bound) of {type}')
+	lines.append(f'\tconst {type} data_type_information<{type}>::sup = {type}({sup}); // limit superior (maximum bound) of {type}')
+	lines.append('')
+	return lines
+
 def ElementTypes_inl():
 	lines = []
 	lines.extend( hlp.generate_header() )
@@ -257,7 +296,7 @@ def ElementTypes_inl():
 	lines.append('')
 	lines.append('#include <pds/pds.h>')
 	lines.append('')
-	lines.extend( hlp.inline_file( 'InlinedCode/uuid_hash_source.inl' ) )
+	#lines.extend( hlp.inline_file( 'InlinedCode/uuid_hash_source.inl' ) )
 	lines.append('')
 	lines.append('namespace pds')
 	lines.append('    {')
@@ -285,9 +324,9 @@ def ElementTypes_inl():
 
 	# matrix type info
 	for vec_dim in vector_dimension_range:
-		lines.extend(print_type_information_source(f"fmat{vec_dim}",'float',vec_dim*vec_dim))	
+		lines.extend(print_matrix_type_information_source(f"fmat{vec_dim}",f"fvec{vec_dim}",'float',vec_dim))	
 	for vec_dim in vector_dimension_range:
-		lines.extend(print_type_information_source(f"dmat{vec_dim}",'double',vec_dim*vec_dim))	
+		lines.extend(print_matrix_type_information_source(f"dmat{vec_dim}",f"dvec{vec_dim}",'double',vec_dim))	
 
 	# quaternions info
 	lines.extend(print_type_information_source('fquat','float',4))
@@ -315,67 +354,67 @@ def ElementValuePointers_h():
 	#lines.append('#include <glm/gtc/type_ptr.hpp>')
 	lines.append('')
 	lines.append('namespace pds')
-	lines.append('    {')
+	lines.append('{')
 
 	# type pointer functions (return pointer to first item in each type)
-	lines.append(f"\t// item pointer functions, returns a pointer to the first item of each type")
+	lines.append(f"// item pointer functions, returns a pointer to the first item of each type")
 	lines.append('')
 	for bit_size in int_bit_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"\tinline {const_type}i{bit_size} *value_ptr( {const_type}i{bit_size} &value ) {{ return &value; }}")
+			lines.append(f"inline {const_type}i{bit_size} *value_ptr( {const_type}i{bit_size} &value ) {{ return &value; }}")
 	lines.append('')
 	for bit_size in int_bit_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"\tinline {const_type}u{bit_size} *value_ptr( {const_type}u{bit_size} &value ) {{ return &value; }}")
+			lines.append(f"inline {const_type}u{bit_size} *value_ptr( {const_type}u{bit_size} &value ) {{ return &value; }}")
 	lines.append('')
 	for float_type in float_type_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"\tinline {const_type}{float_type} *value_ptr( {const_type}{float_type} &value ) {{ return &value; }}")
+			lines.append(f"inline {const_type}{float_type} *value_ptr( {const_type}{float_type} &value ) {{ return &value; }}")
 	lines.append('')
 	for bit_size in int_bit_range:
 		for vec_dim in vector_dimension_range:
 			for const_type in nonconst_const_range:
-				lines.append(f"\tinline {const_type}i{bit_size} *value_ptr( {const_type}i{bit_size}vec{vec_dim} &value ) {{ return glm::value_ptr(value); }}")
+				lines.append(f"inline {const_type}i{bit_size} *value_ptr( {const_type}i{bit_size}vec{vec_dim} &value ) {{ return value.data(); }}")
 	lines.append('')
 	for bit_size in int_bit_range:
 		for vec_dim in vector_dimension_range:
 			for const_type in nonconst_const_range:
-				lines.append(f"\tinline {const_type}u{bit_size} *value_ptr( {const_type}u{bit_size}vec{vec_dim} &value ) {{ return glm::value_ptr(value); }}")
+				lines.append(f"inline {const_type}u{bit_size} *value_ptr( {const_type}u{bit_size}vec{vec_dim} &value ) {{ return value.data(); }}")
 	lines.append('')
 
 	# vectors
 	for vec_dim in vector_dimension_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"\tinline {const_type}float *value_ptr( {const_type}fvec{vec_dim} &value ) {{ return glm::value_ptr(value); }}")
+			lines.append(f"inline {const_type}float *value_ptr( {const_type}fvec{vec_dim} &value ) {{ return value.data(); }}")
 	for vec_dim in vector_dimension_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"\tinline {const_type}double *value_ptr( {const_type}dvec{vec_dim} &value ) {{ return glm::value_ptr(value); }}")
+			lines.append(f"inline {const_type}double *value_ptr( {const_type}dvec{vec_dim} &value ) {{ return value.data(); }}")
 	lines.append('')
 
 	# matrices
 	for vec_dim in vector_dimension_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"\tinline {const_type}float *value_ptr( {const_type}fmat{vec_dim} &value ) {{ return glm::value_ptr(value); }}")
+			lines.append(f"inline {const_type}float *value_ptr( {const_type}fmat{vec_dim} &value ) {{ return value.data()->data(); }}")
 	for vec_dim in vector_dimension_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"\tinline {const_type}double *value_ptr( {const_type}dmat{vec_dim} &value ) {{ return glm::value_ptr(value); }}")
+			lines.append(f"inline {const_type}double *value_ptr( {const_type}dmat{vec_dim} &value ) {{ return value.data()->data(); }}")
 	lines.append('')
 
 	# quaternions
 	for const_type in nonconst_const_range:
-		lines.append(f"\tinline {const_type}float *value_ptr( {const_type}fquat &value ) {{ return glm::value_ptr(value); }}")
+		lines.append(f"inline {const_type}float *value_ptr( {const_type}fquat &value ) {{ return value.data(); }}")
 	for const_type in nonconst_const_range:
-		lines.append(f"\tinline {const_type}double *value_ptr( {const_type}dquat &value ) {{ return glm::value_ptr(value); }}")
+		lines.append(f"inline {const_type}double *value_ptr( {const_type}dquat &value ) {{ return value.data(); }}")
 	lines.append('')
 
 	# other types that have no inner item pointer
 	same_type_range = ['uuid','hash','string']
 	for type in same_type_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"\tinline {const_type}{type} *value_ptr( {const_type}{type} &value ) {{ return &value; }}")
+			lines.append(f"inline {const_type}{type} *value_ptr( {const_type}{type} &value ) {{ return &value; }}")
 
 	# end of namespace
-	lines.append('    };')
+	lines.append('};')
 	lines.append('')
 
 	# reenable warning

@@ -138,7 +138,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, EntityW
 	}
 
 	// sanity check, make sure all sections were written
-	pdsSanityCheckDebugMacro( index == obj.v_Entries.size() );
+	ctSanityCheck( index == obj.v_Entries.size() );
 
 	// end the Entries sections array
 	if( !writer.EndWriteSectionsArray( section_writer ) )
@@ -164,10 +164,10 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &
 	std::tie( section_reader, map_size, success ) = reader.BeginReadSectionsArray( pdsKeyMacro( "Entities" ), false );
 	if( !success )
 		return false;
-	pdsSanityCheckDebugMacro( section_reader );
+	ctSanityCheck( section_reader );
 	if( map_size != keys.size() )
 	{
-		pdsErrorLog << "Invalid size in ItemTable, the Keys and Entities arrays do not match in size." << pdsErrorLogEnd;
+		ctLogError << "Invalid size in ItemTable, the Keys and Entities arrays do not match in size." << ctLogEnd;
 		return false;
 	}
 
@@ -186,7 +186,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &
 
 		if( !success )
 		{
-			pdsErrorLog << "Failed inserting key-value pair in ItemTable" << pdsErrorLogEnd;
+			ctLogError << "Failed inserting key-value pair in ItemTable" << ctLogEnd;
 			return false;
 		}
 

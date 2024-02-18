@@ -5,15 +5,8 @@
 
 #include "pds.h"
 
-#ifdef _MSC_VER
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#endif
-
 namespace pds
 {
-
-
 
 // Memory write stream is a write-only memory area.
 // The stream is used to write structured values. 
@@ -50,8 +43,8 @@ private:
 	template <class T> void WriteValues( const T *src, u64 count );
 
 public:
-	MemoryWriteStream( u64 _InitialAllocationSize = InitialAllocationSize ) { this->ReserveForSize( _InitialAllocationSize ); };
-	~MemoryWriteStream() { this->FreeAllocation(); };
+	MemoryWriteStream( u64 _InitialAllocationSize = InitialAllocationSize );
+	~MemoryWriteStream();
 
 	// get a read-only pointer to the data
 	const void *GetData() const { return this->Data; }
@@ -95,62 +88,6 @@ public:
 	void Write( const uuid *src, u64 count );
 	void Write( const hash *src, u64 count );
 };
-
-inline void MemoryWriteStream::ReserveForSize( u64 reserveSize )
-{
-	// we need to resize the reserved data area, try doubling size
-	// and if that is not enough, set to the reserveSize
-	this->DataReservedSize *= 2;
-	if( this->DataReservedSize < reserveSize )
-	{
-		this->DataReservedSize = reserveSize;
-	}
-
-	// allocate a new area
-#ifdef _MSC_VER
-	u8 *pNewData = ( u8 * )::VirtualAlloc( nullptr, this->DataReservedSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE );
-#elif defined(__GNUC__)
-	u8 *pNewData = (u8 *)malloc( this->DataReservedSize );
-#endif
-	if( pNewData == nullptr )
-	{
-		throw std::bad_alloc();
-	}
-
-	// if there is an old area, copy the data and free the old area
-	// the area can never shrink, so we don't need to worry about capping
-	if( this->Data )
-	{
-		memcpy( pNewData, this->Data, this->DataSize );
-		this->FreeAllocation();
-	}
-
-	// set the new pointer
-	this->Data = pNewData;
-}
-
-inline void MemoryWriteStream::FreeAllocation()
-{
-	if( this->Data )
-	{
-#ifdef _MSC_VER			
-		::VirtualFree( this->Data, 0, MEM_RELEASE );
-#elif defined(__GNUC__)
-		free( this->Data );
-#endif							
-		this->Data = nullptr;
-	}
-}
-
-inline void MemoryWriteStream::Resize( u64 newSize )
-{
-	if( newSize > this->DataReservedSize )
-	{
-		this->ReserveForSize( newSize );
-	}
-
-	this->DataSize = newSize;
-}
 
 inline void MemoryWriteStream::WriteRawData( const void *src, u64 count )
 {

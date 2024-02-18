@@ -140,7 +140,7 @@ TEST( TypeTests, SHA256Hashing )
 			0x0c,0xc4,0x76,0x6f,0xe2,0x78,0xc4,0xb5
 		};
 
-		EXPECT_EQ( memcmp( sha.digest, expected_hash, 32 ), 0 );
+		EXPECT_EQ( memcmp( sha.data, expected_hash, 32 ), 0 );
 	}
 }
 

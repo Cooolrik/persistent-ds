@@ -4,6 +4,7 @@
 
 #ifdef _MSC_VER
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 #include <Rpc.h>
 #endif
@@ -31,6 +32,7 @@
 #include "EntityWriter.inl"
 #include "EntityReader.inl"
 #include "DynamicTypes.inl"
+#include "MemoryWriteStream.inl"
 
 #include <iostream>
 #include <fstream>
@@ -44,6 +46,9 @@ constexpr size_t sha256_hash_size = 32;
 
 namespace pds
 {
+#include "_pds_macros.inl"
+
+
 item_ref item_ref::make_ref()
 {
 	return item_ref::from_uuid( uuid::generate() );
@@ -71,7 +76,7 @@ static std::shared_ptr<Entity> entityNew( const std::vector<const EntityHandler:
 {
 	if( !entityTypeString )
 	{
-		pdsErrorLog << "Invalid parameter, entityTypeString must be a pointer to a string" << pdsErrorLogEnd;
+		ctLogError << "Invalid parameter, entityTypeString must be a pointer to a string" << ctLogEnd;
 		return nullptr;
 	}
 
@@ -82,7 +87,7 @@ static std::shared_ptr<Entity> entityNew( const std::vector<const EntityHandler:
 			return ret;
 	}
 
-	pdsErrorLog << "Unrecognized entity, cannot allocate entity of type: " << entityTypeString << " is not registered with any package." << pdsErrorLogEnd;
+	ctLogError << "Unrecognized entity, cannot allocate entity of type: " << entityTypeString << " is not registered with any package." << ctLogEnd;
 	return nullptr;
 }
 
@@ -90,7 +95,7 @@ static bool entityWrite( const std::vector<const EntityHandler::PackageRecord *>
 {
 	if( !obj )
 	{
-		pdsErrorLog << "Invalid parameter, obj must be a pointer to an allocated object" << pdsErrorLogEnd;
+		ctLogError << "Invalid parameter, obj must be a pointer to an allocated object" << ctLogEnd;
 		return false;
 	}
 
@@ -101,7 +106,7 @@ static bool entityWrite( const std::vector<const EntityHandler::PackageRecord *>
 			return ret;
 	}
 
-	pdsErrorLog << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << pdsErrorLogEnd;
+	ctLogError << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << ctLogEnd;
 	return false;
 }
 
@@ -109,7 +114,7 @@ static bool entityRead( const std::vector<const EntityHandler::PackageRecord *> 
 {
 	if( !obj )
 	{
-		pdsErrorLog << "Invalid parameter, obj must be a pointer to an allocated object" << pdsErrorLogEnd;
+		ctLogError << "Invalid parameter, obj must be a pointer to an allocated object" << ctLogEnd;
 		return false;
 	}
 
@@ -120,7 +125,7 @@ static bool entityRead( const std::vector<const EntityHandler::PackageRecord *> 
 			return ret;
 	}
 
-	pdsErrorLog << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << pdsErrorLogEnd;
+	ctLogError << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << ctLogEnd;
 	return false;
 }
 
@@ -128,7 +133,7 @@ static bool entityValidate( const std::vector<const EntityHandler::PackageRecord
 {
 	if( !obj )
 	{
-		pdsErrorLog << "Invalid parameter, obj must be a pointer to an allocated object" << pdsErrorLogEnd;
+		ctLogError << "Invalid parameter, obj must be a pointer to an allocated object" << ctLogEnd;
 		return false;
 	}
 
@@ -139,7 +144,7 @@ static bool entityValidate( const std::vector<const EntityHandler::PackageRecord
 			return ret;
 	}
 
-	pdsErrorLog << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << pdsErrorLogEnd;
+	ctLogError << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << ctLogEnd;
 	return false;
 }
 
@@ -168,7 +173,7 @@ Status EntityHandler::Initialize( const std::string &path, const std::vector<con
 	if( ( file_attributes == INVALID_FILE_ATTRIBUTES )
 		|| ( file_attributes & FILE_ATTRIBUTE_DIRECTORY ) != FILE_ATTRIBUTE_DIRECTORY )
 	{
-		pdsErrorLog << "Invalid path: " << path << pdsErrorLogEnd;
+		ctLogError << "Invalid path: " << path << ctLogEnd;
 		return Status::EParam; // invalid path
 	}
 
@@ -364,5 +369,6 @@ std::pair<entity_ref, Status> EntityHandler::AddEntity( const std::shared_ptr<co
 	return futr.get();
 }
 
+#include "_pds_undef_macros.inl"
 }
-
+// namespace pds

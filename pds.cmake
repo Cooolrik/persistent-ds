@@ -23,7 +23,9 @@ set(
 	./Include/pds/ItemTable.h
 	./Include/pds/ItemTable_MF.h
 	./Include/pds/MemoryReadStream.h
+	./Include/pds/MemoryReadStream.inl
 	./Include/pds/MemoryWriteStream.h
+	./Include/pds/MemoryWriteStream.inl
 	./Include/pds/pds.h
 	./Include/pds/pds.inl
 	./Include/pds/SHA256.h

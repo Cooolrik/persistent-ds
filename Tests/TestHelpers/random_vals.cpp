@@ -71,34 +71,34 @@ template <> u32vec4 random_value<u32vec4>() { return u32vec4( u32_rand(), u32_ra
 template <> u64vec4 random_value<u64vec4>() { return u64vec4( u64_rand(), u64_rand(), u64_rand(), u64_rand() ) ; }
 
 template <> fmat2 random_value<fmat2>() { return fmat2(
-	float_rand(), float_rand(),
-	float_rand(), float_rand()
+	fvec2(float_rand(), float_rand()),
+	fvec2(float_rand(), float_rand())
 ) ; }
 template <> dmat2 random_value<dmat2>() { return dmat2(
-	double_rand(), double_rand(),
-	double_rand(), double_rand()
+	dvec2(double_rand(), double_rand()),
+	dvec2(double_rand(), double_rand())
 ) ; }
 template <> fmat3 random_value<fmat3>() { return fmat3(
-	float_rand(), float_rand(), float_rand(),
-	float_rand(), float_rand(), float_rand(),
-	float_rand(), float_rand(), float_rand()
+	fvec3(float_rand(), float_rand(), float_rand()),
+	fvec3(float_rand(), float_rand(), float_rand()),
+	fvec3(float_rand(), float_rand(), float_rand())
 ) ; }
 template <> dmat3 random_value<dmat3>() { return dmat3(
-	double_rand(), double_rand(), double_rand(),
-	double_rand(), double_rand(), double_rand(),
-	double_rand(), double_rand(), double_rand()
+	dvec3(double_rand(), double_rand(), double_rand()),
+	dvec3(double_rand(), double_rand(), double_rand()),
+	dvec3(double_rand(), double_rand(), double_rand())
 ) ; }
 template <> fmat4 random_value<fmat4>() { return fmat4(
-	float_rand(), float_rand(), float_rand(), float_rand(),
-	float_rand(), float_rand(), float_rand(), float_rand(),
-	float_rand(), float_rand(), float_rand(), float_rand(),
-	float_rand(), float_rand(), float_rand(), float_rand()
+	fvec4(float_rand(), float_rand(), float_rand(), float_rand()),
+	fvec4(float_rand(), float_rand(), float_rand(), float_rand()),
+	fvec4(float_rand(), float_rand(), float_rand(), float_rand()),
+	fvec4(float_rand(), float_rand(), float_rand(), float_rand())
 ) ; }
 template <> dmat4 random_value<dmat4>() { return dmat4(
-	double_rand(), double_rand(), double_rand(), double_rand(),
-	double_rand(), double_rand(), double_rand(), double_rand(),
-	double_rand(), double_rand(), double_rand(), double_rand(),
-	double_rand(), double_rand(), double_rand(), double_rand()
+	dvec4(double_rand(), double_rand(), double_rand(), double_rand()),
+	dvec4(double_rand(), double_rand(), double_rand(), double_rand()),
+	dvec4(double_rand(), double_rand(), double_rand(), double_rand()),
+	dvec4(double_rand(), double_rand(), double_rand(), double_rand())
 ) ; }
 
 template <> uuid random_value<uuid>() { return uuid_rand(); }

@@ -3,7 +3,6 @@
 
 #include "Tests.h"
 
-#include <ctle/uuid.h>
 #include <pds/DirectedGraph_MF.h>
 #include <pds/EntityValidator.h>
 #include <pds/EntityWriter.inl>
