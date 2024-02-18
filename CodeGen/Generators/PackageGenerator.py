@@ -827,7 +827,7 @@ def CreatePackageHandler_inl( package: Package ):
 	hlp.write_lines_to_file(f"{package.Path}/{packageName}PackageHandler.inl",lines)
 
 
-from .DataTypes import ListPackageHeaderDefines
+from .ElementTypes import ListPackageHeaderDefines
 
 # create a header for the package, which has all needed references and definitions
 def CreatePackageHeader( package ):

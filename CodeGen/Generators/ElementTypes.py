@@ -25,30 +25,31 @@ def print_type_information_header( type , value , value_count ):
 	lines.append('')
 	return lines
 
-def DataTypes_h():
+def ElementTypes_h():
 	lines = []
 	lines.extend( hlp.generate_header() )
 	lines.append('')
-	lines.append('// DataTypes.h - All basic data types which are used by pds')
+	lines.append('// ElementTypes.h - All basic types which are used by pds')
 	lines.append('')
 	lines.append('#pragma once')
 	lines.append('')
-	lines.append('// UUID and HASH definitions. Define PDS_SKIP_UUID_AND_HASH if you wish to roll your own UUID and HASH definitions.')
-	lines.append('#ifndef PDS_SKIP_UUID_AND_HASH')
-	lines.append('')
-	lines.extend( hlp.inline_file( 'InlinedCode/uuid_hash_header.inl' ) )
-	lines.append('')
-	lines.append('#endif//PDS_SKIP_UUID_AND_HASH')
-	lines.append('')
+	#lines.append('// UUID and HASH definitions. Define PDS_SKIP_UUID_AND_HASH if you wish to roll your own UUID and HASH definitions.')
+	#lines.append('#ifndef PDS_SKIP_UUID_AND_HASH')
+	#lines.append('')
+	#lines.extend( hlp.inline_file( 'InlinedCode/uuid_hash_header.inl' ) )
+	#lines.append('')
+	#lines.append('#endif//PDS_SKIP_UUID_AND_HASH')
+	#lines.append('')
 	lines.append('#include <limits.h>')
 	lines.append('#include <float.h>')
 	lines.append('#include <glm/fwd.hpp>')
 	lines.append('#include <ctle/uuid.h>')
+	lines.append('#include <ctle/hash.h>') 
 	lines.append('#include <ctle/string_funcs.h>')
 	lines.append('')
 
 	lines.append('namespace pds')
-	lines.append('    {')
+	lines.append('{')
 
 	# typedef base integer types
 	lines.append(f"\t// scalar types")
@@ -59,7 +60,7 @@ def DataTypes_h():
 	lines.append('')
 	lines.append(f"\ttypedef std::string string;")
 	lines.append(f"\tusing ctle::uuid;")
-	lines.append(f"\ttypedef HASH hash;")
+	lines.append(f"\tusing hash = ctle::hash<256>;")
 	lines.append('')
 
 	# const min/max values of the standard types
@@ -220,12 +221,12 @@ def DataTypes_h():
 	lines.append('    {')
 	lines.append('    std::size_t operator()(pds::entity_ref const& val) const noexcept')
 	lines.append('        {')
-	lines.append('        return std::hash<HASH>{}( HASH( val ) );')
+	lines.append('        return std::hash<pds::hash>{}( pds::hash( val ) );')
 	lines.append('        }')
 	lines.append('    };')
 
 	# end of file
-	hlp.write_lines_to_file("../Include/pds/DataTypes.h",lines)
+	hlp.write_lines_to_file("../Include/pds/ElementTypes.h",lines)
 
 def print_type_information_source( type , value , value_count ):
 	lines = []
@@ -247,12 +248,12 @@ def print_type_information_source( type , value , value_count ):
 	lines.append('')
 	return lines
 
-def DataTypes_inl():
+def ElementTypes_inl():
 	lines = []
 	lines.extend( hlp.generate_header() )
 	lines.append('')
-	lines.append('#include <glm/glm.hpp>')
-	lines.append('#include <glm/gtc/type_ptr.hpp>')
+	#lines.append('#include <glm/glm.hpp>')
+	#lines.append('#include <glm/gtc/type_ptr.hpp>')
 	lines.append('')
 	lines.append('#include <pds/pds.h>')
 	lines.append('')
@@ -298,9 +299,9 @@ def DataTypes_inl():
 		lines.extend(print_type_information_source(type,type,1))
 	lines.append('    };')
 
-	hlp.write_lines_to_file("../Include/pds/DataTypes.inl",lines)
+	hlp.write_lines_to_file("../Include/pds/ElementTypes.inl",lines)
 
-def DataValuePointers_h():
+def ElementValuePointers_h():
 	lines = []
 	lines.extend( hlp.generate_header() )
 	lines.append('')
@@ -311,7 +312,7 @@ def DataValuePointers_h():
 
 	lines.extend( hlp.generate_push_and_disable_warnings( [4201] , [] ) )
 	lines.append('')
-	lines.append('#include <glm/gtc/type_ptr.hpp>')
+	#lines.append('#include <glm/gtc/type_ptr.hpp>')
 	lines.append('')
 	lines.append('namespace pds')
 	lines.append('    {')
@@ -380,7 +381,7 @@ def DataValuePointers_h():
 	# reenable warning
 	lines.extend( hlp.generate_pop_warnings() )
 	
-	hlp.write_lines_to_file("../Include/pds/DataValuePointers.h",lines)
+	hlp.write_lines_to_file("../Include/pds/ElementValuePointers.h",lines)
 
 # used by CreatePackageHeader to list all needed defines in pds
 def ListPackageHeaderDefines():
@@ -479,6 +480,6 @@ def ListPackageHeaderDefines():
 	return lines
 
 def run():
-	DataTypes_h()
-	DataTypes_inl()
-	DataValuePointers_h()
+	ElementTypes_h()
+	ElementTypes_inl()
+	ElementValuePointers_h()

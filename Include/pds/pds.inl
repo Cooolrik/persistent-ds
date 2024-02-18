@@ -25,11 +25,9 @@
 #include "IndexedVector.h"
 #include "ItemTable.h"
 
-#include "DataValuePointers.h"
+#include "ElementValuePointers.h"
 
-#include "SHA256.inl"
-
-#include "DataTypes.inl"
+#include "ElementTypes.inl"
 #include "EntityWriter.inl"
 #include "EntityReader.inl"
 #include "DynamicTypes.inl"

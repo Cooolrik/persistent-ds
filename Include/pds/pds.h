@@ -21,33 +21,10 @@
 #include <ctle/uuid.h>
 #include <ctle/log.h>
 
-#include "DataTypes.h"
-
-#define pdsErrorLog\
-	if( ctle::log_level::error <= ctle::get_global_log_level() ) {\
-		ctle::log_msg _ctle_log_entry(ctle::log_level::error,__FILE__,__LINE__,__func__); _ctle_log_entry.message()
-#define pdsErrorLogEnd ""; }
-
-#define pdsValidationError( errorid ) if( !validator.GetRecordErrorStrings() ) { validator.ReportError( errorid ); } else { auto _errorId = errorid; std::stringstream _errorStringStream; _errorStringStream
-#define pdsValidationErrorEnd ""; validator.ReportError( _errorId , _errorStringStream.str() , __FILE__ , __LINE__ , __func__ ); }
-
-#define pdsRuntimeCheck( statement , errorid , errortext ) if( !(statement) ) { pdsErrorLog << "Runtime check failed: (" #statement ") error id:" << (int)errorid << pdsErrorLogEnd; throw std::exception("Sanity debug check failed: (" #statement "): Error text: " #errortext ); }
-
-#ifndef NDEBUG
-#define pdsSanityCheckDebugMacro( statement ) if( !(statement) ) { pdsErrorLog << "Sanity debug check failed: (" #statement ")" << pdsErrorLogEnd; throw std::runtime_error("Sanity debug check failed: (" #statement ")"); }
-#define pdsSanityCheckCoreDebugMacro( statement ) if( !(statement) ) { pdsErrorLog << "Core debug sanity check failed: (" #statement ")" << pdsErrorLogEnd; throw std::runtime_error("Core debug sanity check failed: (" #statement ")"); }
-#else
-#define pdsSanityCheckDebugMacro( statement ) 
-#define pdsSanityCheckCoreDebugMacro( statement ) 
-#endif
-
-#define pdsKeyMacro( name ) name , (u8)(strlen(name))
+#include "ElementTypes.h"
 
 namespace pds
 {
-
-
-
 typedef unsigned int uint;
 using ctle::thread_safe_map;
 

@@ -4,7 +4,7 @@
 #include "Tests.h"
 
 #include <ctle/uuid.h>
-#include <pds/DirectedGraph.h>
+#include <pds/DirectedGraph_MF.h>
 #include <pds/EntityValidator.h>
 #include <pds/EntityWriter.inl>
 #include <pds/EntityReader.inl>

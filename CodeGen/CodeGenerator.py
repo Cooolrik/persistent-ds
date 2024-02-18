@@ -5,7 +5,7 @@ import CodeGeneratorHelpers as hlp
 
 hlp.run_module('EntityWriter')
 hlp.run_module('EntityReader')
-hlp.run_module('DataTypes')
+hlp.run_module('ElementTypes')
 hlp.run_module('ValueTypes')
 hlp.run_module('DynamicTypes')
 

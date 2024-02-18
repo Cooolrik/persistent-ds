@@ -2,11 +2,14 @@
 set(
 	pds_library_files
 
+	# library files
 	./Include/pds/BidirectionalMap.h
-	./Include/pds/DataTypes.h
-	./Include/pds/DataTypes.inl
-	./Include/pds/DataValuePointers.h
+	./Include/pds/BidirectionalMap_MF.h
+	./Include/pds/ElementTypes.h
+	./Include/pds/ElementTypes.inl
+	./Include/pds/ElementValuePointers.h
 	./Include/pds/DirectedGraph.h
+	./Include/pds/DirectedGraph_MF.h
 	./Include/pds/DynamicTypes.h
 	./Include/pds/DynamicTypes.inl
 	./Include/pds/EntityReader.h
@@ -18,6 +21,7 @@ set(
 	./Include/pds/EntityWriterTemplates.inl
 	./Include/pds/IndexedVector.h
 	./Include/pds/ItemTable.h
+	./Include/pds/ItemTable_MF.h
 	./Include/pds/MemoryReadStream.h
 	./Include/pds/MemoryWriteStream.h
 	./Include/pds/pds.h
@@ -28,6 +32,10 @@ set(
 	./Include/pds/ValueTypes.inl
 	./Include/pds/Varying.h
 	./Include/pds/Varying.inl
+
+	# compilation helper files
+	./Include/pds/_pds_macros.inl
+	./Include/pds/_pds_undef_macros.inl
 )
 
 source_group_by_folder( ./Include/pds pds ${pds_library_files} )
@@ -95,6 +103,9 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Tests/TypeTests.cpp 
 		./Tests/TestHelpers/random_vals.cpp 
 		./Tests/TestPackA/TestPackA.cpp 
+
+		dependencies.cmake
+		pds.cmake
 		)
 
 	target_include_directories( 
