@@ -15,10 +15,9 @@
 #include <Windows.h>
 #endif
 
-#include <pds/pds.h>
+#include <picosha2.h>
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
+#include <pds/pds.h>
 
 using namespace pds;
 

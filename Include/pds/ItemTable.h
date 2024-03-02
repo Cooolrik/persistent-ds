@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <unordered_map>
 #include "pds.h"
 
 namespace pds
@@ -17,7 +18,7 @@ enum ItemTableFlags : uint
 	NullEntities = 0x2, // if set, validation will allow that null entities exist in the registry
 };
 
-template<class _Kty, class _Ty, uint _Flags = 0, class _MapTy = std::map<_Kty, std::unique_ptr<_Ty>>>
+template<class _Kty, class _Ty, uint _Flags = 0, class _MapTy = std::unordered_map<_Kty, std::unique_ptr<_Ty>>>
 class ItemTable
 {
 public:

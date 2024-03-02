@@ -381,7 +381,6 @@ template<> inline bool write_array<ValueType::VT_Array_String, std::string>( Mem
 	return true;
 }
 
-#ifdef PDS_MAIN_BUILD_FILE
 EntityWriter::EntityWriter( MemoryWriteStream &_dstream ) : dstream( _dstream ), start_position( _dstream.GetPosition() )
 {}
 
@@ -550,8 +549,6 @@ bool EntityWriter::WriteNullSectionsArray( const char *key, const u8 key_length 
 	}
 	return this->EndWriteSectionsArray( subsection );
 }
-
-#endif//PDS_MAIN_BUILD_FILE
 
 
 #include "_pds_undef_macros.inl"

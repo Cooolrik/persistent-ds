@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <sstream>
+
 #include <pds/pds.h>
 
 namespace pds

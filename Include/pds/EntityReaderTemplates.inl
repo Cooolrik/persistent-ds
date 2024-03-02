@@ -557,7 +557,6 @@ template<> inline reader_status read_array<ValueType::VT_Array_String, string>( 
 	return reader_status::success;
 }
 
-#ifdef PDS_MAIN_BUILD_FILE
 EntityReader::EntityReader( MemoryReadStream &_sstream ) : sstream( _sstream ), end_position( _sstream.GetSize() ) {}
 
 EntityReader::EntityReader( MemoryReadStream &_sstream, const u64 _end_position ) : sstream( _sstream ), end_position( _end_position ) {}
@@ -736,9 +735,6 @@ bool EntityReader::EndReadSectionsArray( const EntityReader *sections_array_read
 	this->active_subsection_end_pos = 0;
 	return true;
 }
-
-#endif//PDS_MAIN_BUILD_FILE
-
 
 #include "_pds_undef_macros.inl"
 }

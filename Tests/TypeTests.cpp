@@ -3,7 +3,15 @@
 
 #include "Tests.h"
 
-#include <pds/SHA256.h>
+using ctle::value_from_bigendian;
+using ctle::bigendian_from_value;
+using ctle::bytes_to_hex_string;
+using ctle::hex_string_to_bytes;
+using ctle::value_to_hex_string;
+
+using ctle::swap_bytes;
+using ctle::swap_byte_order;
+
 TEST( TypeTests, StandardTypes )
 {
 	EXPECT_EQ( sizeof( u8 ), 1 );
@@ -131,7 +139,7 @@ TEST( TypeTests, SHA256Hashing )
 			0x48,0x2f,0x4a,0x33,0x06
 		};
 
-		SHA256::CalculateHash( sha, testdata, sizeof( testdata ) );
+		ctle::calculate_sha256_hash( sha, testdata, sizeof( testdata ) );
 
 		u8 expected_hash[32] = {
 			0xf6,0x48,0x54,0x2d,0xf8,0xcc,0xf2,0x1f,

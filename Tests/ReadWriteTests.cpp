@@ -3,8 +3,10 @@
 
 #include "Tests.h"
 
-#include <pds/EntityReader.inl>
-#include <pds/EntityWriter.inl>
+#include <pds/EntityWriter.h>
+#include <pds/EntityReader.h>
+#include <pds/MemoryWriteStream.h>
+#include <pds/MemoryReadStream.h>
 
 template<class T> void ExpectReadValueIs( MemoryReadStream *rs, T ref_value )
 {

@@ -27,14 +27,16 @@ def CreateItemHeader(item: Item):
 		lines.append(f'#include "../{previousVersionName}/{previousVersionName}_{item.Name}.h"')
 		lines.append('')
 		lines.append(f'namespace {packageName}')
-		lines.append('    {')
+		lines.append('{')
 		lines.append(f'namespace {versionName}')
-		lines.append('    {')
-		lines.append(f'    // {item.Name} is identical to the previous version {previousVersionName}')
-		lines.append(f'    using {item.Name} = {previousVersionName}::{item.Name};')
-		lines.append('    };')
-		lines.append('    };')		
-
+		lines.append('{')
+		lines.append(f'// {item.Name} is identical to the previous version {previousVersionName}')
+		lines.append(f'using {item.Name} = {previousVersionName}::{item.Name};')
+		lines.append('}')
+		lines.append(f'// namespace {versionName}')
+		lines.append('}')		
+		lines.append(f'// namespace {packageName}')
+		
 	else:
 		# not an alias, defined the whole class
 		if item.IsModifiedFromPreviousVersion:
@@ -45,15 +47,15 @@ def CreateItemHeader(item: Item):
 		for dep in item.Dependencies:
 			if dep.IncludeInHeader:
 				if dep.PDSType:
-					lines.append(f'#include <pds/{dep.Name}.h>')
+					lines.append(f'#include <pds/{dep.Name}_MF.h>')
 				else:
 					lines.append(f'#include "{versionName}_{dep.Name}.h"')				
 
 		lines.append('')
 		lines.append(f'namespace {packageName}')
-		lines.append('    {')
+		lines.append('{')
 		lines.append(f'namespace {versionName}')
-		lines.append('    {')
+		lines.append('{')
 
 		# list dependences that only needs a forward reference in the header
 		for dep in item.Dependencies:
@@ -172,9 +174,11 @@ def CreateItemHeader(item: Item):
 		lines.append('        }')
 		lines.append('')
 
-		lines.append('    };')
-		lines.append('    };')		
-
+		lines.append('}')
+		lines.append(f'// namespace {versionName}')
+		lines.append('}')		
+		lines.append(f'// namespace {packageName}')
+  
 	hlp.write_lines_to_file(f"{item.Package.Path}/{versionName}/{versionName}_{item.Name}.h",lines)
 
 def ImplementClearCall(item,var):
@@ -431,7 +435,7 @@ def CreateItemSource(item):
 	lines.append('')
 
 	#lines.extend( hlp.generate_push_and_disable_warnings( [] , ["-Wno-volatile"] ) )
-	lines.append('#include <glm/glm.hpp>')
+	#lines.append('#include <glm/glm.hpp>')
 	#lines.extend( hlp.generate_pop_warnings() )
 	lines.append('')	
 	lines.append(f'#include <pds/EntityWriter.h>')
@@ -444,7 +448,7 @@ def CreateItemSource(item):
 	for dep in item.Dependencies:
 		if not dep.IncludeInHeader:
 			if dep.PDSType:
-				lines.append(f'#include <pds/{dep.Name}.h>')
+				lines.append(f'#include <pds/{dep.Name}_MF.h>')
 			else:
 				lines.append(f'#include "{versionName}_{dep.Name}.h"')
 
@@ -452,9 +456,9 @@ def CreateItemSource(item):
 	lines.append('#include <pds/_pds_macros.inl>')
 	lines.append('')
 	lines.append(f'namespace {packageName}')
-	lines.append('    {')
+	lines.append('{')
 	lines.append(f'namespace {versionName}')
-	lines.append('    {')
+	lines.append('{')
 
 	lines.append('')
 	if item.IsEntity:
@@ -681,10 +685,12 @@ def CreatePackageHandler_inl( package: Package ):
 				lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.h"')
 
 	lines.append('')
+	lines.append('#include <pds/_pds_macros.inl>')
+	lines.append('')
 	lines.append(f'namespace {packageName}')
-	lines.append('    {')
+	lines.append('{')
 	lines.append('namespace entity_types')
-	lines.append('    {')
+	lines.append('{')
 	
 	lines.append('    // dynamic allocation functors for items')
 	lines.append('    class _entityTypeClass')
@@ -760,22 +766,23 @@ def CreatePackageHandler_inl( package: Package ):
 	lines.append('            }')
 	lines.append('')
 	lines.append('        // entity was not found (this should never happen unless testing)')
-	lines.append('        pdsErrorLog << "_findEntityTypeClass: Invalid entity parameter { " << typeNameString << " } " << pdsErrorLogEnd;')
+	lines.append('        ctLogError << "_findEntityTypeClass: Invalid entity parameter { " << typeNameString << " } " << ctLogEnd;')
 	lines.append('        return nullptr;')
 	lines.append('        }')
 	lines.append('')
 	
-	lines.append('\t};')
-	
+	lines.append('}')
+	lines.append(f'// namespace entity_types')	
+ 
 	lines.append("""
-	static const class CreatePackageHandler : public pds::EntityHandler::PackageRecord
+	static const class CreatePackageHandler : public pds::EntityManager::PackageRecord
 		{
 		public:
 			virtual std::shared_ptr<pds::Entity> New( const char *entityTypeString ) const
 				{
 				if( !entityTypeString )
 					{
-					pdsErrorLog << "Invalid parameter, data must be name of entity type" << pdsErrorLogEnd;
+					ctLogError << "Invalid parameter, data must be name of entity type" << ctLogEnd;
 					return nullptr;
 					}
 				const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( entityTypeString );
@@ -788,7 +795,7 @@ def CreatePackageHandler_inl( package: Package ):
 				{
 				if( !obj )
 					{
-					pdsErrorLog << "Invalid parameter, data must be a pointer to allocated object" << pdsErrorLogEnd;
+					ctLogError << "Invalid parameter, data must be a pointer to allocated object" << ctLogEnd;
 					return false;
 					}
 				const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
@@ -801,7 +808,7 @@ def CreatePackageHandler_inl( package: Package ):
 				{
 				if( !obj )
 					{
-					pdsErrorLog << "Invalid parameter, data must be a pointer to allocated object" << pdsErrorLogEnd;
+					ctLogError << "Invalid parameter, data must be a pointer to allocated object" << ctLogEnd;
 					return false;
 					}
 				const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
@@ -814,7 +821,7 @@ def CreatePackageHandler_inl( package: Package ):
 				{
 				if( !obj )
 					{
-					pdsErrorLog << "Invalid parameter, data must be a pointer to allocated object" << pdsErrorLogEnd;
+					ctLogError << "Invalid parameter, data must be a pointer to allocated object" << ctLogEnd;
 					return false;
 					}
 				const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
@@ -825,11 +832,14 @@ def CreatePackageHandler_inl( package: Package ):
 				
 		} _createPackageHandlerObject;
 
-	const pds::EntityHandler::PackageRecord *GetPackageRecord() { return &_createPackageHandlerObject; }
+	const pds::EntityManager::PackageRecord *GetPackageRecord() { return &_createPackageHandlerObject; }
 	""")
 
 	# end of namespace
-	lines.append('\t};')
+	lines.append('}')
+	lines.append(f'// namespace {packageName}')
+	lines.append('')
+	lines.append('#include <pds/_pds_undef_macros.inl>')
 	hlp.write_lines_to_file(f"{package.Path}/{packageName}PackageHandler.inl",lines)
 
 
@@ -850,6 +860,7 @@ def CreatePackageHeader( package ):
 	lines.append(f'#include <pds/Varying.h>')
 	lines.append(f'#include <pds/DirectedGraph.h>')
 	lines.append(f'#include <pds/BidirectionalMap.h>')
+	lines.append(f'#include <pds/EntityManager.h>')
 	lines.append('')
 		
 	lines.append('')
@@ -857,7 +868,7 @@ def CreatePackageHeader( package ):
 	lines.append('\t{')
 	lines.extend( ListPackageHeaderDefines() )
 	lines.append('')
-	lines.append('\tconst pds::EntityHandler::PackageRecord *GetPackageRecord();')
+	lines.append('\tconst pds::EntityManager::PackageRecord *GetPackageRecord();')
 	lines.append('\t};')
 
 	hlp.write_lines_to_file(f"{package.Path}/pdsImportsAndDefines.h",lines)
@@ -872,9 +883,11 @@ def CreatePackageSourceFile( package: Package ):
 	lines.append(f'#include "pdsImportsAndDefines.h"')
 	lines.append('')
 
-	lines.append('// Needed inline code from pds')
-	lines.append('#include <pds/EntityReader.inl>')
-	lines.append('#include <pds/EntityWriter.inl>')
+	lines.append('#include <pds/EntityWriter.h>')
+	lines.append('#include <pds/EntityReader.h>')
+	lines.append('#include <pds/MemoryWriteStream.h>')
+	lines.append('#include <pds/MemoryReadStream.h>')
+ 
 	lines.append('')
 	
 	lines.append('// All versions of this package')
@@ -893,6 +906,7 @@ def CreatePackageSourceFile( package: Package ):
 	lines.append('')
 
 	lines.append('// Include the package handler for this package')
+	lines.append('')
 	lines.append(f'#include "{packageName}PackageHandler.inl"')
 
 	hlp.write_lines_to_file(f"{package.Path}/{packageName}.cpp",lines)

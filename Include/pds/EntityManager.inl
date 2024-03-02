@@ -1,78 +1,16 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-#define PDS_MAIN_BUILD_FILE
 
-#ifdef _MSC_VER
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#include <Rpc.h>
-#endif
-
-#include "SHA256.h"
-#include "DynamicTypes.h"
-#include "ValueTypes.h"
-#include "Varying.h"
-
-#include "MemoryWriteStream.h"
-#include "MemoryReadStream.h"
-
-#include "EntityWriter.h"
-#include "EntityReader.h"
-#include "EntityValidator.h"
-
-#include "BidirectionalMap.h"
-#include "DirectedGraph.h"
-#include "IndexedVector.h"
-#include "ItemTable.h"
-
-#include "ElementValuePointers.h"
-
-#include "ElementTypes.inl"
-#include "EntityWriter.inl"
-#include "EntityReader.inl"
-#include "DynamicTypes.inl"
-#include "MemoryWriteStream.inl"
-
-#include <iostream>
-#include <fstream>
+#include "EntityManager.h"
 
 #include <ctle/file_funcs.h>
-
-using std::pair;
-using std::make_pair;
-
-constexpr size_t sha256_hash_size = 32;
 
 namespace pds
 {
 #include "_pds_macros.inl"
 
 
-item_ref item_ref::make_ref()
-{
-	return item_ref::from_uuid( uuid::generate() );
-}
-
-std::string value_to_hex_string( hash value )
-{
-	static_assert( sizeof( hash ) == 32, "Error: hash is assumed to be of size 32." );
-	// note: no need to swap order of bytes. 
-	// The hash is always ordered the same, regardless of the hardware (basically a big-endian 256 bit value)
-	return bytes_to_hex_string( &value, 32 );
-}
-
-template <> hash hex_string_to_value<hash>( const char *hex_string )
-{
-	static_assert( sizeof( hash ) == 32, "Error: hash is assumed to be of size 32." );
-	hash value;
-	hex_string_to_bytes( &value, hex_string, 32 );
-	// note: no need to swap order of bytes. 
-	// The hash is always ordered the same, regardless of the hardware (basically a big-endian 256 bit value)
-	return value;
-}
-
-static std::shared_ptr<Entity> entityNew( const std::vector<const EntityHandler::PackageRecord *> &records, const char *entityTypeString )
+static std::shared_ptr<Entity> entityNew( const std::vector<const EntityManager::PackageRecord *> &records, const char *entityTypeString )
 {
 	if( !entityTypeString )
 	{
@@ -91,7 +29,7 @@ static std::shared_ptr<Entity> entityNew( const std::vector<const EntityHandler:
 	return nullptr;
 }
 
-static bool entityWrite( const std::vector<const EntityHandler::PackageRecord *> &records, const Entity *obj, EntityWriter &writer )
+static bool entityWrite( const std::vector<const EntityManager::PackageRecord *> &records, const Entity *obj, EntityWriter &writer )
 {
 	if( !obj )
 	{
@@ -110,7 +48,7 @@ static bool entityWrite( const std::vector<const EntityHandler::PackageRecord *>
 	return false;
 }
 
-static bool entityRead( const std::vector<const EntityHandler::PackageRecord *> &records, Entity *obj, EntityReader &reader )
+static bool entityRead( const std::vector<const EntityManager::PackageRecord *> &records, Entity *obj, EntityReader &reader )
 {
 	if( !obj )
 	{
@@ -129,7 +67,7 @@ static bool entityRead( const std::vector<const EntityHandler::PackageRecord *> 
 	return false;
 }
 
-static bool entityValidate( const std::vector<const EntityHandler::PackageRecord *> &records, const Entity *obj, EntityValidator &validator )
+static bool entityValidate( const std::vector<const EntityManager::PackageRecord *> &records, const Entity *obj, EntityValidator &validator )
 {
 	if( !obj )
 	{
@@ -148,22 +86,22 @@ static bool entityValidate( const std::vector<const EntityHandler::PackageRecord
 	return false;
 }
 
-void EntityHandler::InsertEntity( const entity_ref &ref, const std::shared_ptr<const Entity> &entity )
+void EntityManager::InsertEntity( const entity_ref &ref, const std::shared_ptr<const Entity> &entity )
 {
 	ctle::readers_writer_lock::write_guard guard( this->EntitiesLock );
 
 	this->Entities.emplace( ref, entity );
 }
 
-Status EntityHandler::Initialize( const std::string &path, const std::vector<const PackageRecord *> &records )
+status EntityManager::Initialize( const std::string &path, const std::vector<const PackageRecord *> &records )
 {
 	if( !this->Path.empty() )
 	{
-		return Status::EAlreadyInitialized;
+		return status::already_initialized;
 	}
 	if( records.empty() )
 	{
-		return Status::EParam; // must have at least one record
+		return status::invalid_param; // must have at least one record
 	}
 
 #ifdef _MSC_VER
@@ -174,7 +112,7 @@ Status EntityHandler::Initialize( const std::string &path, const std::vector<con
 		|| ( file_attributes & FILE_ATTRIBUTE_DIRECTORY ) != FILE_ATTRIBUTE_DIRECTORY )
 	{
 		ctLogError << "Invalid path: " << path << ctLogEnd;
-		return Status::EParam; // invalid path
+		return status::invalid_param; // invalid path
 	}
 
 #endif
@@ -183,17 +121,17 @@ Status EntityHandler::Initialize( const std::string &path, const std::vector<con
 	// copy the package records
 	this->Records = records;
 
-	return Status::Ok;
+	return status::ok;
 }
 
-Status EntityHandler::ReadTask( EntityHandler *pThis, const entity_ref ref )
+status EntityManager::ReadTask( EntityManager *pThis, const entity_ref ref )
 {
 	const uint hash_size = 32;
 
 	// skip if entity already is loaded
 	if( pThis->IsEntityLoaded( ref ) )
 	{
-		return Status::Ok;
+		return status::ok;
 	}
 
 	// create the file name and path from the hash
@@ -203,13 +141,13 @@ Status EntityHandler::ReadTask( EntityHandler *pThis, const entity_ref ref )
 	std::vector<u8> allocation;
 	if( !ctle::read_file( filePath, allocation ) )
 	{
-		return Status::ECantRead;
+		return status::cant_read;
 	}
 
 	// cant be less in size than the size of the hash at the end
 	if( allocation.size() < hash_size )
 	{
-		return Status::ECorrupted;
+		return status::corrupted;
 	}
 
 	u8 *buffer = allocation.data();
@@ -217,11 +155,11 @@ Status EntityHandler::ReadTask( EntityHandler *pThis, const entity_ref ref )
 
 	// calculate the sha256 hash on the data, and make sure it compares correctly with the hash
 	hash digest = {};
-	SHA256::CalculateHash( digest, buffer, total_size );
+	ctle::calculate_sha256_hash( digest, buffer, total_size );
 	if( digest != hash( ref ) )
 	{
 		// sha hash does not compare correctly, file is corrupted
-		return Status::ECorrupted;
+		return status::corrupted;
 	}
 
 	// set up a memory stream and deserializer
@@ -233,41 +171,41 @@ Status EntityHandler::ReadTask( EntityHandler *pThis, const entity_ref ref )
 	EntityReader *sectionReader;
 	std::tie( sectionReader, result ) = reader.BeginReadSection( pdsKeyMacro( "EntityFile" ), false );
 	if( !result )
-		return Status::ECorrupted;
+		return status::corrupted;
 	std::string entityTypeString;
 	result = sectionReader->Read<std::string>( pdsKeyMacro( "EntityType" ), entityTypeString );
 	if( !result )
-		return Status::ECorrupted;
+		return status::corrupted;
 	std::shared_ptr<Entity> entity = entityNew( pThis->Records, entityTypeString.c_str() );
 	if( !entity )
-		return Status::ENotInitialized;
+		return status::not_initialized;
 	result = entityRead( pThis->Records, entity.get(), *sectionReader );
 	if( !result )
-		return Status::ECorrupted;
+		return status::corrupted;
 	result = reader.EndReadSection( sectionReader );
 	if( !result )
-		return Status::ECorrupted;
+		return status::corrupted;
 
 	// transfer into the Entities map 
 	pThis->InsertEntity( ref, entity );
 
 	// done
-	return Status::Ok;
+	return status::ok;
 }
 
-std::future<Status> EntityHandler::LoadEntityAsync( const entity_ref &ref )
+std::future<status> EntityManager::LoadEntityAsync( const entity_ref &ref )
 {
 	return std::async( ReadTask, this, ref );
 }
 
-Status EntityHandler::LoadEntity( const entity_ref &ref )
+status EntityManager::LoadEntity( const entity_ref &ref )
 {
 	auto futr = this->LoadEntityAsync( ref );
 	futr.wait();
 	return futr.get();
 }
 
-Status EntityHandler::UnloadNonReferencedEntities()
+status EntityManager::UnloadNonReferencedEntities()
 {
 	ctle::readers_writer_lock::write_guard guard( this->EntitiesLock );
 
@@ -285,18 +223,18 @@ Status EntityHandler::UnloadNonReferencedEntities()
 		}
 	}
 
-	return Status::Ok;
+	return status::ok;
 }
 
 
-bool EntityHandler::IsEntityLoaded( const entity_ref &ref )
+bool EntityManager::IsEntityLoaded( const entity_ref &ref )
 {
 	ctle::readers_writer_lock::read_guard guard( this->EntitiesLock );
 
 	return this->Entities.find( ref ) != this->Entities.end();
 }
 
-std::shared_ptr<const Entity> EntityHandler::GetLoadedEntity( const entity_ref &ref )
+std::shared_ptr<const Entity> EntityManager::GetLoadedEntity( const entity_ref &ref )
 {
 	ctle::readers_writer_lock::read_guard guard( this->EntitiesLock );
 
@@ -307,7 +245,7 @@ std::shared_ptr<const Entity> EntityHandler::GetLoadedEntity( const entity_ref &
 	return it->second;
 }
 
-std::pair<entity_ref, Status> EntityHandler::WriteTask( EntityHandler *pThis, std::shared_ptr<const Entity> entity )
+std::pair<entity_ref, status> EntityManager::WriteTask( EntityManager *pThis, std::shared_ptr<const Entity> entity )
 {
 	EntityValidator validator;
 	MemoryWriteStream wstream;
@@ -315,23 +253,23 @@ std::pair<entity_ref, Status> EntityHandler::WriteTask( EntityHandler *pThis, st
 
 	// make sure the entity is valid
 	if( !entityValidate( pThis->Records, entity.get(), validator ) )
-		return std::pair<entity_ref, Status>( {}, Status::ECorrupted );
+		return std::pair<entity_ref, status>( {}, status::corrupted );
 	if( validator.GetErrorCount() > 0 )
-		return std::pair<entity_ref, Status>( {}, Status::EInvalid );
+		return std::pair<entity_ref, status>( {}, status::invalid );
 
 	// serialize to a stream
 	EntityWriter *sectionWriter = writer.BeginWriteSection( pdsKeyMacro( "EntityFile" ) );
 	if( !sectionWriter )
-		return std::pair<entity_ref, Status>( {}, Status::EUndefined );
+		return std::pair<entity_ref, status>( {}, status::undefined_error );
 	sectionWriter->Write<std::string>( pdsKeyMacro( "EntityType" ), entity->EntityTypeString() );
 	if( !entityWrite( pThis->Records, entity.get(), *sectionWriter ) )
-		return std::pair<entity_ref, Status>( {}, Status::EUndefined );
+		return std::pair<entity_ref, status>( {}, status::undefined_error );
 	if( !writer.EndWriteSection( sectionWriter ) )
-		return std::pair<entity_ref, Status>( {}, Status::EUndefined );
+		return std::pair<entity_ref, status>( {}, status::undefined_error );
 
 	// calculate the sha256 hash on the data
 	hash digest = {};
-	SHA256::CalculateHash( digest, (u8 *)wstream.GetData(), wstream.GetSize() );
+	ctle::calculate_sha256_hash( digest, (u8 *)wstream.GetData(), wstream.GetSize() );
 
 	// get file data
 	const u8 *writeBuffer = (u8 *)wstream.GetData();
@@ -346,7 +284,7 @@ std::pair<entity_ref, Status> EntityHandler::WriteTask( EntityHandler *pThis, st
 	{
 		if( !ctle::write_file( filePath, writeBuffer, (size_t)totalBytesToWrite, true ) )
 		{
-			return std::pair<entity_ref, Status>( {}, Status::ECantWrite );
+			return std::pair<entity_ref, status>( {}, status::cant_write );
 		}
 	}
 
@@ -354,15 +292,15 @@ std::pair<entity_ref, Status> EntityHandler::WriteTask( EntityHandler *pThis, st
 	pThis->InsertEntity( entity_ref( digest ), entity );
 
 	// done
-	return std::pair<entity_ref, Status>( entity_ref( digest ), Status::Ok );
+	return std::pair<entity_ref, status>( entity_ref( digest ), status::ok );
 }
 
-std::future<std::pair<entity_ref, Status>> EntityHandler::AddEntityAsync( const std::shared_ptr<const Entity> &entity )
+std::future<std::pair<entity_ref, status>> EntityManager::AddEntityAsync( const std::shared_ptr<const Entity> &entity )
 {
 	return std::async( WriteTask, this, entity );
 }
 
-std::pair<entity_ref, Status> EntityHandler::AddEntity( const std::shared_ptr<const Entity> &entity )
+std::pair<entity_ref, status> EntityManager::AddEntity( const std::shared_ptr<const Entity> &entity )
 {
 	auto futr = this->AddEntityAsync( entity );
 	futr.wait();

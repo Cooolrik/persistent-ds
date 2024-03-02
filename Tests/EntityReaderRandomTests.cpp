@@ -3,7 +3,8 @@
 
 #include "Tests.h"
 
-#include <pds/EntityReader.inl>
+#include <pds/EntityReader.h>
+#include <pds/MemoryReadStream.h>
 
 TEST( RandomFileDataReadTest, Test_EntityReader_with_random_file_fuzzing_expect_no_exceptions )
 {

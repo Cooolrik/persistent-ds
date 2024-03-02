@@ -81,22 +81,6 @@ inline u8 MemoryReadStream::Peek() const
 		return this->Data[this->DataPosition];
 }
 
-inline u64 MemoryReadStream::ReadRawData( void *dest, u64 count )
-{
-	// cap the end position
-	u64 end_pos = this->DataPosition + count;
-	if( end_pos > this->DataSize )
-	{
-		end_pos = this->DataSize;
-		count = end_pos - this->DataPosition;
-	}
-
-	// copy the data and move the position
-	memcpy( dest, &this->Data[this->DataPosition], count );
-	this->DataPosition = end_pos;
-	return count;
-}
-
 template <class T> inline u64 MemoryReadStream::ReadValues( T *dest, u64 count )
 {
 	u64 readc = this->ReadRawData( dest, count * sizeof( T ) ) / sizeof( T );
@@ -104,7 +88,7 @@ template <class T> inline u64 MemoryReadStream::ReadValues( T *dest, u64 count )
 		return readc;
 
 	// flip the byte order of the words in the dest
-	swap_byte_order<T>( dest, count );
+	ctle::swap_byte_order<T>( dest, count );
 	return readc;
 }
 
@@ -136,16 +120,6 @@ inline bool MemoryReadStream::SetPosition( u64 new_pos )
 inline bool MemoryReadStream::IsEOF() const
 {
 	return this->DataPosition >= this->DataSize;
-}
-
-inline bool MemoryReadStream::GetFlipByteOrder() const
-{
-	return this->FlipByteOrder;
-}
-
-inline void MemoryReadStream::SetFlipByteOrder( bool value )
-{
-	this->FlipByteOrder = value;
 }
 
 // read one item of data

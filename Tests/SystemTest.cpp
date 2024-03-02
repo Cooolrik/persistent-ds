@@ -1,30 +1,31 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
-#define PDS_IMPLEMENTATION
+//#include "TestPackA/TestEntityA.h"
+//#include "TestPackA/TestEntityB.h"
 
-#include "TestPackA/TestEntityA.h"
-#include "TestPackA/TestEntityB.h"
+//#include <pds/ValueTypes.h>
+//#include <pds/Varying.h>
+
+//using namespace TestPackA;
 
 #include <pds/pds.h>
+#include <pds/ValueTypes.h>
 
-using namespace TestPackA;
-
-// disable warnings in code we cannot control
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable : 4189 )
-#elif defined(__GNUC__)
-#pragma GCC diagnostic push
-#endif
+using namespace pds;
 
 int main()
 	{
-	pds::EntityHandler eh;
+	std::vector<int> myvec = {1,2,3};
 
-	if( eh.Initialize( "./testfolder", { GetPackageRecord() } ) != pds::Status::Ok )
-		return -1;
-	
+	pds::clear_combined_type( myvec );
+
+
+	//pds::EntityManager eh;
+	//
+	//if( eh.Initialize( "./testfolder", { GetPackageRecord() } ) != pds::Status::Ok )
+	//	return -1;
+	//
 	//auto pentA = std::make_shared<TestEntityA>();
 	//TestEntityA &entA = *pentA;
 	//auto pentB = std::make_shared<TestEntityB>();

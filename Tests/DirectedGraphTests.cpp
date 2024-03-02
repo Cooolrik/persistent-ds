@@ -5,8 +5,10 @@
 
 #include <pds/DirectedGraph_MF.h>
 #include <pds/EntityValidator.h>
-#include <pds/EntityWriter.inl>
-#include <pds/EntityReader.inl>
+#include <pds/EntityWriter.h>
+#include <pds/EntityReader.h>
+#include <pds/MemoryWriteStream.h>
+#include <pds/MemoryReadStream.h>
 
 #include "TestHelpers/structure_generation.h"
 

@@ -5,6 +5,7 @@
 
 #include <stack>
 #include <queue>
+#include <ctle/log.h>
 
 #include "DirectedGraph.h"
 

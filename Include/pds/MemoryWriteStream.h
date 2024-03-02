@@ -110,7 +110,7 @@ template <class T> inline void MemoryWriteStream::WriteValues( const T *src, u64
 		// flip the byte order of the words in the dest 
 		u64 pos = this->Position;
 		this->WriteRawData( src, count * sizeof( T ) );
-		swap_byte_order<T>( (T *)( &this->Data[pos] ), count );
+		ctle::swap_byte_order<T>( (T *)( &this->Data[pos] ), count );
 	}
 	else
 	{

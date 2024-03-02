@@ -29,20 +29,11 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		GIT_REPOSITORY 	https://github.com/google/googletest.git
 		GIT_TAG			58d77fa8070e8cec2dc1ed015d66b454c8d78850 # 1.12.1 
 		)
-		
-	# glm 
-	# (use a 0.9.9.9 from Aug-2020, because 0.9.9.8 triggers a deprecated feature warning in C++20 in GCC)
-	FetchContent_Declare(
-		glm
-		GIT_REPOSITORY https://github.com/g-truc/glm.git
-		GIT_TAG        6fdeff4d67f3db493d47c44da20aa1efaa6574ef # (2020 Aug 06)
-	)
-	
+
 	FetchContent_MakeAvailable( 
 		ctle 
 		picosha2 
 		googletest 
-		glm
 		)
 	
 endif() #BUILD_PERSISTENT_DS_TESTS

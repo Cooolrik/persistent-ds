@@ -29,8 +29,8 @@ public:
 	~BidirectionalMap() = default;
 
 	// value compare operators
-	bool operator==( const BidirectionalMap &rval ) const { return bimap::operator==(rval); }
-	bool operator!=( const BidirectionalMap &rval ) const { return bimap::operator!=(rval); }
+	bool operator==( const BidirectionalMap &rval ) const { return ctle::bimap::operator==(rval); }
+	bool operator!=( const BidirectionalMap &rval ) const { return ctle::bimap::operator!=(rval); }
 };
 
 }

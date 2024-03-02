@@ -294,12 +294,12 @@ def ElementTypes_inl():
 	#lines.append('#include <glm/glm.hpp>')
 	#lines.append('#include <glm/gtc/type_ptr.hpp>')
 	lines.append('')
-	lines.append('#include <pds/pds.h>')
+	lines.append('#include "pds.h"')
 	lines.append('')
 	#lines.extend( hlp.inline_file( 'InlinedCode/uuid_hash_source.inl' ) )
 	lines.append('')
 	lines.append('namespace pds')
-	lines.append('    {')
+	lines.append('{')
 
 	# scalar type info
 	lines.extend(print_type_information_source("bool","bool",1))
@@ -336,7 +336,7 @@ def ElementTypes_inl():
 	same_type_range = ['uuid','entity_ref','hash','item_ref','string']
 	for type in same_type_range:
 		lines.extend(print_type_information_source(type,type,1))
-	lines.append('    };')
+	lines.append('};')
 
 	hlp.write_lines_to_file("../Include/pds/ElementTypes.inl",lines)
 
@@ -346,11 +346,11 @@ def ElementValuePointers_h():
 	lines.append('')
 	lines.append('#pragma once')
 	lines.append('')
-	lines.append('#include <pds/pds.h>')
+	lines.append('#include "pds.h"')
 	lines.append('')
 
-	lines.extend( hlp.generate_push_and_disable_warnings( [4201] , [] ) )
-	lines.append('')
+	#lines.extend( hlp.generate_push_and_disable_warnings( [4201] , [] ) )
+	#lines.append('')
 	#lines.append('#include <glm/gtc/type_ptr.hpp>')
 	lines.append('')
 	lines.append('namespace pds')
@@ -414,11 +414,12 @@ def ElementValuePointers_h():
 			lines.append(f"inline {const_type}{type} *value_ptr( {const_type}{type} &value ) {{ return &value; }}")
 
 	# end of namespace
-	lines.append('};')
+	lines.append('}')
+	lines.append('// namespace pds')
 	lines.append('')
 
 	# reenable warning
-	lines.extend( hlp.generate_pop_warnings() )
+	#lines.extend( hlp.generate_pop_warnings() )
 	
 	hlp.write_lines_to_file("../Include/pds/ElementValuePointers.h",lines)
 

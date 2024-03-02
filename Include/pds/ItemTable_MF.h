@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <ctle/log.h>
+
 #include "ItemTable.h"
 
 #include "EntityWriter.h"
