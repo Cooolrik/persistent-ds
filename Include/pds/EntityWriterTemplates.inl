@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <pds/DataValuePointers.h>
+#include <pds/ElementValuePointers.h>
 
 namespace pds
 {
-
+#include "_pds_macros.inl"
 
 
 // called to begin a large block
@@ -16,7 +16,7 @@ inline bool begin_write_large_block( MemoryWriteStream &dstream, ValueType VT, c
 {
 	const u8 value_type = (u8)VT;
 	const u64 start_pos = dstream.GetPosition();
-	pdsSanityCheckDebugMacro( key_size_in_bytes <= EntityMaxKeyLength );
+	ctSanityCheck( key_size_in_bytes <= EntityMaxKeyLength );
 
 	// sizeof(value_type)=1 + sizeof(block_size)=8 + sizeof(key_size_in_bytes)=1 + key_size_in_bytes;
 	const u64 expected_end_pos = start_pos + key_size_in_bytes + 10;
@@ -30,7 +30,7 @@ inline bool begin_write_large_block( MemoryWriteStream &dstream, ValueType VT, c
 	dstream.Write( (i8 *)key, key_size_in_bytes );
 
 	const u64 end_pos = dstream.GetPosition();
-	pdsSanityCheckCoreDebugMacro( end_pos == expected_end_pos );
+	ctSanityCheck( end_pos == expected_end_pos );
 	return ( end_pos == expected_end_pos );
 }
 
@@ -57,8 +57,8 @@ template<ValueType VT, class T> inline bool write_single_value( MemoryWriteStrea
 	const size_t value_count = data_type_information<T>::value_count;
 	const size_t data_size_in_bytes = ( data != nullptr ) ? ( value_size * value_count ) : 0; // if data == nullptr, the block is empty
 	const size_t block_size = data_size_in_bytes + key_length;
-	pdsSanityCheckDebugMacro( key_length <= EntityMaxKeyLength ); // max key length
-	pdsSanityCheckCoreDebugMacro( block_size < 256 ); // must fit in a byte
+	ctSanityCheck( key_length <= EntityMaxKeyLength ); // max key length
+	ctSanityCheck( block_size < 256 ); // must fit in a byte
 	const u8 u8_block_size = (u8)( block_size );
 	const u64 start_pos = dstream.GetPosition();
 	const u64 expected_end_pos = start_pos + 2 + block_size;
@@ -74,7 +74,7 @@ template<ValueType VT, class T> inline bool write_single_value( MemoryWriteStrea
 	dstream.Write( (i8 *)key, key_length );
 
 	const u64 end_pos = dstream.GetPosition();
-	pdsSanityCheckCoreDebugMacro( end_pos == expected_end_pos );
+	ctSanityCheck( end_pos == expected_end_pos );
 	return ( dstream.GetPosition() == expected_end_pos );
 };
 
@@ -96,7 +96,7 @@ template<> inline bool write_single_value<ValueType::VT_String, std::string>( Me
 	// begin a large block
 	if( !begin_write_large_block( dstream, ValueType::VT_String, key, key_size_in_bytes ) )
 	{
-		pdsErrorLog << "begin_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "begin_write_large_block() failed unexpectedly" << ctLogEnd;
 		return false;
 	}
 
@@ -109,7 +109,7 @@ template<> inline bool write_single_value<ValueType::VT_String, std::string>( Me
 		// empty string, early out 
 		if( !end_write_large_block( dstream, start_pos ) )
 		{
-			pdsErrorLog << "end_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+			ctLogError << "end_write_large_block() failed unexpectedly" << ctLogEnd;
 			return false;
 		}
 		return true;
@@ -131,7 +131,7 @@ template<> inline bool write_single_value<ValueType::VT_String, std::string>( Me
 	// end the block by going back to the start and writing the start position offset
 	if( !end_write_large_block( dstream, start_pos ) )
 	{
-		pdsErrorLog << "end_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "end_write_large_block() failed unexpectedly" << ctLogEnd;
 		return false;
 	}
 
@@ -139,7 +139,7 @@ template<> inline bool write_single_value<ValueType::VT_String, std::string>( Me
 	const u64 end_pos = dstream.GetPosition();
 	if( end_pos != expected_end_pos )
 	{
-		pdsErrorLog << "End position of data " << end_pos << " does not equal the expected end position which is " << expected_end_pos << pdsErrorLogEnd;
+		ctLogError << "End position of data " << end_pos << " does not equal the expected end position which is " << expected_end_pos << ctLogEnd;
 		return false;
 	}
 
@@ -151,7 +151,7 @@ template<> inline bool write_single_value<ValueType::VT_String, std::string>( Me
 inline bool write_array_metadata_and_index( MemoryWriteStream &dstream, size_t per_item_size, size_t item_count, const std::vector<i32> *index )
 {
 	static_assert( sizeof( u64 ) <= sizeof( size_t ), "Unsupported size_t, current code requires it to be at least 8 bytes in size, equal to u64" );
-	pdsSanityCheckDebugMacro( per_item_size <= 0xff );
+	ctSanityCheck( per_item_size <= 0xff );
 
 	const u64 start_pos = dstream.GetPosition();
 
@@ -185,7 +185,7 @@ inline bool write_array_metadata_and_index( MemoryWriteStream &dstream, size_t p
 	const u64 end_pos = dstream.GetPosition();
 	if( end_pos != expected_end_pos )
 	{
-		pdsErrorLog << "End position of data " << end_pos << " does not equal the expected end position which is " << expected_end_pos << pdsErrorLogEnd;
+		ctLogError << "End position of data " << end_pos << " does not equal the expected end position which is " << expected_end_pos << ctLogEnd;
 		return false;
 	}
 
@@ -207,7 +207,7 @@ template<ValueType VT, class T> inline bool write_array( MemoryWriteStream &dstr
 	// begin a large block
 	if( !begin_write_large_block( dstream, VT, key, key_size_in_bytes ) )
 	{
-		pdsErrorLog << "begin_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "begin_write_large_block() failed unexpectedly" << ctLogEnd;
 		return false;
 	}
 
@@ -232,7 +232,7 @@ template<ValueType VT, class T> inline bool write_array( MemoryWriteStream &dstr
 			// make sure all were written
 			if( values_end_pos != values_expected_end_pos )
 			{
-				pdsErrorLog << "End position of data " << values_end_pos << " does not equal the expected end position which is " << values_expected_end_pos << pdsErrorLogEnd;
+				ctLogError << "End position of data " << values_end_pos << " does not equal the expected end position which is " << values_expected_end_pos << ctLogEnd;
 				return false;
 			}
 		}
@@ -241,7 +241,7 @@ template<ValueType VT, class T> inline bool write_array( MemoryWriteStream &dstr
 	// end the block by going back to the start and writing the size of the payload
 	if( !end_write_large_block( dstream, start_pos ) )
 	{
-		pdsErrorLog << "end_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "end_write_large_block() failed unexpectedly" << ctLogEnd;
 		return false;
 	}
 
@@ -258,7 +258,7 @@ template<> inline bool write_array<ValueType::VT_Array_Bool, bool>( MemoryWriteS
 	// begin a large block
 	if( !begin_write_large_block( dstream, ValueType::VT_Array_Bool, key, key_size_in_bytes ) )
 	{
-		pdsErrorLog << "begin_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "begin_write_large_block() failed unexpectedly" << ctLogEnd;
 		return false;
 	}
 
@@ -296,7 +296,7 @@ template<> inline bool write_array<ValueType::VT_Array_Bool, bool>( MemoryWriteS
 			// make sure all were written
 			if( values_end_pos != values_expected_end_pos )
 			{
-				pdsErrorLog << "End position of data " << values_end_pos << " does not equal the expected end position which is " << values_expected_end_pos << pdsErrorLogEnd;
+				ctLogError << "End position of data " << values_end_pos << " does not equal the expected end position which is " << values_expected_end_pos << ctLogEnd;
 				return false;
 			}
 		}
@@ -305,7 +305,7 @@ template<> inline bool write_array<ValueType::VT_Array_Bool, bool>( MemoryWriteS
 	// end the block by going back to the start and writing the start position offset
 	if( !end_write_large_block( dstream, start_pos ) )
 	{
-		pdsErrorLog << "end_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "end_write_large_block() failed unexpectedly" << ctLogEnd;
 		return false;
 	}
 
@@ -322,7 +322,7 @@ template<> inline bool write_array<ValueType::VT_Array_String, std::string>( Mem
 	// begin a large block
 	if( !begin_write_large_block( dstream, ValueType::VT_Array_String, key, key_size_in_bytes ) )
 	{
-		pdsErrorLog << "begin_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "begin_write_large_block() failed unexpectedly" << ctLogEnd;
 		return false;
 	}
 
@@ -363,7 +363,7 @@ template<> inline bool write_array<ValueType::VT_Array_String, std::string>( Mem
 			// make sure we are at the expected end pos
 			if( values_end_pos != values_expected_end_pos )
 			{
-				pdsErrorLog << "End position of data " << values_end_pos << " does not equal the expected end position which is " << values_expected_end_pos << pdsErrorLogEnd;
+				ctLogError << "End position of data " << values_end_pos << " does not equal the expected end position which is " << values_expected_end_pos << ctLogEnd;
 				return false;
 			}
 
@@ -373,7 +373,7 @@ template<> inline bool write_array<ValueType::VT_Array_String, std::string>( Mem
 	// end the block by going back to the start and writing the start position offset
 	if( !end_write_large_block( dstream, start_pos ) )
 	{
-		pdsErrorLog << "end_write_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "end_write_large_block() failed unexpectedly" << ctLogEnd;
 		return false;
 	}
 
@@ -381,7 +381,6 @@ template<> inline bool write_array<ValueType::VT_Array_String, std::string>( Mem
 	return true;
 }
 
-#ifdef PDS_MAIN_BUILD_FILE
 EntityWriter::EntityWriter( MemoryWriteStream &_dstream ) : dstream( _dstream ), start_position( _dstream.GetPosition() )
 {}
 
@@ -390,7 +389,7 @@ EntityWriter *EntityWriter::BeginWriteSection( const char *key, const u8 key_len
 {
 	if( this->active_subsection )
 	{
-		pdsErrorLog << "There is already an active subsection." << pdsErrorLogEnd;
+		ctLogError << "There is already an active subsection." << ctLogEnd;
 		return nullptr;
 	}
 
@@ -399,7 +398,7 @@ EntityWriter *EntityWriter::BeginWriteSection( const char *key, const u8 key_len
 
 	if( !begin_write_large_block( this->dstream, ValueType::VT_Subsection, key, key_length ) )
 	{
-		pdsErrorLog << "begin_write_large_block failed to write header." << pdsErrorLogEnd;
+		ctLogError << "begin_write_large_block failed to write header." << ctLogEnd;
 		return nullptr;
 	}
 
@@ -410,13 +409,13 @@ bool EntityWriter::EndWriteSection( const EntityWriter *section_writer )
 {
 	if( this->active_subsection.get() != section_writer )
 	{
-		pdsErrorLog << "Invalid parameter section_writer, it does not match the internal value." << pdsErrorLogEnd;
+		ctLogError << "Invalid parameter section_writer, it does not match the internal value." << ctLogEnd;
 		return false;
 	}
 
 	if( !end_write_large_block( this->dstream, this->active_subsection->start_position ) )
 	{
-		pdsErrorLog << "end_write_large_block failed unexpectedly." << pdsErrorLogEnd;
+		ctLogError << "end_write_large_block failed unexpectedly." << ctLogEnd;
 		return false;
 	}
 
@@ -438,7 +437,7 @@ EntityWriter *EntityWriter::BeginWriteSectionsArray( const char *key, const u8 k
 {
 	if( this->active_subsection )
 	{
-		pdsErrorLog << "There is already an active subsection" << pdsErrorLogEnd;
+		ctLogError << "There is already an active subsection" << ctLogEnd;
 		return nullptr;
 	}
 
@@ -447,7 +446,7 @@ EntityWriter *EntityWriter::BeginWriteSectionsArray( const char *key, const u8 k
 
 	if( !begin_write_large_block( this->dstream, ValueType::VT_Array_Subsection, key, key_length ) )
 	{
-		pdsErrorLog << "begin_write_large_block failed to write header." << pdsErrorLogEnd;
+		ctLogError << "begin_write_large_block failed to write header." << ctLogEnd;
 		return nullptr;
 	}
 
@@ -475,17 +474,17 @@ bool EntityWriter::BeginWriteSectionInArray( const EntityWriter *sections_array_
 {
 	if( this->active_subsection.get() != sections_array_writer )
 	{
-		pdsErrorLog << "Synch error, currently not writing a subsection array" << pdsErrorLogEnd;
+		ctLogError << "Synch error, currently not writing a subsection array" << ctLogEnd;
 		return false;
 	}
 	if( ( this->active_array_index + 1 ) != section_index )
 	{
-		pdsErrorLog << "Synch error, incorrect subsection index" << pdsErrorLogEnd;
+		ctLogError << "Synch error, incorrect subsection index" << ctLogEnd;
 		return false;
 	}
 	if( section_index >= this->active_array_size )
 	{
-		pdsErrorLog << "Incorrect subsection index, out of array bounds" << pdsErrorLogEnd;
+		ctLogError << "Incorrect subsection index, out of array bounds" << ctLogEnd;
 		return false;
 	}
 
@@ -502,7 +501,7 @@ bool EntityWriter::EndWriteSectionInArray( const EntityWriter *sections_array_wr
 {
 	if( this->active_subsection.get() != sections_array_writer || this->active_array_index != section_index )
 	{
-		pdsErrorLog << "Synch error, currently not writing a subsection array, or incorrect section index" << pdsErrorLogEnd;
+		ctLogError << "Synch error, currently not writing a subsection array, or incorrect section index" << ctLogEnd;
 		return false;
 	}
 
@@ -518,18 +517,18 @@ bool EntityWriter::EndWriteSectionsArray( const EntityWriter *sections_array_wri
 {
 	if( this->active_subsection.get() != sections_array_writer )
 	{
-		pdsErrorLog << "Synch error, currently not writing a subsection array" << pdsErrorLogEnd;
+		ctLogError << "Synch error, currently not writing a subsection array" << ctLogEnd;
 		return false;
 	}
 	if( ( this->active_array_index + 1 ) != this->active_array_size )
 	{
-		pdsErrorLog << "Synch error, the subsection index does not equal the end of the array" << pdsErrorLogEnd;
+		ctLogError << "Synch error, the subsection index does not equal the end of the array" << ctLogEnd;
 		return false;
 	}
 
 	if( !end_write_large_block( this->dstream, this->active_subsection->start_position ) )
 	{
-		pdsErrorLog << "end_write_large_block failed unexpectedly." << pdsErrorLogEnd;
+		ctLogError << "end_write_large_block failed unexpectedly." << ctLogEnd;
 		return false;
 	}
 
@@ -551,9 +550,7 @@ bool EntityWriter::WriteNullSectionsArray( const char *key, const u8 key_length 
 	return this->EndWriteSectionsArray( subsection );
 }
 
-#endif//PDS_MAIN_BUILD_FILE
 
-
-
+#include "_pds_undef_macros.inl"
 }
 // namespace pds

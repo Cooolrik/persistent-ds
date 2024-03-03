@@ -7,12 +7,9 @@
 
 namespace pds
 {
-
-
-
-
 namespace dynamic_types
 {
+
 
 // dynamically allocate a data of data type and container combination
 std::tuple<void *, bool> new_type( data_type_index dataType, container_type_index containerType );
@@ -47,10 +44,8 @@ bool copy( data_type_index dataType, container_type_index containerType, void *d
 // type combo to the function.
 bool equals( data_type_index dataType, container_type_index containerType, const void *dataA, const void *dataB );
 
+
 }
 // namespace dynamic_types
-
-
-
 }
 // namespace pds

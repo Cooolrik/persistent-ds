@@ -2,13 +2,18 @@
 set(
 	pds_library_files
 
+	# library files
 	./Include/pds/BidirectionalMap.h
-	./Include/pds/DataTypes.h
-	./Include/pds/DataTypes.inl
-	./Include/pds/DataValuePointers.h
+	./Include/pds/BidirectionalMap_MF.h
+	./Include/pds/ElementTypes.h
+	./Include/pds/ElementTypes.inl
+	./Include/pds/ElementValuePointers.h
 	./Include/pds/DirectedGraph.h
+	./Include/pds/DirectedGraph_MF.h
 	./Include/pds/DynamicTypes.h
 	./Include/pds/DynamicTypes.inl
+	./Include/pds/EntityManager.h
+	./Include/pds/EntityManager.inl
 	./Include/pds/EntityReader.h
 	./Include/pds/EntityReader.inl
 	./Include/pds/EntityReaderTemplates.inl
@@ -17,17 +22,24 @@ set(
 	./Include/pds/EntityWriter.inl
 	./Include/pds/EntityWriterTemplates.inl
 	./Include/pds/IndexedVector.h
+	./Include/pds/IndexedVector_MF.h
 	./Include/pds/ItemTable.h
+	./Include/pds/ItemTable_MF.h
 	./Include/pds/MemoryReadStream.h
+	./Include/pds/MemoryReadStream.inl
 	./Include/pds/MemoryWriteStream.h
+	./Include/pds/MemoryWriteStream.inl
 	./Include/pds/pds.h
-	./Include/pds/pds.inl
-	./Include/pds/SHA256.h
-	./Include/pds/SHA256.inl
 	./Include/pds/ValueTypes.h
 	./Include/pds/ValueTypes.inl
 	./Include/pds/Varying.h
+	./Include/pds/Varying_MF.h
 	./Include/pds/Varying.inl
+	./Include/pds/Varying_MF.inl
+
+	# compilation helper files
+	./Include/pds/_pds_macros.inl
+	./Include/pds/_pds_undef_macros.inl
 )
 
 source_group_by_folder( ./Include/pds pds ${pds_library_files} )
@@ -60,14 +72,14 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		systemtest
 		./Tests/SystemTest.cpp 
 		./Tests/TestPackA/TestPackA.cpp 
-
+		./Tests/HeaderLibraries.cpp 
+		
 		${pds_library_files}
 		)	
 
 	target_include_directories(	
 		systemtest 
 		PUBLIC ${PROJECT_SOURCE_DIR}/Include
-		PUBLIC ${glm_SOURCE_DIR}
 		PUBLIC ${picosha2_SOURCE_DIR}
 		PUBLIC ${ctle_SOURCE_DIR}
 		PUBLIC ${PROJECT_SOURCE_DIR}/Tests 
@@ -84,23 +96,28 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		${pds_library_files}
 
 		./Tests/Tests.cpp 
+		./Tests/HeaderLibraries.cpp 
+		./Tests/BidirectionalMapTests.cpp
 		./Tests/DirectedGraphTests.cpp
 		./Tests/DynamicTypesTests.cpp
 		./Tests/EntityReaderRandomTests.cpp
 		./Tests/EntityReadWriteTests.cpp
 		./Tests/EntityTests.cpp
 		./Tests/ItemTableTests.cpp
+		./Tests/IndexedVectorTests.cpp
 		./Tests/ReadWriteTests.cpp
 		./Tests/SectionHierarchyReadWriteTests.cpp
 		./Tests/TypeTests.cpp 
 		./Tests/TestHelpers/random_vals.cpp 
 		./Tests/TestPackA/TestPackA.cpp 
+		
+		dependencies.cmake
+		pds.cmake
 		)
 
 	target_include_directories( 
 		tests 
 		PUBLIC ${PROJECT_SOURCE_DIR}/Include
-		PUBLIC ${glm_SOURCE_DIR}
 		PUBLIC ${picosha2_SOURCE_DIR}
 		PUBLIC ${ctle_SOURCE_DIR}
 		PUBLIC ${PROJECT_SOURCE_DIR}/Tests	

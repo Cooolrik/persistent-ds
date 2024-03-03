@@ -4,10 +4,12 @@
 #include "Tests.h"
 
 #include <pds/EntityValidator.h>
-#include <pds/EntityReader.inl>
-#include <pds/EntityWriter.inl>
+#include <pds/EntityWriter.h>
+#include <pds/EntityReader.h>
+#include <pds/MemoryWriteStream.h>
+#include <pds/MemoryReadStream.h>
 
-#include <pds/ItemTable.h>
+#include <pds/ItemTable_MF.h>
 
 #include "TestPackA/TestEntityA.h"
 #include "TestHelpers/structure_generation.h"

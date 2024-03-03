@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <pds/DataValuePointers.h>
+#include <pds/ElementValuePointers.h>
 
 // value_type: the ValueType enum to read the block as
 // object_type: the C++ object that stores the data (can be a basic type), such as u32, or glm::vec3
@@ -12,7 +12,7 @@
 
 namespace pds
 {
-
+#include "_pds_macros.inl"
 
 enum class reader_status
 {
@@ -26,14 +26,14 @@ enum class reader_status
 // a stream position of 0 is not possible, and indicates error
 inline u64 begin_read_large_block( MemoryReadStream &sstream, ValueType VT, const char *key, const u8 key_size_in_bytes )
 {
-	pdsSanityCheckDebugMacro( key_size_in_bytes <= EntityMaxKeyLength ); // max key length
+	ctSanityCheck( key_size_in_bytes <= EntityMaxKeyLength ); // max key length
 
 	// read and make sure we have the correct value type
 	const u8 value_type = sstream.Read<u8>();
 	if( value_type != (u8)VT )
 	{
 		// not the expected type
-		pdsErrorLog << "The type in the input stream:" << (u32)value_type << " does not match expected type: " << (u32)VT << pdsErrorLogEnd;
+		ctLogError << "The type in the input stream:" << (u32)value_type << " does not match expected type: " << (u32)VT << ctLogEnd;
 		return 0;
 	}
 
@@ -43,7 +43,7 @@ inline u64 begin_read_large_block( MemoryReadStream &sstream, ValueType VT, cons
 	if( expected_end_pos > sstream.GetSize() )
 	{
 		// not the expected type
-		pdsErrorLog << "The block size:" << block_size << " points beyond the end of the stream size" << pdsErrorLogEnd;
+		ctLogError << "The block size:" << block_size << " points beyond the end of the stream size" << ctLogEnd;
 		return 0;
 	}
 
@@ -53,7 +53,7 @@ inline u64 begin_read_large_block( MemoryReadStream &sstream, ValueType VT, cons
 	{
 		// not the expected type
 		std::string expected_key_name( key, key_size_in_bytes );
-		pdsErrorLog << "The size of the input key:" << (u32)read_key_size_in_bytes << " does not match expected size: " << (u32)key_size_in_bytes << " for key: \"" << expected_key_name << "\"" << pdsErrorLogEnd;
+		ctLogError << "The size of the input key:" << (u32)read_key_size_in_bytes << " does not match expected size: " << (u32)key_size_in_bytes << " for key: \"" << expected_key_name << "\"" << ctLogEnd;
 		return 0;
 	}
 
@@ -64,7 +64,7 @@ inline u64 begin_read_large_block( MemoryReadStream &sstream, ValueType VT, cons
 	{
 		std::string expected_key_name( key, key_size_in_bytes );
 		std::string read_key_name( read_key, key_size_in_bytes );
-		pdsErrorLog << "Unexpected key name in the stream. Expected name: " << expected_key_name << " read name: " << read_key_name << pdsErrorLogEnd;
+		ctLogError << "Unexpected key name in the stream. Expected name: " << expected_key_name << " read name: " << read_key_name << ctLogEnd;
 		return 0;
 	}
 
@@ -95,7 +95,7 @@ template<ValueType VT, class T> inline reader_status read_single_item( MemoryRea
 	if( value_type != (u8)VT )
 	{
 		// not the expected type
-		pdsErrorLog << "The type in the input stream:" << (u32)value_type << " does not match expected type: " << (u32)VT << pdsErrorLogEnd;
+		ctLogError << "The type in the input stream:" << (u32)value_type << " does not match expected type: " << (u32)VT << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -104,8 +104,8 @@ template<ValueType VT, class T> inline reader_status read_single_item( MemoryRea
 	const u64 expected_block_size_if_empty = key_size_in_bytes;
 	const u64 expected_block_size = dest_data_size_in_bytes + expected_block_size_if_empty;
 
-	pdsSanityCheckCoreDebugMacro( key_size_in_bytes <= EntityMaxKeyLength );
-	pdsSanityCheckCoreDebugMacro( expected_block_size < 256 ); // must fit in a byte
+	ctSanityCheck( key_size_in_bytes <= EntityMaxKeyLength );
+	ctSanityCheck( expected_block_size < 256 ); // must fit in a byte
 
 	// read in size of the small block, if the size does not match the expected block size, check if empty value is ok (is_optional_value == true), and if not raise error
 	// any size other than expected_block_size is regarded as empty, and we will check that size if empty is actually allowed
@@ -118,14 +118,14 @@ template<ValueType VT, class T> inline reader_status read_single_item( MemoryRea
 			// if empty is allowed, make sure that we have the block size of an empty block
 			if( block_size != expected_block_size_if_empty )
 			{
-				pdsErrorLog << "The size of the block in the input stream:" << block_size << " does not match expected possible sizes: " << expected_block_size_if_empty << " (if empty value) or " << expected_block_size << " (if non-empty) " << pdsErrorLogEnd;
+				ctLogError << "The size of the block in the input stream:" << block_size << " does not match expected possible sizes: " << expected_block_size_if_empty << " (if empty value) or " << expected_block_size << " (if non-empty) " << ctLogEnd;
 				return reader_status::fail;
 			}
 		}
 		else
 		{
 			// empty is not allowed, so regardless of the size, it is invalid, error out
-			pdsErrorLog << "The size of the block in the input stream:" << block_size << " does not match expected size (empty is not allowed): " << expected_block_size << pdsErrorLogEnd;
+			ctLogError << "The size of the block in the input stream:" << block_size << " does not match expected size (empty is not allowed): " << expected_block_size << ctLogEnd;
 			return reader_status::fail;
 		}
 	}
@@ -136,7 +136,7 @@ template<ValueType VT, class T> inline reader_status read_single_item( MemoryRea
 		const u64 read_count = sstream.Read( value_ptr( *dest_data ), value_count );
 		if( read_count != value_count )
 		{
-			pdsErrorLog << "Could not read all expected values from the input stream. Expected count: " << value_count << " read count: " << read_count << pdsErrorLogEnd;
+			ctLogError << "Could not read all expected values from the input stream. Expected count: " << value_count << " read count: " << read_count << ctLogEnd;
 			return reader_status::fail;
 		}
 	}
@@ -149,17 +149,17 @@ template<ValueType VT, class T> inline reader_status read_single_item( MemoryRea
 	{
 		std::string expected_key_name( key, key_size_in_bytes );
 		std::string read_key_name( read_key, key_size_in_bytes ); // cap string at lenght of expected data
-		pdsErrorLog << "Unexpected key name in the stream. Expected name: " << expected_key_name << " read name: " << read_key_name << pdsErrorLogEnd;
+		ctLogError << "Unexpected key name in the stream. Expected name: " << expected_key_name << " read name: " << read_key_name << ctLogEnd;
 		return reader_status::fail;
 	}
 
 	// get the position beyond the end of the block, and validate position
 	const u64 expected_end_pos = ( is_empty_value ) ? ( start_pos + 2 + expected_block_size_if_empty ) : ( start_pos + 2 + expected_block_size );
 	const u64 end_pos = sstream.GetPosition();
-	pdsSanityCheckCoreDebugMacro( end_pos == expected_end_pos );
+	ctSanityCheck( end_pos == expected_end_pos );
 	if( end_pos != expected_end_pos )
 	{
-		pdsErrorLog << "Invaild position in the read stream. Expected position: " << expected_end_pos << " current position: " << end_pos << pdsErrorLogEnd;
+		ctLogError << "Invaild position in the read stream. Expected position: " << expected_end_pos << " current position: " << end_pos << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -187,13 +187,13 @@ template<> inline reader_status read_single_item<ValueType::VT_String, string>( 
 {
 	static_assert( sizeof( u64 ) == sizeof( size_t ), "Unsupported size_t, current code requires it to be 8 bytes in size, equal to u64" );
 
-	pdsSanityCheckCoreDebugMacro( dest_data );
+	ctSanityCheck( dest_data );
 
 	// read block header
 	const u64 expected_end_position = begin_read_large_block( sstream, ValueType::VT_String, key, key_size_in_bytes );
 	if( expected_end_position == 0 )
 	{
-		pdsErrorLog << "begin_read_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "begin_read_large_block() failed unexpectedly" << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -206,7 +206,7 @@ template<> inline reader_status read_single_item<ValueType::VT_String, string>( 
 			// empty value is allowed, early out if the block end checks out
 			if( !end_read_large_block( sstream, expected_end_position ) )
 			{
-				pdsErrorLog << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << expected_end_position << pdsErrorLogEnd;
+				ctLogError << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << expected_end_position << ctLogEnd;
 				return reader_status::fail;
 			}
 
@@ -216,7 +216,7 @@ template<> inline reader_status read_single_item<ValueType::VT_String, string>( 
 		else
 		{
 			// empty is not allowed
-			pdsErrorLog << "The read stream value is empty, which is not allowed for value \"" << key << "\"" << pdsErrorLogEnd;
+			ctLogError << "The read stream value is empty, which is not allowed for value \"" << key << "\"" << ctLogEnd;
 			return reader_status::fail;
 		}
 	}
@@ -228,7 +228,7 @@ template<> inline reader_status read_single_item<ValueType::VT_String, string>( 
 	const u64 expected_string_size = ( expected_end_position - sstream.GetPosition() );
 	if( string_size > expected_string_size )
 	{
-		pdsErrorLog << "The string size in the stream is invalid, it is beyond the size of the value block" << pdsErrorLogEnd;
+		ctLogError << "The string size in the stream is invalid, it is beyond the size of the value block" << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -242,7 +242,7 @@ template<> inline reader_status read_single_item<ValueType::VT_String, string>( 
 		const u64 read_item_count = sstream.Read( p_data, string_size );
 		if( read_item_count != string_size )
 		{
-			pdsErrorLog << "The stream could not read the whole string" << pdsErrorLogEnd;
+			ctLogError << "The stream could not read the whole string" << ctLogEnd;
 			return reader_status::fail;
 		}
 	}
@@ -250,7 +250,7 @@ template<> inline reader_status read_single_item<ValueType::VT_String, string>( 
 	// make sure we are at the expected end pos
 	if( !end_read_large_block( sstream, expected_end_position ) )
 	{
-		pdsErrorLog << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << expected_end_position << pdsErrorLogEnd;
+		ctLogError << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << expected_end_position << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -265,7 +265,7 @@ inline reader_status end_read_empty_large_block( MemoryReadStream &sstream, cons
 		// empty value is allowed, early out if the block end checks out
 		if( !end_read_large_block( sstream, expected_end_position ) )
 		{
-			pdsErrorLog << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << expected_end_position << pdsErrorLogEnd;
+			ctLogError << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << expected_end_position << ctLogEnd;
 			return reader_status::fail;
 		}
 
@@ -275,7 +275,7 @@ inline reader_status end_read_empty_large_block( MemoryReadStream &sstream, cons
 	else
 	{
 		// empty is not allowed
-		pdsErrorLog << "The read stream value is empty, which is not allowed for value \"" << key << "\"" << pdsErrorLogEnd;
+		ctLogError << "The read stream value is empty, which is not allowed for value \"" << key << "\"" << ctLogEnd;
 		return reader_status::fail;
 	}
 }
@@ -296,7 +296,7 @@ inline bool read_array_metadata_and_index( MemoryReadStream &sstream, size_t &ou
 	// we don't support 64 bit index (yet)
 	if( index_is_64bit )
 	{
-		pdsErrorLog << "The block has a 64 bit index, which is not supported" << pdsErrorLogEnd;
+		ctLogError << "The block has a 64 bit index, which is not supported" << ctLogEnd;
 		return false;
 	}
 
@@ -309,17 +309,17 @@ inline bool read_array_metadata_and_index( MemoryReadStream &sstream, size_t &ou
 		// make sure we DO expect an index
 		if( !dest_index )
 		{
-			pdsErrorLog << "Invalid array type: The stream type has an index, but the destination object does not." << pdsErrorLogEnd;
+			ctLogError << "Invalid array type: The stream type has an index, but the destination object does not." << ctLogEnd;
 			return false;
 		}
 
 		// read in the size of the index
-		pdsSanityCheckCoreDebugMacro( block_end_position >= sstream.GetPosition() );
+		ctSanityCheck( block_end_position >= sstream.GetPosition() );
 		const u64 index_count = sstream.Read<u64>();
 		const u64 maximum_possible_index_count = ( block_end_position - sstream.GetPosition() ) / sizeof( u32 );
 		if( index_count > maximum_possible_index_count )
 		{
-			pdsErrorLog << "The index item count in the stream is invalid, it is beyond the size of the block" << pdsErrorLogEnd;
+			ctLogError << "The index item count in the stream is invalid, it is beyond the size of the block" << ctLogEnd;
 			return false;
 		}
 
@@ -338,14 +338,14 @@ inline bool read_array_metadata_and_index( MemoryReadStream &sstream, size_t &ou
 		// make sure we do NOT expect an index
 		if( dest_index )
 		{
-			pdsErrorLog << "Invalid array type: The stream type has does not have an index, but the destination object does." << pdsErrorLogEnd;
+			ctLogError << "Invalid array type: The stream type has does not have an index, but the destination object does." << ctLogEnd;
 			return false;
 		}
 	}
 
 	if( expected_end_position != sstream.GetPosition() )
 	{
-		pdsErrorLog << "Failed to read full array header from block." << pdsErrorLogEnd;
+		ctLogError << "Failed to read full array header from block." << ctLogEnd;
 		return false;
 	}
 
@@ -358,13 +358,13 @@ template<ValueType VT, class T> inline reader_status read_array( MemoryReadStrea
 	static_assert( sizeof( u64 ) >= sizeof( size_t ), "Unsupported size_t, current code requires it to be at max 8 bytes in size, equal to u64" );
 	const size_t value_size = sizeof( typename data_type_information<T>::value_type );
 
-	pdsSanityCheckCoreDebugMacro( dest_items );
+	ctSanityCheck( dest_items );
 
 	// read block header. if we are already at the end, the block is empty, end the block and make sure empty is allowed
 	const u64 block_end_position = begin_read_large_block( sstream, VT, key, key_size_in_bytes );
 	if( block_end_position == 0 )
 	{
-		pdsErrorLog << "begin_read_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "begin_read_large_block() failed unexpectedly" << ctLogEnd;
 		return reader_status::fail;
 	}
 	else if( block_end_position == sstream.GetPosition() )
@@ -383,7 +383,7 @@ template<ValueType VT, class T> inline reader_status read_array( MemoryReadStrea
 	// make sure we have the right item size
 	if( value_size != per_item_size )
 	{
-		pdsErrorLog << "The size of the items in the stream does not match the expected size" << pdsErrorLogEnd;
+		ctLogError << "The size of the items in the stream does not match the expected size" << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -391,7 +391,7 @@ template<ValueType VT, class T> inline reader_status read_array( MemoryReadStrea
 	const u64 maximum_possible_item_count = ( block_end_position - sstream.GetPosition() ) / value_size;
 	if( item_count > maximum_possible_item_count )
 	{
-		pdsErrorLog << "The array item count in the stream is invalid, it is beyond the size of the block" << pdsErrorLogEnd;
+		ctLogError << "The array item count in the stream is invalid, it is beyond the size of the block" << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -404,14 +404,14 @@ template<ValueType VT, class T> inline reader_status read_array( MemoryReadStrea
 	const u64 read_item_count = sstream.Read( value_ptr( *p_data ), item_count );
 	if( read_item_count != item_count )
 	{
-		pdsErrorLog << "The stream could not read all the items for the array" << pdsErrorLogEnd;
+		ctLogError << "The stream could not read all the items for the array" << ctLogEnd;
 		return reader_status::fail;
 	}
 
 	// make sure we are at the expected end pos
 	if( !end_read_large_block( sstream, block_end_position ) )
 	{
-		pdsErrorLog << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << block_end_position << pdsErrorLogEnd;
+		ctLogError << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << block_end_position << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -421,13 +421,13 @@ template<ValueType VT, class T> inline reader_status read_array( MemoryReadStrea
 // read_array implementation for bool arrays (which need specific packing)
 template <> inline reader_status read_array<ValueType::VT_Array_Bool, bool>( MemoryReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<bool> *dest_items, std::vector<i32> *dest_index )
 {
-	pdsSanityCheckCoreDebugMacro( dest_items );
+	ctSanityCheck( dest_items );
 
 	// read block header. if we are already at the end, the block is empty, end the block and make sure empty is allowed
 	const u64 block_end_position = begin_read_large_block( sstream, ValueType::VT_Array_Bool, key, key_size_in_bytes );
 	if( block_end_position == 0 )
 	{
-		pdsErrorLog << "begin_read_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "begin_read_large_block() failed unexpectedly" << ctLogEnd;
 		return reader_status::fail;
 	}
 	else if( block_end_position == sstream.GetPosition() )
@@ -451,7 +451,7 @@ template <> inline reader_status read_array<ValueType::VT_Array_Bool, bool>( Mem
 	const u64 maximum_possible_item_count = ( block_end_position - sstream.GetPosition() );
 	if( number_of_packed_u8s > maximum_possible_item_count )
 	{
-		pdsErrorLog << "The array item count in the stream is invalid, it is beyond the size of the block" << pdsErrorLogEnd;
+		ctLogError << "The array item count in the stream is invalid, it is beyond the size of the block" << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -473,7 +473,7 @@ template <> inline reader_status read_array<ValueType::VT_Array_Bool, bool>( Mem
 	// make sure we are at the expected end pos
 	if( !end_read_large_block( sstream, block_end_position ) )
 	{
-		pdsErrorLog << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << block_end_position << pdsErrorLogEnd;
+		ctLogError << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << block_end_position << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -484,13 +484,13 @@ template<> inline reader_status read_array<ValueType::VT_Array_String, string>( 
 {
 	static_assert( sizeof( u64 ) == sizeof( size_t ), "Unsupported size_t, current code requires it to be 8 bytes in size, equal to u64" );
 
-	pdsSanityCheckCoreDebugMacro( dest_items );
+	ctSanityCheck( dest_items );
 
 	// read block header. if we are already at the end, the block is empty, end the block and make sure empty is allowed
 	const u64 block_end_position = begin_read_large_block( sstream, ValueType::VT_Array_String, key, key_size_in_bytes );
 	if( block_end_position == 0 )
 	{
-		pdsErrorLog << "begin_read_large_block() failed unexpectedly" << pdsErrorLogEnd;
+		ctLogError << "begin_read_large_block() failed unexpectedly" << ctLogEnd;
 		return reader_status::fail;
 	}
 	else if( block_end_position == sstream.GetPosition() )
@@ -511,7 +511,7 @@ template<> inline reader_status read_array<ValueType::VT_Array_String, string>( 
 	const u64 maximum_possible_item_count = ( block_end_position - sstream.GetPosition() ) / sizeof( u64 );
 	if( string_count > maximum_possible_item_count )
 	{
-		pdsErrorLog << "The array string count in the stream is invalid, it is beyond the size of the block" << pdsErrorLogEnd;
+		ctLogError << "The array string count in the stream is invalid, it is beyond the size of the block" << ctLogEnd;
 		return reader_status::fail;
 	}
 
@@ -529,7 +529,7 @@ template<> inline reader_status read_array<ValueType::VT_Array_String, string>( 
 		const u64 maximum_possible_string_size = ( block_end_position - sstream.GetPosition() );
 		if( string_size > maximum_possible_string_size )
 		{
-			pdsErrorLog << "A string size in a string array in the stream is invalid, it is beyond the size of the block" << pdsErrorLogEnd;
+			ctLogError << "A string size in a string array in the stream is invalid, it is beyond the size of the block" << ctLogEnd;
 			return reader_status::fail;
 		}
 
@@ -541,7 +541,7 @@ template<> inline reader_status read_array<ValueType::VT_Array_String, string>( 
 			const u64 read_item_count = sstream.Read( p_data, string_size );
 			if( read_item_count != string_size )
 			{
-				pdsErrorLog << "The stream could not read one of the strings" << pdsErrorLogEnd;
+				ctLogError << "The stream could not read one of the strings" << ctLogEnd;
 				return reader_status::fail;
 			}
 		}
@@ -550,14 +550,13 @@ template<> inline reader_status read_array<ValueType::VT_Array_String, string>( 
 	// make sure we are at the expected end pos
 	if( !end_read_large_block( sstream, block_end_position ) )
 	{
-		pdsErrorLog << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << block_end_position << pdsErrorLogEnd;
+		ctLogError << "End position of data " << sstream.GetPosition() << " does not equal the expected end position which is " << block_end_position << ctLogEnd;
 		return reader_status::fail;
 	}
 
 	return reader_status::success;
 }
 
-#ifdef PDS_MAIN_BUILD_FILE
 EntityReader::EntityReader( MemoryReadStream &_sstream ) : sstream( _sstream ), end_position( _sstream.GetSize() ) {}
 
 EntityReader::EntityReader( MemoryReadStream &_sstream, const u64 _end_position ) : sstream( _sstream ), end_position( _end_position ) {}
@@ -569,7 +568,7 @@ std::tuple<EntityReader *, bool> EntityReader::BeginReadSection( const char *key
 {
 	if( this->active_subsection )
 	{
-		pdsErrorLog << "There is already an active subsection." << pdsErrorLogEnd;
+		ctLogError << "There is already an active subsection." << ctLogEnd;
 		return std::tuple<EntityReader *, bool>( nullptr, false );
 	}
 
@@ -577,7 +576,7 @@ std::tuple<EntityReader *, bool> EntityReader::BeginReadSection( const char *key
 	const u64 end_of_section = begin_read_large_block( sstream, ValueType::VT_Subsection, key, key_length );
 	if( end_of_section == 0 )
 	{
-		pdsErrorLog << "begin_read_large_block() failed unexpectedly, stream is probably corrupted" << pdsErrorLogEnd;
+		ctLogError << "begin_read_large_block() failed unexpectedly, stream is probably corrupted" << ctLogEnd;
 		return std::tuple<EntityReader *, bool>( nullptr, false );
 	}
 	else if( end_of_section == sstream.GetPosition() )
@@ -598,13 +597,13 @@ bool EntityReader::EndReadSection( const EntityReader *section_reader )
 {
 	if( section_reader != this->active_subsection.get() )
 	{
-		pdsErrorLog << "Invalid parameter section_reader, it does not match the internal expected value." << pdsErrorLogEnd;
+		ctLogError << "Invalid parameter section_reader, it does not match the internal expected value." << ctLogEnd;
 		return false;
 	}
 
 	if( !end_read_large_block( this->sstream, this->active_subsection->end_position ) )
 	{
-		pdsErrorLog << "end_read_large_block failed unexpectedly, the stream is probably corrupted." << pdsErrorLogEnd;
+		ctLogError << "end_read_large_block failed unexpectedly, the stream is probably corrupted." << ctLogEnd;
 		return false;
 	}
 
@@ -620,7 +619,7 @@ std::tuple<EntityReader *, size_t, bool> EntityReader::BeginReadSectionsArray( c
 {
 	if( this->active_subsection )
 	{
-		pdsErrorLog << "There is already an active subsection." << pdsErrorLogEnd;
+		ctLogError << "There is already an active subsection." << ctLogEnd;
 		return std::tuple<EntityReader *, size_t, bool>( nullptr, 0, false );
 	}
 
@@ -628,7 +627,7 @@ std::tuple<EntityReader *, size_t, bool> EntityReader::BeginReadSectionsArray( c
 	const u64 end_of_section = begin_read_large_block( sstream, ValueType::VT_Array_Subsection, key, key_length );
 	if( end_of_section == 0 )
 	{
-		pdsErrorLog << "begin_read_large_block() failed unexpectedly, stream is probably corrupted" << pdsErrorLogEnd;
+		ctLogError << "begin_read_large_block() failed unexpectedly, stream is probably corrupted" << ctLogEnd;
 		return std::tuple<EntityReader *, size_t, bool>( nullptr, 0, false );
 	}
 	else if( end_of_section == sstream.GetPosition() )
@@ -657,17 +656,17 @@ bool EntityReader::BeginReadSectionInArray( const EntityReader *sections_array_r
 {
 	if( this->active_subsection.get() != sections_array_reader )
 	{
-		pdsErrorLog << "Synch error, currently not writing a subsection array" << pdsErrorLogEnd;
+		ctLogError << "Synch error, currently not writing a subsection array" << ctLogEnd;
 		return false;
 	}
 	if( ( this->active_subsection_index + 1 ) != section_index )
 	{
-		pdsErrorLog << "Synch error, incorrect subsection index" << pdsErrorLogEnd;
+		ctLogError << "Synch error, incorrect subsection index" << ctLogEnd;
 		return false;
 	}
 	if( section_index >= this->active_subsection_array_size )
 	{
-		pdsErrorLog << "Incorrect subsection index, out of array bounds" << pdsErrorLogEnd;
+		ctLogError << "Incorrect subsection index, out of array bounds" << ctLogEnd;
 		return false;
 	}
 
@@ -680,7 +679,7 @@ bool EntityReader::BeginReadSectionInArray( const EntityReader *sections_array_r
 		// make sure that the section size is not empty
 		if( section_size == 0 )
 		{
-			pdsErrorLog << "Section in array in stream is marked as null, but this is not allowed for the array it is read into" << pdsErrorLogEnd;
+			ctLogError << "Section in array in stream is marked as null, but this is not allowed for the array it is read into" << ctLogEnd;
 			return false;
 		}
 	}
@@ -696,7 +695,7 @@ bool EntityReader::EndReadSectionInArray( const EntityReader *sections_array_rea
 {
 	if( this->active_subsection.get() != sections_array_reader || this->active_subsection_index != section_index )
 	{
-		pdsErrorLog << "Synch error, currently not reading a subsection array, or incorrect section index" << pdsErrorLogEnd;
+		ctLogError << "Synch error, currently not reading a subsection array, or incorrect section index" << ctLogEnd;
 		return false;
 	}
 
@@ -704,7 +703,7 @@ bool EntityReader::EndReadSectionInArray( const EntityReader *sections_array_rea
 
 	if( end_pos != this->active_subsection_end_pos )
 	{
-		pdsErrorLog << "The current subsection did not end where expected" << pdsErrorLogEnd;
+		ctLogError << "The current subsection did not end where expected" << ctLogEnd;
 		return false;
 	}
 
@@ -715,18 +714,18 @@ bool EntityReader::EndReadSectionsArray( const EntityReader *sections_array_read
 {
 	if( this->active_subsection.get() != sections_array_reader )
 	{
-		pdsErrorLog << "Invalid parameter section_reader, it does not match the internal expected value." << pdsErrorLogEnd;
+		ctLogError << "Invalid parameter section_reader, it does not match the internal expected value." << ctLogEnd;
 		return false;
 	}
 	if( ( this->active_subsection_index + 1 ) != this->active_subsection_array_size )
 	{
-		pdsErrorLog << "Synch error, the subsection index does not equal the end of the array" << pdsErrorLogEnd;
+		ctLogError << "Synch error, the subsection index does not equal the end of the array" << ctLogEnd;
 		return false;
 	}
 
 	if( !end_read_large_block( this->sstream, this->active_subsection->end_position ) )
 	{
-		pdsErrorLog << "end_read_large_block failed unexpectedly, the stream is probably corrupted." << pdsErrorLogEnd;
+		ctLogError << "end_read_large_block failed unexpectedly, the stream is probably corrupted." << ctLogEnd;
 		return false;
 	}
 
@@ -737,6 +736,6 @@ bool EntityReader::EndReadSectionsArray( const EntityReader *sections_array_read
 	return true;
 }
 
-#endif//PDS_MAIN_BUILD_FILE
-
-};
+#include "_pds_undef_macros.inl"
+}
+// namespace pds

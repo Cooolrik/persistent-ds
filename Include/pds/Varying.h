@@ -4,7 +4,6 @@
 #pragma once
 
 #include "DynamicTypes.h"
-#include "ValueTypes.h"
 
 namespace pds
 {
@@ -51,34 +50,10 @@ public:
 	template<class _Ty> _Ty &Data();
 };
 
-class EntityWriter;
-class EntityReader;
-class EntityValidator;
-
-class Varying::MF
-{
-public:
-	static void Clear( Varying &obj );
-	static void DeepCopy( Varying &dest, const Varying *source );
-	static bool Equals( const Varying *lvar, const Varying *rvar );
-
-	static bool Write( const Varying &obj, EntityWriter &writer );
-	static bool Read( Varying &obj, EntityReader &reader );
-
-	static bool Validate( const Varying &obj, EntityValidator &validator );
-
-	// Method to set the type of the data in the varying object, either using a parameter, or as a template method
-	static bool SetType( Varying &obj, data_type_index dataType, container_type_index containerType );
-	template <class _Ty> static bool SetType( Varying &obj )
-	{
-		return SetType( obj, combined_type_information<_Ty>::type_index, combined_type_information<_Ty>::container_index );
-	}
-};
-
 template <class _Ty> _Ty &Varying::Initialize()
 {
 	bool success = this->Initialize( combined_type_information<_Ty>::type_index, combined_type_information<_Ty>::container_index );
-	pdsRuntimeCheck( success, Status::ENotInitialized, "Failed to initialize Varying object" );
+	//pdsRuntimeCheck( success, Status::ENotInitialized, "Failed to initialize Varying object" );
 	return *( (_Ty *)data_m );
 }
 
@@ -92,16 +67,16 @@ template<class _Ty> bool Varying::IsA() const noexcept
 // Retreive a reference to the data in the object
 template<class _Ty> const _Ty &Varying::Data() const
 {
-	pdsRuntimeCheck( this->IsInitialized(), Status::ENotInitialized, "Dereferencing non-initialized object" );
-	pdsRuntimeCheck( this->IsA<_Ty>(), Status::EInvalid, "Wrong type when dereferencing" );
+	//pdsRuntimeCheck( this->IsInitialized(), Status::ENotInitialized, "Dereferencing non-initialized object" );
+	//pdsRuntimeCheck( this->IsA<_Ty>(), Status::EInvalid, "Wrong type when dereferencing" );
 	return *( (const _Ty *)data_m );
 };
 
 // Retreive a reference to the data in the object
 template<class _Ty> _Ty &Varying::Data()
 {
-	pdsRuntimeCheck( this->IsInitialized(), Status::ENotInitialized, "Dereferencing non-initialized object" );
-	pdsRuntimeCheck( this->IsA<_Ty>(), Status::EInvalid, "Wrong type when dereferencing" );
+	//pdsRuntimeCheck( this->IsInitialized(), Status::ENotInitialized, "Dereferencing non-initialized object" );
+	//pdsRuntimeCheck( this->IsA<_Ty>(), Status::EInvalid, "Wrong type when dereferencing" );
 	return *( (_Ty *)data_m );
 };
 

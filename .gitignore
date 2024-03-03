@@ -31,3 +31,6 @@ x64
 /results_c++14
 /results_c++17
 /results_c++20
+/Include/pds/ElementTypes.h
+/Include/pds/ElementTypes.inl
+/Include/pds/ElementValuePointers.h

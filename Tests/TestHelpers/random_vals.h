@@ -5,8 +5,6 @@
 #include <vector>
 #include <set>
 
-#include <glm/glm.hpp>
-
 using namespace pds;
 
 const i64 global_random_seed = 12876123876;

@@ -3,11 +3,12 @@
 
 #include "Tests.h"
 
-#include <ctle/uuid.h>
-#include <pds/DirectedGraph.h>
+#include <pds/DirectedGraph_MF.h>
 #include <pds/EntityValidator.h>
-#include <pds/EntityWriter.inl>
-#include <pds/EntityReader.inl>
+#include <pds/EntityWriter.h>
+#include <pds/EntityReader.h>
+#include <pds/MemoryWriteStream.h>
+#include <pds/MemoryReadStream.h>
 
 #include "TestHelpers/structure_generation.h"
 
@@ -25,7 +26,7 @@ TEST( DirectedGraphTests, DirectedGraphBasicTest )
 	dg.Edges().emplace( 3, 1 );
 
 	EntityValidator validator;
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_EQ( validator.GetErrorCount(), uint( 0 ) );
 }
 
@@ -48,7 +49,7 @@ TEST( DirectedGraphTests, DirectedGraphItemRefTest )
 	dg.Edges().emplace( A, D );
 
 	EntityValidator validator;
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_EQ( validator.GetErrorCount(), uint( 1 ) ); // should report a cycle
 }
 
@@ -69,7 +70,7 @@ TEST( DirectedGraphTests, DirectedGraphDuplicateEdgesTest )
 
 	// make sure this is invalid
 	EntityValidator validator;
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_EQ( validator.GetErrorCount(), uint( 0 ) );
 }
 
@@ -85,7 +86,7 @@ TEST( DirectedGraphTests, DirectedGraphAcyclicTest )
 
 	// make sure this is valid
 	EntityValidator validator;
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_EQ( validator.GetErrorCount(), uint( 0 ) );
 
 	// now, insert a cycle into the tree
@@ -95,7 +96,7 @@ TEST( DirectedGraphTests, DirectedGraphAcyclicTest )
 
 	// make sure this is not valid anymore, and that the error is the cycle
 	validator.Clear();
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_NE( validator.GetErrorCount(), uint( 0 ) );
 	EXPECT_TRUE( validator.GetErrorIds() == ValidationError::InvalidSetup );
 }
@@ -112,7 +113,7 @@ TEST( DirectedGraphTests, DirectedGraphSingleRootTest )
 
 	// make sure this is valid
 	EntityValidator validator;
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_EQ( validator.GetErrorCount(), uint( 0 ) );
 
 	// now, insert a second root into the tree, by adding two random nodes
@@ -120,7 +121,7 @@ TEST( DirectedGraphTests, DirectedGraphSingleRootTest )
 
 	// make sure this is not valid anymore, and that the error is multiple roots
 	validator.Clear();
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_NE( validator.GetErrorCount(), uint( 0 ) );
 	EXPECT_TRUE( validator.GetErrorIds() == ValidationError::InvalidCount );
 }
@@ -144,7 +145,7 @@ TEST( DirectedGraphTests, DirectedGraphRootedTest )
 
 	// make sure this is valid
 	EntityValidator validator;
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_EQ( validator.GetErrorCount(), uint( 0 ) );
 
 	// now, remove the first root in the roots list
@@ -152,7 +153,7 @@ TEST( DirectedGraphTests, DirectedGraphRootedTest )
 
 	// make sure this is not valid anymore, and that the error the missing root node in the Roots list
 	validator.Clear();
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_NE( validator.GetErrorCount(), uint( 0 ) );
 	EXPECT_EQ( validator.GetErrorIds(), ( ValidationError::InvalidSetup | ValidationError::MissingObject ) );
 }
@@ -187,7 +188,7 @@ TEST( DirectedGraphTests, DirectedGraphSceneGraphTest )
 
 	// make sure this is valid (no cycles)
 	EntityValidator validator;
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_EQ( validator.GetErrorCount(), uint( 0 ) );
 
 	// add two new roots, insert a cycle (leaf node points at original root, which is no longer a root), dont add the new roots to the root list, and add two identical edges to the graph
@@ -198,7 +199,7 @@ TEST( DirectedGraphTests, DirectedGraphSceneGraphTest )
 
 	// make sure this is not valid anymore, and that the error the missing root node in the Roots list
 	validator.Clear();
-	Graph::MF::Validate( dg, validator );
+	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_NE( validator.GetErrorCount(), uint( 0 ) );
 	const u64 expected_error = (
 		ValidationError::InvalidSetup
@@ -226,7 +227,7 @@ void ReadWriteTest( MemoryWriteStream &ws, EntityWriter &ew )
 
 	// store to file
 	u64 start_pos = ws.GetPosition();
-	EXPECT_TRUE( Graph::MF::Write( dg, ew ) );
+	EXPECT_EQ( Graph::MF::Write( dg, ew ), status::ok );
 
 	// read from file
 	MemoryReadStream rs( ws.GetData(), ws.GetSize(), ws.GetFlipByteOrder() );
@@ -235,7 +236,7 @@ void ReadWriteTest( MemoryWriteStream &ws, EntityWriter &ew )
 
 	// read back the graph 
 	Graph readback_dg;
-	EXPECT_TRUE( Graph::MF::Read( readback_dg, er ) );
+	EXPECT_EQ( Graph::MF::Read( readback_dg, er ), status::ok );
 
 	// compare values
 	EXPECT_EQ( dg.Edges(), readback_dg.Edges() );

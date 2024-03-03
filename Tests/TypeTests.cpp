@@ -3,7 +3,16 @@
 
 #include "Tests.h"
 
-#include <pds/SHA256.h>
+using ctle::value_from_bigendian;
+using ctle::bigendian_from_value;
+using ctle::bytes_to_hex_string;
+using ctle::hex_string_to_bytes;
+using ctle::to_string;
+using ctle::value_to_hex_string;
+
+using ctle::swap_bytes;
+using ctle::swap_byte_order;
+
 TEST( TypeTests, StandardTypes )
 {
 	EXPECT_EQ( sizeof( u8 ), 1 );
@@ -72,7 +81,7 @@ TEST( TypeTests, HexStringFunctions )
 {
 	uuid uuidval = { 0xb2b1a2a178563412 , 0xc8c7c6c5c4c3c2c1 };
 	std::string expected_hexuuidval = "12345678-a1a2-b1b2-c1c2-c3c4c5c6c7c8";
-	EXPECT_EQ( value_to_hex_string( uuidval ), expected_hexuuidval );
+	EXPECT_EQ( to_string( uuidval ), expected_hexuuidval );
 
 	const u8 hashdata[32] = {
 		0xf6,0x48,0x54,0x2d,0xf8,0xcc,0xf2,0x1f,
@@ -83,7 +92,7 @@ TEST( TypeTests, HexStringFunctions )
 	hash hashval;
 	memcpy( &hashval, hashdata, 32 );
 	std::string expected_hexhashval = "f648542df8ccf21fd34e95f67df5f2b4f27272aa14f503090cc4766fe278c4b5";
-	EXPECT_EQ( value_to_hex_string( hashval ), expected_hexhashval );
+	EXPECT_EQ( to_string( hashval ), expected_hexhashval );
 
 	u8 u8val = 0x13;
 	std::string expected_hexu8 = "13";
@@ -131,7 +140,7 @@ TEST( TypeTests, SHA256Hashing )
 			0x48,0x2f,0x4a,0x33,0x06
 		};
 
-		SHA256::CalculateHash( sha, testdata, sizeof( testdata ) );
+		ctle::calculate_sha256_hash( sha, testdata, sizeof( testdata ) );
 
 		u8 expected_hash[32] = {
 			0xf6,0x48,0x54,0x2d,0xf8,0xcc,0xf2,0x1f,
@@ -140,7 +149,7 @@ TEST( TypeTests, SHA256Hashing )
 			0x0c,0xc4,0x76,0x6f,0xe2,0x78,0xc4,0xb5
 		};
 
-		EXPECT_EQ( memcmp( sha.digest, expected_hash, 32 ), 0 );
+		EXPECT_EQ( memcmp( sha.data, expected_hash, 32 ), 0 );
 	}
 }
 
@@ -198,18 +207,6 @@ TEST( TypeTests, Test_entity_ref )
 	EXPECT_EQ( ref, ref2 );
 	EXPECT_TRUE( !( ref != ref2 ) );
 	EXPECT_TRUE( !( ref2 < ref ) );
-}
-
-template<typename K, typename V>
-std::map<V, K> inverse_map( std::map<K, V> &map )
-{
-	std::map<V, K> inv;
-	std::for_each( map.begin(), map.end(),
-		[&inv]( const std::pair<K, V> &p )
-		{
-			inv.emplace( p.second, p.first );
-		} );
-	return inv;
 }
 
 // this tests the hash function, the less than operator and the equals operator
