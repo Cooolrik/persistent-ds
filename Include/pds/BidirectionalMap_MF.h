@@ -16,32 +16,34 @@ class BidirectionalMap<_Kty, _Vty, _Base>::MF
 	using _MgmCl = BidirectionalMap<_Kty, _Vty, _Base>;
 
 public:
-	static void Clear( _MgmCl &obj );
-	static void DeepCopy( _MgmCl &dest, const _MgmCl *source );
+	static status Clear( _MgmCl &obj );
+	static status DeepCopy( _MgmCl &dest, const _MgmCl *source );
 	static bool Equals( const _MgmCl *lval, const _MgmCl *rval );
 
-	static bool Write( const _MgmCl &obj, EntityWriter &writer );
-	static bool Read( _MgmCl &obj, EntityReader &reader );
+	static status Write( const _MgmCl &obj, EntityWriter &writer );
+	static status Read( _MgmCl &obj, EntityReader &reader );
 
-	static bool Validate( const _MgmCl &obj, EntityValidator &validator );
+	static status Validate( const _MgmCl &obj, EntityValidator &validator );
 
 	// support methods for validation
 	static bool ContainsKey( const _MgmCl &obj, const _Kty &key );
 };
 
 template<class _Kty, class _Vty, class _Base>
-void BidirectionalMap<_Kty, _Vty, _Base>::MF::Clear( _MgmCl &obj )
+status BidirectionalMap<_Kty, _Vty, _Base>::MF::Clear( _MgmCl &obj )
 {
 	obj.clear();
+	return status::ok;
 }
 
 template<class _Kty, class _Vty, class _Base>
-void BidirectionalMap<_Kty, _Vty, _Base>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
+status BidirectionalMap<_Kty, _Vty, _Base>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
 {
 	MF::Clear( dest );
 	if( !source )
-		return;
+		return status::ok;
 	dest = *source;
+	return status::ok;
 }
 
 template<class _Kty, class _Vty, class _Base>
@@ -62,7 +64,7 @@ bool BidirectionalMap<_Kty, _Vty, _Base>::MF::Equals( const _MgmCl *lval, const 
 }
 
 template<class _Kty, class _Vty, class _Base>
-bool BidirectionalMap<_Kty, _Vty, _Base>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
+status BidirectionalMap<_Kty, _Vty, _Base>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
 {
 	// enumerate all keys and values to two separate vectors
 	std::vector<_Kty> keys( obj.size() );
@@ -76,15 +78,15 @@ bool BidirectionalMap<_Kty, _Vty, _Base>::MF::Write( const _MgmCl &obj, EntityWr
 
 	// write vectors 
 	if( !writer.Write( pdsKeyMacro( "Keys" ), keys ) )
-		return false;
+		return status::cant_write;
 	if( !writer.Write( pdsKeyMacro( "Values" ), values ) )
-		return false;
+		return status::cant_write;
 
-	return true;
+	return status::ok;
 }
 
 template<class _Kty, class _Vty, class _Base>
-bool BidirectionalMap<_Kty, _Vty, _Base>::MF::Read( _MgmCl &obj, EntityReader &reader )
+status BidirectionalMap<_Kty, _Vty, _Base>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	obj.clear();
 
@@ -93,9 +95,9 @@ bool BidirectionalMap<_Kty, _Vty, _Base>::MF::Read( _MgmCl &obj, EntityReader &r
 
 	// read in vectors with keys and values
 	if( !reader.Read( pdsKeyMacro( "Keys" ), keys ) )
-		return false;
+		return status::cant_read;
 	if( !reader.Read( pdsKeyMacro( "Values" ), values ) )
-		return false;
+		return status::cant_read;
 
 	// insert into map
 	for( size_t index = 0; index < keys.size(); ++index )
@@ -103,13 +105,13 @@ bool BidirectionalMap<_Kty, _Vty, _Base>::MF::Read( _MgmCl &obj, EntityReader &r
 		obj.insert( keys[index], values[index] );
 	}
 
-	return true;
+	return status::ok;
 }
 
 template<class _Kty, class _Vty, class _Base>
-bool BidirectionalMap<_Kty, _Vty, _Base>::MF::Validate( const _MgmCl &/*obj*/, EntityValidator &/*validator*/ )
+status BidirectionalMap<_Kty, _Vty, _Base>::MF::Validate( const _MgmCl &/*obj*/, EntityValidator &/*validator*/ )
 {
-	return true;
+	return status::ok;
 }
 
 template<class _Kty, class _Vty, class _Base>

@@ -97,12 +97,14 @@ if(BUILD_PERSISTENT_DS_TESTS)
 
 		./Tests/Tests.cpp 
 		./Tests/HeaderLibraries.cpp 
+		./Tests/BidirectionalMapTests.cpp
 		./Tests/DirectedGraphTests.cpp
 		./Tests/DynamicTypesTests.cpp
 		./Tests/EntityReaderRandomTests.cpp
 		./Tests/EntityReadWriteTests.cpp
 		./Tests/EntityTests.cpp
 		./Tests/ItemTableTests.cpp
+		./Tests/IndexedVectorTests.cpp
 		./Tests/ReadWriteTests.cpp
 		./Tests/SectionHierarchyReadWriteTests.cpp
 		./Tests/TypeTests.cpp 

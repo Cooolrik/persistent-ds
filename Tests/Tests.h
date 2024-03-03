@@ -33,3 +33,16 @@ using namespace pds;
 
 // set this to a higher number to run more passes where the values are randomized
 const size_t global_number_of_passes = 1;
+
+// method which creates an inversed map, where the values of the original map points at the keys of the original map
+template<typename K, typename V>
+inline std::map<V, K> inverse_map( std::map<K, V> &map )
+{
+	std::map<V, K> inv;
+	std::for_each( map.begin(), map.end(),
+		[&inv]( const std::pair<K, V> &p )
+		{
+			inv.emplace( p.second, p.first );
+		} );
+	return inv;
+}

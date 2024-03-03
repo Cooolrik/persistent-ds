@@ -131,22 +131,22 @@ def CreateItemHeader(item: Item):
 		lines.append(f'    class {item.Name}::MF')
 		lines.append('        {')
 		lines.append('        public:')
-		lines.append(f'            static void Clear( {item.Name} &obj );')
-		lines.append(f'            static void DeepCopy( {item.Name} &dest, const {item.Name} *source );')
+		lines.append(f'            static status Clear( {item.Name} &obj );')
+		lines.append(f'            static status DeepCopy( {item.Name} &dest, const {item.Name} *source );')
 		lines.append(f'            static bool Equals( const {item.Name} *lvar, const {item.Name} *rvar );')
 		lines.append('')
-		lines.append(f'            static bool Write( const {item.Name} &obj, pds::EntityWriter &writer );')
-		lines.append(f'            static bool Read( {item.Name} &obj, pds::EntityReader &reader );')
+		lines.append(f'            static status Write( const {item.Name} &obj, pds::EntityWriter &writer );')
+		lines.append(f'            static status Read( {item.Name} &obj, pds::EntityReader &reader );')
 		lines.append('')
-		lines.append(f'            static bool Validate( const {item.Name} &obj, pds::EntityValidator &validator );')
+		lines.append(f'            static status Validate( const {item.Name} &obj, pds::EntityValidator &validator );')
 		lines.append('')
 		if item.IsEntity:
 			lines.append(f'            static const {item.Name} *EntitySafeCast( const pds::Entity *srcEnt );')
 			lines.append(f'            static std::shared_ptr<const {item.Name}> EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt );')
 			lines.append('')
 		if item.IsModifiedFromPreviousVersion:
-			lines.append(f'            static bool ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &source );')
-			lines.append(f'            static bool FromPrevious( {item.Name} &dest , const {item.PreviousVersion.Version.Name}::{item.Name} &source );')
+			lines.append(f'            static status ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &source );')
+			lines.append(f'            static status FromPrevious( {item.Name} &dest , const {item.PreviousVersion.Version.Name}::{item.Name} &source );')
 			lines.append('')
 		lines.append('        };')
 		lines.append('')
@@ -197,7 +197,7 @@ def ImplementClearCall(item,var):
 			lines.append(f'        obj.v_{var.Name} = {{}};')
 		else:
 			# clear through the MF::Clear method of the type
-			lines.append(f'        {var.Type}::MF::Clear( obj.v_{var.Name} );')
+			lines.append(f'        ctStatusCall({var.Type}::MF::Clear( obj.v_{var.Name} ));')
 
 	return lines
 
@@ -218,14 +218,14 @@ def ImplementDeepCopyCall(item,var):
 			lines.append(f'        if( source->v_{var.Name}.has_value() )')
 			lines.append('            {')
 			lines.append(f'            dest.v_{var.Name}.set();')
-			lines.append(f'            {var.Type}::MF::DeepCopy( dest.v_{var.Name}.value() , &(source->v_{var.Name}.value()) );')
+			lines.append(f'            ctStatusCall( {var.Type}::MF::DeepCopy( dest.v_{var.Name}.value() , &(source->v_{var.Name}.value()) ));')
 			lines.append('            }')
 			lines.append(f'        else')
 			lines.append('            {')
 			lines.append(f'            dest.v_{var.Name}.reset();')			
 			lines.append('            }')
 		else:
-			lines.append(f'        {var.Type}::MF::DeepCopy( dest.v_{var.Name} , &(source->v_{var.Name}) );')
+			lines.append(f'        ctStatusCall( {var.Type}::MF::DeepCopy( dest.v_{var.Name} , &(source->v_{var.Name} ) ));')
 
 	return lines
 
@@ -264,23 +264,21 @@ def ImplementWriterCall(item,var):
 		lines.append(f'        // write variable "{var.Name}"')
 		lines.append(f'        success = writer.Write<{var.TypeString}>( pdsKeyMacro("{var.Name}") , obj.v_{var.Name} );')
 		lines.append(f'        if( !success )')
-		lines.append(f'            return false;')
+		lines.append(f'            return status::cant_write;')
 		lines.append('')
 	else:
 		# not a base type, so an item. add a block
 		lines.append(f'        // write section "{var.Name}"')
 		lines.append(f'        success = (section_writer = writer.BeginWriteSection( pdsKeyMacro("{var.Name}") ));')
 		lines.append('        if( !success )')
-		lines.append('            return false;')
+		lines.append('            return status::cant_write;')
 		if var.Optional:
 			lines.append(f'        if( obj.v_{var.Name}.has_value() )')
 			lines.append('            {')
-			lines.append(f'            if( !{item.Name}::{var.Type}::MF::Write( obj.v_{var.Name}.value(), *section_writer ) )')
-			lines.append('                return false;')
+			lines.append(f'            ctStatusCall( {item.Name}::{var.Type}::MF::Write( obj.v_{var.Name}.value(), *section_writer ) );')
 			lines.append('            }')
 		else:
-			lines.append(f'        if( !{item.Name}::{var.Type}::MF::Write( obj.v_{var.Name}, *section_writer ) )')
-			lines.append('            return false;')
+			lines.append(f'        ctStatusCall( {item.Name}::{var.Type}::MF::Write( obj.v_{var.Name}, *section_writer ) );')
 		lines.append('        writer.EndWriteSection( section_writer );')
 		lines.append('        section_writer = nullptr;')
 		lines.append('')
@@ -301,22 +299,21 @@ def ImplementReaderCall(item,var):
 		lines.append(f'        // read variable "{var.Name}"')
 		lines.append(f'        success = reader.Read<{var.TypeString}>( pdsKeyMacro("{var.Name}") , obj.v_{var.Name} );')
 		lines.append(f'        if( !success )')
-		lines.append(f'            return false;')
+		lines.append(f'            return status::cant_read;')
 		lines.append('')
 	else:
 		# not a base type, so an item. add a block
 		lines.append(f'        // read section "{var.Name}"')
 		lines.append(f'        std::tie(section_reader,success) = reader.BeginReadSection( pdsKeyMacro("{var.Name}") , {value_can_be_null} );')
 		lines.append('        if( !success )')
-		lines.append('            return false;')
+		lines.append('            return status::cant_read;')
 		lines.append('        if( section_reader )')
 		lines.append('            {')
 		if var.Optional:
 			lines.append(f'            obj.v_{var.Name}.set();')
-			lines.append(f'            if( !{item.Name}::{var.Type}::MF::Read( obj.v_{var.Name}.value(), *section_reader ) )')
+			lines.append(f'            ctStatusCall( {item.Name}::{var.Type}::MF::Read( obj.v_{var.Name}.value(), *section_reader ) );')
 		else:
-			lines.append(f'            if( !{item.Name}::{var.Type}::MF::Read( obj.v_{var.Name}, *section_reader ) )')
-		lines.append('                return false;')
+			lines.append(f'            ctStatusCall( {item.Name}::{var.Type}::MF::Read( obj.v_{var.Name}, *section_reader ) );')
 		lines.append('            reader.EndReadSection( section_reader );')
 		lines.append('            section_reader = nullptr;')
 		lines.append('            }')
@@ -337,14 +334,10 @@ def ImplementVariableValidatorCall(item,var):
 		if var.Optional:
 			lines.append(f'        if( obj.v_{var.Name}.has_value() )')
 			lines.append('            {')
-			lines.append(f'            success = {var.Type}::MF::Validate( obj.v_{var.Name}.value() , validator );')
-			lines.append('            if( !success )')
-			lines.append('                return false;')
+			lines.append(f'            ctStatusCall( {var.Type}::MF::Validate( obj.v_{var.Name}.value() , validator ) );')
 			lines.append('            }')
 		else:
-			lines.append(f'        success = {var.Type}::MF::Validate( obj.v_{var.Name} , validator );')
-			lines.append('        if( !success )')
-			lines.append('            return false;')
+			lines.append(f'        ctStatusCall( {var.Type}::MF::Validate( obj.v_{var.Name} , validator ) );')
 		lines.append('')
 
 	return lines
@@ -377,9 +370,7 @@ def ImplementToPreviousCall(item:Item , mapping:Mapping):
 
 	if type(mapping) is RenamedVariable: # renamed or same variable, copy to the previous name in the dest
 		if base_type is None:
-			lines.append(f'        success = {variable.Type}::MF::Copy( dest.{mapping.PreviousName}() , obj.v_{variable.Name} );')
-			lines.append('        if( !success )')
-			lines.append('            return false;')
+			lines.append(f'        ctStatusCall( {variable.Type}::MF::Copy( dest.{mapping.PreviousName}() , obj.v_{variable.Name} ) );')
 		else:
 			lines.append(f'        dest.{mapping.PreviousName}() = obj.v_{variable.Name};')
 
@@ -413,9 +404,7 @@ def ImplementFromPreviousCall(item:Item , mapping:Mapping):
 
 	if type(mapping) is RenamedVariable: # renamed or same variable, copy to the previous name in the dest
 		if base_type is None:
-			lines.append(f'        success = {variable.Type}::MF::Copy( obj.v_{variable.Name} , src.{mapping.PreviousName}() );')
-			lines.append('        if( !success )')
-			lines.append('            return false;')
+			lines.append(f'        ctStatusCall( {variable.Type}::MF::Copy( obj.v_{variable.Name} , src.{mapping.PreviousName}() ) );')
 		else:
 			lines.append(f'        obj.v_{variable.Name} = src.{mapping.PreviousName}();')
 
@@ -474,25 +463,27 @@ def CreateItemSource(item):
 			break
 	
 	# clear code
-	lines.append(f'    void {item.Name}::MF::Clear( {item.Name} &obj )')
+	lines.append(f'    status {item.Name}::MF::Clear( {item.Name} &obj )')
 	lines.append('        {')
 	lines.append('        // direct clear calls on variables and Entities')
 	for var in item.Variables:
 		lines.extend(ImplementClearCall(item,var))
+	lines.append('        return status::ok;')
 	lines.append('        }')
 	lines.append('')
 
 	# deep copy code
-	lines.append(f'    void {item.Name}::MF::DeepCopy( {item.Name} &dest, const {item.Name} *source )')
+	lines.append(f'    status {item.Name}::MF::DeepCopy( {item.Name} &dest, const {item.Name} *source )')
 	lines.append('        {')
 	lines.append('        // just call Clear if source is nullptr')
 	lines.append('        if( !source )')
 	lines.append('            {')
-	lines.append('            MF::Clear( dest );')
-	lines.append('            return;')
+	lines.append('            ctStatusCall( MF::Clear( dest ) );')
+	lines.append('        	  return status::ok;')
 	lines.append('            }')
 	for var in item.Variables:
 		lines.extend(ImplementDeepCopyCall(item,var))
+	lines.append('        return status::ok;')
 	lines.append('        }')
 	lines.append('')
 
@@ -514,7 +505,7 @@ def CreateItemSource(item):
 	lines.append('')
 
 	# writer code
-	lines.append(f'    bool {item.Name}::MF::Write( const {item.Name} &obj, pds::EntityWriter &writer )')
+	lines.append(f'    status {item.Name}::MF::Write( const {item.Name} &obj, pds::EntityWriter &writer )')
 	lines.append('        {')
 	lines.append('        bool success = true;')
 	if vars_have_item:
@@ -522,12 +513,12 @@ def CreateItemSource(item):
 	lines.append('')
 	for var in item.Variables:
 		lines.extend(ImplementWriterCall(item,var))
-	lines.append('        return true;')
+	lines.append('        return status::ok;')
 	lines.append('        }')
 	lines.append('')
 	
 	# reader code
-	lines.append(f'    bool {item.Name}::MF::Read( {item.Name} &obj, pds::EntityReader &reader )')
+	lines.append(f'    status {item.Name}::MF::Read( {item.Name} &obj, pds::EntityReader &reader )')
 	lines.append('        {')
 	lines.append('        bool success = true;')
 	if vars_have_item:
@@ -535,7 +526,7 @@ def CreateItemSource(item):
 	lines.append('')
 	for var in item.Variables:
 		lines.extend(ImplementReaderCall(item,var))
-	lines.append('        return true;')
+	lines.append('        return status::ok;')
 	lines.append('        }')
 	lines.append('')
 
@@ -550,18 +541,17 @@ def CreateItemSource(item):
 	# if we have validation lines, setup the support code else use empty call
 	if len(validation_lines) > 0:
 		# validator code
-		lines.append(f'    bool {item.Name}::MF::Validate( const {item.Name} &obj, pds::EntityValidator &validator )')
+		lines.append(f'    status {item.Name}::MF::Validate( const {item.Name} &obj, pds::EntityValidator &validator )')
 		lines.append('        {')
-		lines.append('        bool success = {};')
 		lines.append('')
 		lines.extend( validation_lines )
 		lines.append('')
 	else:
-		lines.append(f'    bool {item.Name}::MF::Validate( const {item.Name} &/*obj*/, pds::EntityValidator &/*validator*/ )')
+		lines.append(f'    status {item.Name}::MF::Validate( const {item.Name} &/*obj*/, pds::EntityValidator &/*validator*/ )')
 		lines.append('        {')
-		lines.append('        // no validation defined in this class, just return true')
+		lines.append('        // no validation defined in this class, just return ok')
 
-	lines.append('        return true;')
+	lines.append('        return status::ok;')
 	lines.append('        }')
 	lines.append('')
 
@@ -588,24 +578,22 @@ def CreateItemSource(item):
 
 	# modified item code
 	if item.IsModifiedFromPreviousVersion:
-		lines.append(f'    bool {item.Name}::MF::ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &obj )')
+		lines.append(f'    status {item.Name}::MF::ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &obj )')
 		lines.append('        {')
-		lines.append('        bool success = {};')
 		lines.append('')			
 		for mapping in item.Mappings:
 			lines.extend(ImplementToPreviousCall(item,mapping))	
 		lines.append('')			
-		lines.append('        return success;')
+		lines.append('        return status::ok;')
 		lines.append('        }')
 		lines.append('')
-		lines.append(f'    bool {item.Name}::MF::FromPrevious( {item.Name} &obj , const {item.PreviousVersion.Version.Name}::{item.Name} &src )')
+		lines.append(f'    status {item.Name}::MF::FromPrevious( {item.Name} &obj , const {item.PreviousVersion.Version.Name}::{item.Name} &src )')
 		lines.append('        {')
-		lines.append('        bool success = {};')
 		lines.append('')			
 		for mapping in item.Mappings:
 			lines.extend(ImplementFromPreviousCall(item,mapping))	
 		lines.append('')			
-		lines.append('        return success;')
+		lines.append('        return status::ok;')
 		lines.append('        }')
 
 	lines.append('}')

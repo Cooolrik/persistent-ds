@@ -434,7 +434,8 @@ def ListPackageHeaderDefines():
 	for bit_size in int_bit_range:
 		lines.append(f"\tusing pds::u{bit_size};")
 	lines.append('')
-
+	lines.append(f"\tusing ctle::status;")
+	lines.append('')
 	lines.append(f"\t// ids, hashes and strings")
 	lines.append(f"\tusing pds::uuid;")
 	lines.append(f"\tusing pds::hash;")

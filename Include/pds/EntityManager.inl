@@ -135,7 +135,7 @@ status EntityManager::ReadTask( EntityManager *pThis, const entity_ref ref )
 	}
 
 	// create the file name and path from the hash
-	const std::string fileName = value_to_hex_string( hash( ref ) ) + ".dat";
+	const std::string fileName = to_string( hash( ref ) ) + ".dat";
 	const std::string filePath = pThis->Path + "/" + fileName;
 
 	std::vector<u8> allocation;
@@ -276,7 +276,7 @@ std::pair<entity_ref, status> EntityManager::WriteTask( EntityManager *pThis, st
 	const u64 totalBytesToWrite = wstream.GetSize();
 
 	// create the file name and path from the hash
-	const std::string fileName = value_to_hex_string( digest ) + ".dat";
+	const std::string fileName = to_string( digest ) + ".dat";
 	const std::string filePath = pThis->Path + "/" + fileName;
 
 	// if the file does not exist, create and write it

@@ -20,29 +20,31 @@ class IndexedVector<_Ty, _Base>::MF
 	using _MgmCl = IndexedVector<_Ty, _Base>;
 
 public:
-	static void Clear( _MgmCl &obj );
-	static void DeepCopy( _MgmCl &dest, const _MgmCl *source );
+	static status Clear( _MgmCl &obj );
+	static status DeepCopy( _MgmCl &dest, const _MgmCl *source );
 	static bool Equals( const _MgmCl *lval, const _MgmCl *rval );
 
-	static bool Write( const _MgmCl &obj, EntityWriter &writer );
-	static bool Read( _MgmCl &obj, EntityReader &reader );
+	static status Write( const _MgmCl &obj, EntityWriter &writer );
+	static status Read( _MgmCl &obj, EntityReader &reader );
 
-	static bool Validate( const _MgmCl &obj, EntityValidator &validator );
+	static status Validate( const _MgmCl &obj, EntityValidator &validator );
 };
 
 template<class _Ty, class _Base>
-void IndexedVector<_Ty, _Base>::MF::Clear( _MgmCl &obj )
+status IndexedVector<_Ty, _Base>::MF::Clear( _MgmCl &obj )
 {
 	obj.clear();
+	return status::ok;
 }
 
 template<class _Ty, class _Base>
-void IndexedVector<_Ty, _Base>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
+status IndexedVector<_Ty, _Base>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
 {
 	MF::Clear( dest );
 	if( !source )
-		return;
+		return status::ok;
 	dest = *source;
+	return status::ok;
 }
 
 template<class _Ty, class _Base>
@@ -63,25 +65,25 @@ bool IndexedVector<_Ty, _Base>::MF::Equals( const _MgmCl *lval, const _MgmCl *rv
 }
 
 template<class _Ty, class _Base>
-bool IndexedVector<_Ty, _Base>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
+status IndexedVector<_Ty, _Base>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
 {
 	const IndexedVector<_Ty, _Base>::base_type &_obj = obj;
 	if( !writer.Write( pdsKeyMacro( "Values" ), _obj ) )
-		return false;
-	return true;
+		return status::cant_write;
+	return status::ok;
 }
 
 template<class _Ty, class _Base>
-bool IndexedVector<_Ty, _Base>::MF::Read( _MgmCl &obj, EntityReader &reader )
+status IndexedVector<_Ty, _Base>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	IndexedVector<_Ty, _Base>::base_type &_obj = obj;
 	if( !reader.Read( pdsKeyMacro( "Values" ), _obj ) )
-		return false;
-	return true;
+		return status::cant_read;
+	return status::ok;
 }
 
 template<class _Ty, class _Base>
-bool IndexedVector<_Ty, _Base>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
+status IndexedVector<_Ty, _Base>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
 {
 	if( obj.values().size() > (size_t)i32_sup )
 	{
@@ -98,7 +100,7 @@ bool IndexedVector<_Ty, _Base>::MF::Validate( const _MgmCl &obj, EntityValidator
 		}
 	}
 
-	return true;
+	return status::ok;
 }
 
 

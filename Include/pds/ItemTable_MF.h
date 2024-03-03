@@ -21,14 +21,14 @@ class ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF
 	using _MgmCl = ItemTable<_Kty, _Ty, _Flags, _MapTy>;
 
 public:
-	static void Clear( _MgmCl &obj );
-	static void DeepCopy( _MgmCl &dest, const _MgmCl *source );
+	static status Clear( _MgmCl &obj );
+	static status DeepCopy( _MgmCl &dest, const _MgmCl *source );
 	static bool Equals( const _MgmCl *lval, const _MgmCl *rval );
 
-	static bool Write( const _MgmCl &obj, EntityWriter &writer );
-	static bool Read( _MgmCl &obj, EntityReader &reader );
+	static status Write( const _MgmCl &obj, EntityWriter &writer );
+	static status Read( _MgmCl &obj, EntityReader &reader );
 
-	static bool Validate( const _MgmCl &obj, EntityValidator &validator );
+	static status Validate( const _MgmCl &obj, EntityValidator &validator );
 
 	// additional validation with external data
 	template<class _Table> static bool ValidateAllKeysAreContainedInTable( const _MgmCl &obj, EntityValidator &validator, const _Table &otherTable, const char *otherTableName );
@@ -38,23 +38,25 @@ public:
 };
 
 template<class _Kty, class _Ty, uint _Flags, class _MapTy>
-void ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Clear( _MgmCl &obj )
+status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Clear( _MgmCl &obj )
 {
 	obj.v_Entries.clear();
+	return status::ok;
 }
 
 template<class _Kty, class _Ty, uint _Flags, class _MapTy>
-void ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
+status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
 {
 	MF::Clear( dest );
 	if( !source )
-		return;
+		return status::ok;
 
 	for( const auto &ent : source->v_Entries )
 	{
 		// make a new copy of the value, if original is not nullptr
 		dest.v_Entries.emplace( ent.first, std::unique_ptr<_Ty>( ( ent.second ) ? new _Ty( *ent.second ) : nullptr ) );
 	}
+	return status::ok;
 }
 
 template<class _Kty, class _Ty, uint _Flags, class _MapTy>
@@ -105,7 +107,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Equals( const _MgmCl *lval, const
 
 
 template<class _Kty, class _Ty, uint _Flags, class _MapTy>
-bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
+status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
 {
 	// collect the keys into a vector, and store in stream as an array
 	std::vector<_Kty> keys( obj.v_Entries.size() );
@@ -115,13 +117,13 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, EntityW
 		keys[index] = it->first;
 	}
 	if( !writer.Write( pdsKeyMacro( "IDs" ), keys ) )
-		return false;
+		return status::cant_write;
 	keys.clear();
 
 	// create a sections array for the entities
 	EntityWriter *section_writer = writer.BeginWriteSectionsArray( pdsKeyMacro( "Entities" ), obj.v_Entries.size() );
 	if( !section_writer )
-		return false;
+		return status::cant_write;
 
 	// write out all the entities as an array
 	// for each non-empty entity, call the write method of the entity
@@ -129,14 +131,13 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, EntityW
 	for( auto it = obj.v_Entries.begin(); it != obj.v_Entries.end(); ++it, ++index )
 	{
 		if( !writer.BeginWriteSectionInArray( section_writer, index ) )
-			return false;
+			return status::cant_write;
 		if( it->second )
 		{
-			if( !_Ty::MF::Write( *( it->second ), *( section_writer ) ) )
-				return false;
+			ctStatusCall( _Ty::MF::Write( *( it->second ), *( section_writer ) ) );
 		}
 		if( !writer.EndWriteSectionInArray( section_writer, index ) )
-			return false;
+			return status::cant_write;
 	}
 
 	// sanity check, make sure all sections were written
@@ -144,13 +145,13 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, EntityW
 
 	// end the Entries sections array
 	if( !writer.EndWriteSectionsArray( section_writer ) )
-		return false;
+		return status::cant_write;
 
-	return true;
+	return status::ok;
 }
 
 template<class _Kty, class _Ty, uint _Flags, class _MapTy>
-bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
+status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	EntityReader *section_reader = {};
 	size_t map_size = {};
@@ -160,17 +161,17 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &
 	// read in the keys as a vector
 	std::vector<_Kty> keys;
 	if( !reader.Read( pdsKeyMacro( "IDs" ), keys ) )
-		return false;
+		return status::cant_read;
 
 	// begin the named sections array
 	std::tie( section_reader, map_size, success ) = reader.BeginReadSectionsArray( pdsKeyMacro( "Entities" ), false );
 	if( !success )
-		return false;
+		return status::cant_read;
 	ctSanityCheck( section_reader );
 	if( map_size != keys.size() )
 	{
 		ctLogError << "Invalid size in ItemTable, the Keys and Entities arrays do not match in size." << ctLogEnd;
-		return false;
+		return status::corrupted;
 	}
 
 	// read in all the entities, push into map as key-value pairs
@@ -179,7 +180,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &
 	{
 		bool has_data = false;
 		if( !reader.BeginReadSectionInArray( section_reader, index, &has_data ) )
-			return false;
+			return status::cant_read;
 
 		if( has_data )
 			std::tie( it, success ) = obj.v_Entries.emplace( keys[index], std::make_unique<_Ty>() );
@@ -189,28 +190,27 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &
 		if( !success )
 		{
 			ctLogError << "Failed inserting key-value pair in ItemTable" << ctLogEnd;
-			return false;
+			return status::cant_read;
 		}
 
 		if( it->second )
 		{
-			if( !_Ty::MF::Read( *( it->second ), *( section_reader ) ) )
-				return false;
+			ctStatusCall( _Ty::MF::Read( *( it->second ), *( section_reader ) ) );
 		}
 
 		if( !reader.EndReadSectionInArray( section_reader, index ) )
-			return false;
+			return status::cant_read;
 	}
 
 	// end the sections array
 	if( !reader.EndReadSectionsArray( section_reader ) )
-		return false;
+		return status::cant_read;
 
-	return true;
+	return status::ok;
 }
 
 template<class _Kty, class _Ty, uint _Flags, class _MapTy>
-bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
+status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
 {
 	// check if a zero key exists in the dictionary
 	if( _MgmCl::type_no_zero_keys )
@@ -226,8 +226,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, Enti
 		// check value
 		if( it->second )
 		{
-			if( !_Ty::MF::Validate( *( it->second ), validator ) )
-				return false;
+			ctStatusCall(_Ty::MF::Validate( *( it->second ), validator ) );
 		}
 		else if( _MgmCl::type_no_null_entities )
 		{
@@ -236,7 +235,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, Enti
 		}
 	}
 
-	return true;
+	return status::ok;
 }
 
 template<class _Kty, class _Ty, uint _Flags, class _MapTy>

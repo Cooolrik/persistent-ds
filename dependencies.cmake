@@ -35,6 +35,6 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		picosha2 
 		googletest 
 		)
-	
+
 endif() #BUILD_PERSISTENT_DS_TESTS
 

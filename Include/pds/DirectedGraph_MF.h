@@ -29,12 +29,12 @@ class DirectedGraph<_Ty, _Flags, _SetTy>::MF
 	static void ValidateRooted( const std::set<_Ty> &roots, const std::set<_Ty> &downstream_nodes, const _MgmCl::set_type &edges, EntityValidator &validator );
 
 public:
-	static void Clear( _MgmCl &obj );
-	static void DeepCopy( _MgmCl &dest, const _MgmCl *source );
+	static status Clear( _MgmCl &obj );
+	static status DeepCopy( _MgmCl &dest, const _MgmCl *source );
 	static bool Equals( const _MgmCl *lval, const _MgmCl *rval );
-	static bool Write( const _MgmCl &obj, EntityWriter &writer );
-	static bool Read( _MgmCl &obj, EntityReader &reader );
-	static bool Validate( const _MgmCl &obj, EntityValidator &validator );
+	static status Write( const _MgmCl &obj, EntityWriter &writer );
+	static status Read( _MgmCl &obj, EntityReader &reader );
+	static status Validate( const _MgmCl &obj, EntityValidator &validator );
 
 	// additional validation with external data
 	template<class _Table> static bool ValidateAllKeysAreContainedInTable( const _MgmCl &obj, EntityValidator &validator, const _Table &otherTable, const char *otherTableName );
@@ -47,24 +47,26 @@ inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::set_contains( const std::set
 }
 
 template<class _Ty, uint _Flags, class _SetTy>
-inline void DirectedGraph<_Ty, _Flags, _SetTy>::MF::Clear( _MgmCl &obj )
+inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Clear( _MgmCl &obj )
 {
 	obj.v_Roots.clear();
 	obj.v_Edges.clear();
+	return status::ok;
 }
 
 template<class _Ty, uint _Flags, class _SetTy>
-inline void DirectedGraph<_Ty, _Flags, _SetTy>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
+inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
 {
 	if( !source )
 	{
 		MF::Clear( dest );
-		return;
+		return status::ok;
 	}
 
 	// replace contents
 	dest.v_Roots = std::set<_Ty>( source->v_Roots.begin(), source->v_Roots.end() );
 	dest.v_Edges = set_type( source->v_Edges.begin(), source->v_Edges.end() );
+	return status::ok;
 }
 
 template<class _Ty, uint _Flags, class _SetTy>
@@ -110,12 +112,12 @@ inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Equals( const _MgmCl *lval, 
 }
 
 template<class _Ty, uint _Flags, class _SetTy>
-inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
+inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
 {
 	// store the roots 
 	std::vector<_Ty> roots( obj.v_Roots.begin(), obj.v_Roots.end() );
 	if( !writer.Write( pdsKeyMacro( "Roots" ), roots ) )
-		return false;
+		return status::cant_write;
 
 	// collect the keys-value pairs into a vector and store as an array
 	std::vector<_Ty> graph_pairs( obj.v_Edges.size() * 2 );
@@ -126,29 +128,29 @@ inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Write( const _MgmCl &obj, En
 		graph_pairs[index * 2 + 1] = it->second;
 	}
 	if( !writer.Write( pdsKeyMacro( "Edges" ), graph_pairs ) )
-		return false;
+		return status::cant_write;
 
 	// sanity check, make sure all sections were written
 	ctSanityCheck( index == obj.v_Edges.size() );
 
-	return true;
+	return status::ok;
 }
 
 template<class _Ty, uint _Flags, class _SetTy>
-inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
+inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	size_t map_size = {};
 
 	// read the roots 
 	std::vector<_Ty> roots;
 	if( !reader.Read( pdsKeyMacro( "Roots" ), roots ) )
-		return false;
+		return status::cant_read;
 	obj.v_Roots = std::set<_Ty>( roots.begin(), roots.end() );
 
 	// read in the graph pairs
 	std::vector<_Ty> graph_pairs;
 	if( !reader.Read( pdsKeyMacro( "Edges" ), graph_pairs ) )
-		return false;
+		return status::cant_read;
 
 	// insert into map
 	obj.v_Edges.clear();
@@ -158,7 +160,7 @@ inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Read( _MgmCl &obj, EntityRea
 		obj.InsertEdge( graph_pairs[index * 2 + 0], graph_pairs[index * 2 + 1] );
 	}
 
-	return true;
+	return status::ok;
 }
 
 template<class _Ty, uint _Flags, class _SetTy>
@@ -290,7 +292,7 @@ inline void DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateRooted( const std::s
 }
 
 template<class _Ty, uint _Flags, class _SetTy>
-inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
+inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
 {
 	// make a set of all nodes with incoming edges
 	std::set<_Ty> downstream_nodes;
@@ -360,7 +362,7 @@ inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &obj,
 		ValidateNoCycles( obj.v_Edges, validator );
 	}
 
-	return true;
+	return status::ok;
 }
 
 
