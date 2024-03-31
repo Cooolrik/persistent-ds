@@ -35,7 +35,10 @@ private:
 	template <class T> u64 ReadValues( T *dest, u64 count );
 
 public:
-	MemoryReadStream( const void *_Data, u64 _DataSize, bool _FlipByteOrder = false ) : Data( (u8 *)_Data ), DataSize( _DataSize ), FlipByteOrder( _FlipByteOrder )
+	MemoryReadStream( const void *_Data, u64 _DataSize, bool _FlipByteOrder = false ) 
+		: Data( (u8 *)_Data )
+		, DataSize( _DataSize )
+		, FlipByteOrder( _FlipByteOrder ) 
 	{};
 
 	// get the Size of the stream in bytes

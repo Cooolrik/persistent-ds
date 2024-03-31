@@ -12,6 +12,7 @@
 namespace pds
 {
 
+// IndexedVector implements an indexed vector, default based on the idx_vector from ctle.
 
 template <class _Ty, class _Base = idx_vector<_Ty> >
 class IndexedVector : public _Base
