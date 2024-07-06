@@ -24,7 +24,7 @@ endmacro()
 
 # generate the generated pds code
 execute_process( 
-	COMMAND 			${PYTHON_EXECUTABLE} CodeGenerator.py
+	COMMAND 			${PYTHON_EXECUTABLE} CodeGenerator.py ${ctle_SOURCE_DIR}
 	WORKING_DIRECTORY 	${CMAKE_CURRENT_LIST_DIR}/CodeGen
 	RESULT_VARIABLE 	py_result
 )

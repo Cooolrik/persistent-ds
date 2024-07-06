@@ -55,6 +55,6 @@ TestPackA = Package( "TestPackA",
 		] 
 	)
 
-hlp.run_module('PackageGenerator', TestPackA, "Latest" )
+hlp.run_module('PackageGenerator.PackageGenerator', TestPackA, "Latest" )
 
 

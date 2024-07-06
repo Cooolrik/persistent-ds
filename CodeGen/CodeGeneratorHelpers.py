@@ -5,6 +5,13 @@ import copy
 import os
 from stat import S_IRUSR, S_IRGRP, S_IROTH, S_IWUSR
 import importlib
+from pathlib import Path
+import shutil
+
+int_bit_range = [8,16,32,64]
+float_type_range = ['float','double']
+vector_dimension_range = [2,3,4] 
+nonconst_const_range = ['','const ']
 
 class BaseType:
 	def __init__(self,name,variants):
@@ -169,9 +176,29 @@ def generate_pop_warnings( comment = 're-enable warnings again' ):
 	lines.append('#endif')
 	return lines
 
+def import_ctle_code_gen( ctle_path:str = '../build/_deps/ctle-src' ):
+	if not (Path.cwd() / 'ctle_code_gen').exists():
+		
+		if ctle_path == '':
+			ctle_path = Path.cwd() / '../build/_deps/ctle-src'
+		else:
+			ctle_path = Path(ctle_path)
+			if not ctle_path.is_absolute():
+				ctle_path = Path.cwd() / ctle_path
+		
+		ctle_code_gen_path = ctle_path / 'ctle_code_gen'
+		
+		if ctle_code_gen_path.exists():
+			print( f'Copying {ctle_code_gen_path} to local ctle_code_gen copy.')
+			shutil.copytree(ctle_code_gen_path, 'ctle_code_gen', dirs_exist_ok=True)
+		else:
+			print( f'Error: the ctle code gen path: {ctle_code_gen_path} does not exist. Cannot continue' )
+			exit(-1)
+	
+
 def run_module( name , *args ):
 	print('Running: ' + name )
-	importlib.import_module('Generators.' + name ).run( *args )
+	importlib.import_module( name ).run( *args )
 	print('')
 
 def write_lines_to_file( path , lines ):

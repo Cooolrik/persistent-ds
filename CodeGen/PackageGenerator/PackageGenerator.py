@@ -4,182 +4,14 @@
 from EntitiesHelpers import * 
 import os
 import CodeGeneratorHelpers as hlp
+from CodeGeneratorHelpers import int_bit_range, float_type_range, vector_dimension_range, nonconst_const_range
+from ctle_code_gen.formatted_output import formatted_output
+
+from .ItemHeader import CreateItemHeader
+from .MFHeader import CreateMFHeader
 
 from ctypes import c_ulonglong 
 from ctypes import c_ubyte
-
-def CreateItemHeader(item: Item):
-	packageName = item.Package.Name
-	versionName = item.Version.Name
-
-	lines = []
-	lines.extend( hlp.generate_header() )
-	lines.append('')
-	lines.append('#pragma once')
-	lines.append('')
-	lines.append(f'#include "../pdsImportsAndDefines.h"')
-
-	# is this an alias of a previous version?
-	if item.IdenticalToPreviousVersion:
-		previousVersionName = item.PreviousVersion.Version.Name
-
-		# if this is just an alias, define a using and reference back to the actual entity
-		lines.append(f'#include "../{previousVersionName}/{previousVersionName}_{item.Name}.h"')
-		lines.append('')
-		lines.append(f'namespace {packageName}')
-		lines.append('{')
-		lines.append(f'namespace {versionName}')
-		lines.append('{')
-		lines.append(f'// {item.Name} is identical to the previous version {previousVersionName}')
-		lines.append(f'using {item.Name} = {previousVersionName}::{item.Name};')
-		lines.append('}')
-		lines.append(f'// namespace {versionName}')
-		lines.append('}')		
-		lines.append(f'// namespace {packageName}')
-		
-	else:
-		# not an alias, defined the whole class
-		if item.IsModifiedFromPreviousVersion:
-			previousVersionName = item.PreviousVersion.Version.Name
-			lines.append(f'#include "../{previousVersionName}/{previousVersionName}_{item.Name}.h"')
-		
-		# list dependences that needs to be included in the header
-		for dep in item.Dependencies:
-			if dep.IncludeInHeader:
-				if dep.PDSType:
-					lines.append(f'#include <pds/{dep.Name}_MF.h>')
-				else:
-					lines.append(f'#include "{versionName}_{dep.Name}.h"')				
-
-		lines.append('')
-		lines.append(f'namespace {packageName}')
-		lines.append('{')
-		lines.append(f'namespace {versionName}')
-		lines.append('{')
-
-		# list dependences that only needs a forward reference in the header
-		for dep in item.Dependencies:
-			if not dep.IncludeInHeader:
-				lines.append(f'    class {dep.Name};')
-
-		if item.IsEntity:
-			lines.append(f'    class {item.Name} : public pds::Entity')
-		else:
-			lines.append(f'    class {item.Name}')
-		lines.append('        {')
-		lines.append('        public:')
-
-		# list typedefs of templates
-		if len(item.Templates) > 0:
-			for typ in item.Templates:
-				lines.append(typ.Declaration)
-			lines.append('')
-
-		lines.append('            class MF;')
-		lines.append('            friend MF;')
-		lines.append('')
-		lines.append(f'            static constexpr const char *ItemTypeString = "{packageName}.{versionName}.{item.Name}";')
-		lines.append('')
-		
-		if item.IsEntity:
-			lines.append(f'            virtual const char *EntityTypeString() const;')
-			lines.append('')
-
-		lines.append(f'            {item.Name}() = default;')
-		lines.append(f'            {item.Name}( const {item.Name} &rval );')
-		lines.append(f'            {item.Name} &operator=( const {item.Name} &rval );')
-		lines.append(f'            {item.Name}( {item.Name} &&rval ) = default;')
-		lines.append(f'            {item.Name} &operator=( {item.Name} &&rval ) = default;')
-		if item.IsEntity:
-			lines.append(f'            virtual ~{item.Name}() = default;')
-		else:
-			lines.append(f'            ~{item.Name}() = default;')
-		lines.append('')
-
-		lines.append('            // value compare operators')
-		lines.append(f'            bool operator==( const {item.Name} &rval ) const;')
-		lines.append(f'            bool operator!=( const {item.Name} &rval ) const;')
-		lines.append('')
-
-		lines.append('        protected:')
-		
-		# list variables in item
-		for var in item.Variables:
-			if var.IsSimpleBaseType:
-				lines.append(f'            {var.TypeString} v_{var.Name} = {{}};')
-			else:
-				lines.append(f'            {var.TypeString} v_{var.Name};')
-
-		lines.append('')
-		lines.append('        public:')
-
-		# create accessor ref for variables, const and non-const versions
-		for var in item.Variables:
-			lines.append(f'            // accessor for referencing variable {var.Name}')
-			lines.append(f'            const {var.TypeString} & {var.Name}() const {{ return this->v_{var.Name}; }}')
-			lines.append(f'            {var.TypeString} & {var.Name}() {{ return this->v_{var.Name}; }}')
-			lines.append('')
-
-		lines.append('        };')
-
-		lines.append('')
-		lines.append('    class EntityWriter;')
-		lines.append('    class EntityReader;')
-		lines.append('    class EntityValidator;')
-
-		lines.append('')
-		lines.append(f'    class {item.Name}::MF')
-		lines.append('        {')
-		lines.append('        public:')
-		lines.append(f'            static status Clear( {item.Name} &obj );')
-		lines.append(f'            static status DeepCopy( {item.Name} &dest, const {item.Name} *source );')
-		lines.append(f'            static bool Equals( const {item.Name} *lvar, const {item.Name} *rvar );')
-		lines.append('')
-		lines.append(f'            static status Write( const {item.Name} &obj, pds::EntityWriter &writer );')
-		lines.append(f'            static status Read( {item.Name} &obj, pds::EntityReader &reader );')
-		lines.append('')
-		lines.append(f'            static status Validate( const {item.Name} &obj, pds::EntityValidator &validator );')
-		lines.append('')
-		if item.IsEntity:
-			lines.append(f'            static const {item.Name} *EntitySafeCast( const pds::Entity *srcEnt );')
-			lines.append(f'            static std::shared_ptr<const {item.Name}> EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt );')
-			lines.append('')
-		if item.IsModifiedFromPreviousVersion:
-			lines.append(f'            static status ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &source );')
-			lines.append(f'            static status FromPrevious( {item.Name} &dest , const {item.PreviousVersion.Version.Name}::{item.Name} &source );')
-			lines.append('')
-		lines.append('        };')
-		lines.append('')
-		
-		# ctors and copy operator code
-		lines.append(f'    inline {item.Name}::{item.Name}( const {item.Name} &rval )')
-		lines.append('        {')
-		lines.append('        MF::DeepCopy( *this , &rval );')
-		lines.append('        }')
-		lines.append('')
-		lines.append(f'    inline {item.Name} &{item.Name}::operator=( const {item.Name} &rval )')
-		lines.append('        {')
-		lines.append('        MF::DeepCopy( *this , &rval );')
-		lines.append('        return *this;')
-		lines.append('        }')
-		lines.append('')
-		lines.append(f'    inline bool {item.Name}::operator==( const {item.Name} &rval ) const')
-		lines.append('        {')
-		lines.append('        return MF::Equals( this, &rval );')
-		lines.append('        }')
-		lines.append('')
-		lines.append(f'    inline bool {item.Name}::operator!=( const {item.Name} &rval ) const')
-		lines.append('        {')
-		lines.append('        return !(MF::Equals( this, &rval ));')
-		lines.append('        }')
-		lines.append('')
-
-		lines.append('}')
-		lines.append(f'// namespace {versionName}')
-		lines.append('}')		
-		lines.append(f'// namespace {packageName}')
-  
-	hlp.write_lines_to_file(f"{item.Package.Path}/{versionName}/{versionName}_{item.Name}.h",lines)
 
 def ImplementClearCall(item,var):
 	lines = []
@@ -830,8 +662,102 @@ def CreatePackageHandler_inl( package: Package ):
 	lines.append('#include <pds/_pds_undef_macros.inl>')
 	hlp.write_lines_to_file(f"{package.Path}/{packageName}PackageHandler.inl",lines)
 
+# used by CreatePackageHeader to list all needed defines in pds
+def ListPackageHeaderDefines():
+	lines = []
 
-from .ElementTypes import ListPackageHeaderDefines
+	# typedef base integer types
+	lines.append(f"\t// scalar types")
+	for bit_size in int_bit_range:
+		lines.append(f"\tusing pds::i{bit_size};")
+	for bit_size in int_bit_range:
+		lines.append(f"\tusing pds::u{bit_size};")
+	lines.append('')
+	lines.append(f"\tusing ctle::status;")
+	lines.append('')
+	lines.append(f"\t// ids, hashes and strings")
+	lines.append(f"\tusing pds::uuid;")
+	lines.append(f"\tusing pds::hash;")
+	lines.append('\tusing std::string;')
+	lines.append('')
+
+	lines.append(f"\t// container types")
+	lines.append('\tusing std::vector;')
+	lines.append('\tusing ctle::idx_vector;')
+	lines.append('\tusing ctle::optional_idx_vector;')
+	lines.append('\tusing ctle::optional_value;')
+	lines.append('\tusing ctle::optional_vector;')
+	lines.append('')
+
+	# typedef vector types
+	lines.append(f"\t// vector types")
+	for bit_size in int_bit_range:
+		for vec_dim in vector_dimension_range:
+			lines.append(f"\tusing pds::i{bit_size}vec{vec_dim};")
+	lines.append('')
+	for bit_size in int_bit_range:
+		for vec_dim in vector_dimension_range:
+			lines.append(f"\tusing pds::u{bit_size}vec{vec_dim};")
+	lines.append('')
+	for vec_dim in vector_dimension_range:
+		lines.append(f"\tusing pds::fvec{vec_dim};")
+	for vec_dim in vector_dimension_range:
+		lines.append(f"\tusing pds::dvec{vec_dim};")
+	lines.append('')
+	
+	# typedef matrix types
+	lines.append(f"\t// matrix types")
+	for vec_dim in vector_dimension_range:
+		lines.append(f"\tusing pds::fmat{vec_dim};")
+	for vec_dim in vector_dimension_range:
+		lines.append(f"\tusing pds::dmat{vec_dim};")
+	lines.append('')
+
+	# typedef quaternions
+	lines.append(f"\t// quaternion types")
+	lines.append(f"\tusing pds::fquat;")
+	lines.append(f"\tusing pds::dquat;")
+	lines.append('')
+
+	# typedef standard types
+	lines.append(f"\t// standard types from glm")
+	for vec_dim in vector_dimension_range:
+		lines.append(f"\tusing pds::ivec{vec_dim};")
+	for vec_dim in vector_dimension_range:
+		lines.append(f"\tusing pds::uvec{vec_dim};")
+	for vec_dim in vector_dimension_range:
+		lines.append(f"\tusing pds::vec{vec_dim};")
+	for vec_dim in vector_dimension_range:
+		lines.append(f"\tusing pds::mat{vec_dim};")
+	lines.append('')
+
+	# inline entity_ref and item_ref
+	lines.append(f"\tusing pds::entity_ref;")
+	lines.append(f"\tusing pds::item_ref;")
+	lines.append('')
+
+	# enum of all data types
+	lines.append('\t// value type index enums')
+	lines.append('\tusing pds::data_type_index;')
+	lines.append('')
+
+	# standard PDS data classes
+	lines.append('\t// data classes')
+	lines.append('\tusing pds::IndexedVector;')
+	lines.append('\tusing pds::ItemTable;')
+	lines.append('\tusing pds::Varying;')
+	lines.append('\tusing pds::DirectedGraph;')
+	lines.append('\tusing pds::BidirectionalMap;')
+	lines.append('')
+
+	# type information on all types
+	lines.append('\t// type information templates')
+	lines.append('\ttemplate <class _Ty> using data_type_information = pds::data_type_information<_Ty>;')
+	lines.append('\ttemplate <class _Ty> using combined_type_information = pds::combined_type_information<_Ty>;')
+	
+	# might not need, wait with defining this one
+	#lines.append('\ttemplate <class _Ty> using clear_combined_type = pds::clear_combined_type<_Ty>;')
+	return lines
 
 # create a header for the package, which has all needed references and definitions
 def CreatePackageHeader( package ):
@@ -853,11 +779,11 @@ def CreatePackageHeader( package ):
 		
 	lines.append('')
 	lines.append(f'namespace {packageName}')
-	lines.append('\t{')
+	lines.append('{')
 	lines.extend( ListPackageHeaderDefines() )
 	lines.append('')
 	lines.append('\tconst pds::EntityManager::PackageRecord *GetPackageRecord();')
-	lines.append('\t};')
+	lines.append('}')
 
 	hlp.write_lines_to_file(f"{package.Path}/pdsImportsAndDefines.h",lines)
 
@@ -982,6 +908,7 @@ def run( package: Package, defaultVersion:str = None ):
 		for item in version.Items:
 			if not item.IsDeleted:
 				CreateItemHeader( item )
+				CreateMFHeader( item )
 				CreateItemSource( item )
 	
 	FindAndCreateDefaultVersionReferencesAndHeaders( package, defaultVersion )
