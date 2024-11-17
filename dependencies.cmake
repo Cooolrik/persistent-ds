@@ -16,13 +16,6 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		GIT_TAG		   main # (latest)
 	)
 
-	# picosha2 
-	FetchContent_Declare( 
-		picosha2
-		GIT_REPOSITORY https://github.com/okdshin/PicoSHA2.git
-		GIT_TAG		   27fcf6979298949e8a462e16d09a0351c18fcaf2 # (2022 Aug 08)
-	)
-	
 	# googletest
 	FetchContent_Declare(
 		googletest
@@ -32,7 +25,6 @@ if(BUILD_PERSISTENT_DS_TESTS)
 
 	FetchContent_MakeAvailable( 
 		ctle 
-		picosha2 
 		googletest 
 		)
 

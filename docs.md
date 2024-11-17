@@ -1,5 +1,5 @@
+
 # Persistent Data Store - A breif documentation
-A persistent data structure framework in C++
 
 ## Object types and descriptions
 
@@ -26,22 +26,13 @@ There are a number of item types already available in pds to ease the creation o
  - DirectedGraph: DirectedGraph keeps a directed graph, using a pair of key values, with frist -> second. The graph can optionally be kept acyclic (DAG), be rooted (where a separate list keeps track of the roots of the graph), and can also have a single root.
  - ItemTable: Implements an unordered_map which can map items using e.g. an item_ref or a uint
  - Varying: Used to store a varying type, which is not fixed at compile time.
-
-### Custom types
-Some data does not work well or at all with the pds structure. Examples are data which is stored in a specific file format, which would lose information if read into a pds-structure (e.g. lossy compressed data like jpeg, data with undocumented formatting, "blind data" which should only be passed on, or data which requires exact reproduction when stored) or data which is too big to be read into memory, and need out-of-core access. 
-
- - OpaqueBinaryBlob: Binary data which is stored verbatim. The original file name of the data can optionally be stored as well.
-
+ 
 ## Dependencies
 - ctle (C++ Template Library Extensions)
 - google test
 - Python 3.11+
 
 ## Generation
-Pds uses code generation extensively for generating and updating objects. In most cases, adding custom items works without any modifications, but in some cases, the generation code needs to be modified. The code used ctle's generation code.
-
-## License
-persistent-ds Copyright (c) Ulrik Lindahl
-Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
+Pds uses code generation extensively for generating and updating objects. In most cases, adding custom items works without any modifications, but in some cases, the generation code needs to be modified. The  
 
 
