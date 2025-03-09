@@ -1,7 +1,7 @@
 from EntitiesHelpers import * 
 import os
 import CodeGeneratorHelpers as hlp
-from CodeGeneratorHelpers import int_bit_range, float_type_range, vector_dimension_range, nonconst_const_range
+from CodeGeneratorHelpers import int_bit_range, vector_dimension_range, nonconst_const_range
 from ctle_code_gen.formatted_output import formatted_output
 
 from ctypes import c_ulonglong 

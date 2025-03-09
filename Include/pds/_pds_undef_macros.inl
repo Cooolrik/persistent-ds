@@ -22,7 +22,7 @@
 #endif//_PDS_MACROS_INCLUDED
 #undef _PDS_MACROS_INCLUDED
 
-// include the ctle _undef_macros.inl macro definitions, which we also use in pds
+// include the ctle _undef_macros.inl which undefs the used ctle macro definitions
 #include <ctle/_undef_macros.inl>
 
 #undef pdsValidationError

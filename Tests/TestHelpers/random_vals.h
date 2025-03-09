@@ -1,9 +1,8 @@
 
-#include <pds/ValueTypes.h>
+#include <pds/value_types.h>
 
-#include <string>
-#include <vector>
 #include <set>
+#include <time.h>
 
 using namespace pds;
 
@@ -25,13 +24,19 @@ inline double double_rand() { return double(u64_rand()); }
 
 inline ctle::uuid uuid_rand() 
 	{ 
-	const ctle::uuid id = {u64_rand(),u64_rand()};
+	ctle::uuid id;
+	id._data_q[0] = u64_rand();
+	id._data_q[1] = u64_rand();
 	return id;
 	}
 
 inline hash hash_rand() 
 	{ 
-	const hash hsh = {u64_rand(),u64_rand(),u64_rand(),u64_rand()};
+	hash hsh;
+	hsh._data_q[0] = u64_rand();
+	hsh._data_q[1] = u64_rand();
+	hsh._data_q[2] = u64_rand();
+	hsh._data_q[3] = u64_rand();
 	return hsh;
 	}
 

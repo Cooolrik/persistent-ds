@@ -73,15 +73,15 @@ status Varying::MF::Write( const Varying &obj, EntityWriter &writer )
 	ctValidate( obj.IsInitialized(), status::not_initialized ) << "Cannot write uninitialized Varying to stream. Use optional_value template for optional Varying data." << ctValidateEnd;
 
 	// store the data type index
-	if( !writer.Write( pdsKeyMacro( "Type" ), (u16)obj.type_m ) )
+	if( !writer.Write( pdsKeyMacro( Type ), (u16)obj.type_m ) )
 		return status::cant_write;
 
 	// store the container type index
-	if( !writer.Write( pdsKeyMacro( "ContainerType" ), (u16)obj.container_type_m ) )
+	if( !writer.Write( pdsKeyMacro( ContainerType ), (u16)obj.container_type_m ) )
 		return status::cant_write;
 
 	// store the data
-	if( !dynamic_types::write( obj.type_m, obj.container_type_m, pdsKeyMacro( "Data" ), writer, obj.data_m ) )
+	if( !dynamic_types::write( obj.type_m, obj.container_type_m, pdsKeyMacro( Data ), writer, obj.data_m ) )
 		return status::cant_write;
 
 	return status::ok;
@@ -96,11 +96,11 @@ status Varying::MF::Read( Varying &obj, EntityReader &reader )
 	u16 container_type_u16 = {};
 
 	// load the data type index
-	if( !reader.Read( pdsKeyMacro( "Type" ), type_u16 ) )
+	if( !reader.Read( pdsKeyMacro( Type ), type_u16 ) )
 		return status::cant_read;
 
 	// load the container type index
-	if( !reader.Read( pdsKeyMacro( "ContainerType" ), container_type_u16 ) )
+	if( !reader.Read( pdsKeyMacro( ContainerType ), container_type_u16 ) )
 		return status::cant_read;
 
 	// set the data type
@@ -108,7 +108,7 @@ status Varying::MF::Read( Varying &obj, EntityReader &reader )
 		return status::cant_read;
 
 	// store the data
-	if( !dynamic_types::read( obj.type_m, obj.container_type_m, pdsKeyMacro( "Data" ), reader, obj.data_m ) )
+	if( !dynamic_types::read( obj.type_m, obj.container_type_m, pdsKeyMacro( Data ), reader, obj.data_m ) )
 		return status::cant_read;
 
 	return status::ok;

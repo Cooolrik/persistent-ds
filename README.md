@@ -3,11 +3,14 @@ A persistent data structure framework in C++
 
 ## Object types and descriptions
 
-### Elemental types
-Elemental types are base types, which are serialized to and from storage. Pds supports scalars, 2D-4D vectors, 2x2-4x4 matrices, strings, hashes and uuids. There are also references to other Entites (see Entity below) and Items (see Item below). The elemental types are defined in [ElementTypes.h](./Include/pds/ElementTypes.h).
+### Element types
+Element types are base types, which are serialized to and from storage. Pds supports scalars, 2D-4D vectors, 2x2-4x4 matrices, strings, hashes and uuids. There are also references to other Entites (see Entity below) and Items (see Item below). The elemental types are defined in [ElementTypes.h](./Include/pds/ElementTypes.h).
+
+### Container types
+Container types are a few types (optinal value, vector, indexed vector) which, when combined with an element type becomes the value types.
 
 ### Value type
-Value types are the basic values of Items (see Item below), and can be either Elemental types or a combination of an elemental type and a container. Currently, pds supports std::vector, ctle::idx_vector (vector extended with an addition index vector), as well as optional variants of these containers. (Note that pds supports all C++ versions from C++14, and therefore does not use the std::optional template). The value types are defined in [ValueTypes.h](./Include/pds/ValueTypes.h).
+Value types are the basic values of Items (see Item below), and can be either Element types or a combination of an element type and a container. Currently, pds supports std::vector, ctle::idx_vector (vector extended with an addition index vector), as well as optional variants of these containers. (Note that pds supports all C++ versions from C++14, and therefore does not use the std::optional template). The value types are defined in [ValueTypes.h](./Include/pds/ValueTypes.h).
 
 ### Item
 An item is a class in the persistent data structure. An Item class contains information which is serialized with the Item. Note that Items in pds do not inherit a specific base class, and *any* class can be an Item, as long as it implements needed methods for item serialization and other management (see MF).
@@ -33,9 +36,15 @@ Some data does not work well or at all with the pds structure. Examples are data
  - OpaqueBinaryBlob: Binary data which is stored verbatim. The original file name of the data can optionally be stored as well.
 
 ## Dependencies
+
+### Main library
 - ctle (C++ Template Library Extensions)
-- google test
+
+### For generation
 - Python 3.11+
+
+### For testing
+- google test
 
 ## Generation
 Pds uses code generation extensively for generating and updating objects. In most cases, adding custom items works without any modifications, but in some cases, the generation code needs to be modified. The code used ctle's generation code.

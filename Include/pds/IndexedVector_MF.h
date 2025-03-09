@@ -68,7 +68,7 @@ template<class _Ty, class _Base>
 status IndexedVector<_Ty, _Base>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
 {
 	const IndexedVector<_Ty, _Base>::base_type &_obj = obj;
-	if( !writer.Write( pdsKeyMacro( "Values" ), _obj ) )
+	if( !writer.Write( pdsKeyMacro( Values ), _obj ) )
 		return status::cant_write;
 	return status::ok;
 }
@@ -77,7 +77,7 @@ template<class _Ty, class _Base>
 status IndexedVector<_Ty, _Base>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	IndexedVector<_Ty, _Base>::base_type &_obj = obj;
-	if( !reader.Read( pdsKeyMacro( "Values" ), _obj ) )
+	if( !reader.Read( pdsKeyMacro( Values ), _obj ) )
 		return status::cant_read;
 	return status::ok;
 }

@@ -4,7 +4,7 @@
 from EntitiesHelpers import * 
 import os
 import CodeGeneratorHelpers as hlp
-from CodeGeneratorHelpers import int_bit_range, float_type_range, vector_dimension_range, nonconst_const_range
+from CodeGeneratorHelpers import int_bit_range, vector_dimension_range
 from ctle_code_gen.formatted_output import formatted_output
 
 from .ItemHeader import CreateItemHeader
@@ -94,14 +94,14 @@ def ImplementWriterCall(item,var):
 	if var.IsBaseType:
 		# we have a base type, add the write code directly
 		lines.append(f'        // write variable "{var.Name}"')
-		lines.append(f'        success = writer.Write<{var.TypeString}>( pdsKeyMacro("{var.Name}") , obj.v_{var.Name} );')
+		lines.append(f'        success = writer.Write<{var.TypeString}>( pdsKeyMacro({var.Name}) , obj.v_{var.Name} );')
 		lines.append(f'        if( !success )')
 		lines.append(f'            return status::cant_write;')
 		lines.append('')
 	else:
 		# not a base type, so an item. add a block
 		lines.append(f'        // write section "{var.Name}"')
-		lines.append(f'        success = (section_writer = writer.BeginWriteSection( pdsKeyMacro("{var.Name}") ));')
+		lines.append(f'        success = (section_writer = writer.BeginWriteSection( pdsKeyMacro({var.Name}) ));')
 		lines.append('        if( !success )')
 		lines.append('            return status::cant_write;')
 		if var.Optional:
@@ -129,14 +129,14 @@ def ImplementReaderCall(item,var):
 	if var.IsBaseType:
 		# we have a base type, add the read code directly
 		lines.append(f'        // read variable "{var.Name}"')
-		lines.append(f'        success = reader.Read<{var.TypeString}>( pdsKeyMacro("{var.Name}") , obj.v_{var.Name} );')
+		lines.append(f'        success = reader.Read<{var.TypeString}>( pdsKeyMacro({var.Name}) , obj.v_{var.Name} );')
 		lines.append(f'        if( !success )')
 		lines.append(f'            return status::cant_read;')
 		lines.append('')
 	else:
 		# not a base type, so an item. add a block
 		lines.append(f'        // read section "{var.Name}"')
-		lines.append(f'        std::tie(section_reader,success) = reader.BeginReadSection( pdsKeyMacro("{var.Name}") , {value_can_be_null} );')
+		lines.append(f'        std::tie(section_reader,success) = reader.BeginReadSection( pdsKeyMacro({var.Name}) , {value_can_be_null} );')
 		lines.append('        if( !success )')
 		lines.append('            return status::cant_read;')
 		lines.append('        if( section_reader )')

@@ -116,12 +116,12 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, Entit
 	{
 		keys[index] = it->first;
 	}
-	if( !writer.Write( pdsKeyMacro( "IDs" ), keys ) )
+	if( !writer.Write( pdsKeyMacro( IDs ), keys ) )
 		return status::cant_write;
 	keys.clear();
 
 	// create a sections array for the entities
-	EntityWriter *section_writer = writer.BeginWriteSectionsArray( pdsKeyMacro( "Entities" ), obj.v_Entries.size() );
+	EntityWriter *section_writer = writer.BeginWriteSectionsArray( pdsKeyMacro( Entities ), obj.v_Entries.size() );
 	if( !section_writer )
 		return status::cant_write;
 
@@ -160,11 +160,11 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader
 
 	// read in the keys as a vector
 	std::vector<_Kty> keys;
-	if( !reader.Read( pdsKeyMacro( "IDs" ), keys ) )
+	if( !reader.Read( pdsKeyMacro( IDs ), keys ) )
 		return status::cant_read;
 
 	// begin the named sections array
-	std::tie( section_reader, map_size, success ) = reader.BeginReadSectionsArray( pdsKeyMacro( "Entities" ), false );
+	std::tie( section_reader, map_size, success ) = reader.BeginReadSectionsArray( pdsKeyMacro( Entities ), false );
 	if( !success )
 		return status::cant_read;
 	ctSanityCheck( section_reader );

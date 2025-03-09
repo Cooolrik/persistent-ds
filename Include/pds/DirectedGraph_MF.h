@@ -116,7 +116,7 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Write( const _MgmCl &obj, 
 {
 	// store the roots 
 	std::vector<_Ty> roots( obj.v_Roots.begin(), obj.v_Roots.end() );
-	if( !writer.Write( pdsKeyMacro( "Roots" ), roots ) )
+	if( !writer.Write( pdsKeyMacro( Roots ), roots ) )
 		return status::cant_write;
 
 	// collect the keys-value pairs into a vector and store as an array
@@ -127,7 +127,7 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Write( const _MgmCl &obj, 
 		graph_pairs[index * 2 + 0] = it->first;
 		graph_pairs[index * 2 + 1] = it->second;
 	}
-	if( !writer.Write( pdsKeyMacro( "Edges" ), graph_pairs ) )
+	if( !writer.Write( pdsKeyMacro( Edges ), graph_pairs ) )
 		return status::cant_write;
 
 	// sanity check, make sure all sections were written
@@ -143,13 +143,13 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Read( _MgmCl &obj, EntityR
 
 	// read the roots 
 	std::vector<_Ty> roots;
-	if( !reader.Read( pdsKeyMacro( "Roots" ), roots ) )
+	if( !reader.Read( pdsKeyMacro( Roots ), roots ) )
 		return status::cant_read;
 	obj.v_Roots = std::set<_Ty>( roots.begin(), roots.end() );
 
 	// read in the graph pairs
 	std::vector<_Ty> graph_pairs;
-	if( !reader.Read( pdsKeyMacro( "Edges" ), graph_pairs ) )
+	if( !reader.Read( pdsKeyMacro( Edges ), graph_pairs ) )
 		return status::cant_read;
 
 	// insert into map

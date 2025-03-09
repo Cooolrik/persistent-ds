@@ -8,7 +8,7 @@
 namespace pds
 {
 
-// Entity is base for all entities (atomic objects in the graph, which ows all values within the object)
+// Entity is base for all entities (atomic objects, which owns all values within the object, and is serialized in one go)
 class Entity
 {
 public:

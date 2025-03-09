@@ -2,10 +2,16 @@
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
 #pragma once
+#ifndef __PDS__READER_TEMPLATES_H__
+#define __PDS__READER_TEMPLATES_H__
 
-#include <pds/ElementValuePointers.h>
+#include <ctle/log.h>
 
-// value_type: the ValueType enum to read the block as
+#include "fileops_common.h"
+#include "element_value_ptrs.h"
+#include "ReadStream.h"
+
+// value_type: the serialization_type_index enum to read the block as
 // object_type: the C++ object that stores the data (can be a basic type), such as u32, or glm::vec3
 // item_type: the actual basic type that stores the data, int the case of glm::vec3, it is a float
 // item_count: the count of the the basic type, again in the case of glm::vec3, the count is 3
@@ -24,7 +30,7 @@ enum class reader_status
 // read the header of a large block
 // returns the stream position of the expected end of the block, to validate the read position
 // a stream position of 0 is not possible, and indicates error
-inline u64 begin_read_large_block( MemoryReadStream &sstream, ValueType VT, const char *key, const u8 key_size_in_bytes )
+inline u64 begin_read_large_block( ReadStream &sstream, serialization_type_index VT, const char *key, const u8 key_size_in_bytes )
 {
 	ctSanityCheck( key_size_in_bytes <= EntityMaxKeyLength ); // max key length
 
@@ -72,20 +78,20 @@ inline u64 begin_read_large_block( MemoryReadStream &sstream, ValueType VT, cons
 }
 
 // ends the block, write the size of the block
-inline bool end_read_large_block( MemoryReadStream &sstream, u64 expected_end_pos )
+inline bool end_read_large_block( ReadStream &sstream, u64 expected_end_pos )
 {
 	const u64 end_pos = sstream.GetPosition();
 	return ( end_pos == expected_end_pos ); // make sure we have read in the full block
 }
 
-// template method that Reads a small block of a specific ValueType VT to the stream. Since most value types 
+// template method that Reads a small block of a specific serialization_type_index VT to the stream. Since most value types 
 // can have different bit depths, the second parameter I is the actual type of the data stored. The data can have more than one values of type I, the count is stored in IC.
-template<ValueType VT, class T> inline reader_status read_single_item( MemoryReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, T *dest_data )
+template<serialization_type_index VT, class T> inline reader_status read_single_item( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, T *dest_data )
 {
-	static_assert( ( VT >= ValueType::VT_Bool ) && ( VT <= ValueType::VT_Hash ), "Invalid type for generic template of read_single_item" );
+	static_assert( ( VT >= serialization_type_index::vt_bool ) && ( VT <= serialization_type_index::vt_hash ), "Invalid type for generic template of read_single_item" );
 
-	const u64 value_size = sizeof( typename data_type_information<T>::value_type );
-	const u64 value_count = data_type_information<T>::value_count;
+	const u64 value_size = sizeof( typename element_type_information<T>::value_type );
+	const u64 value_count = element_type_information<T>::value_count;
 
 	// record start position, for validation
 	const u64 start_pos = sstream.GetPosition();
@@ -170,10 +176,10 @@ template<ValueType VT, class T> inline reader_status read_single_item( MemoryRea
 };
 
 // special implementation of read_small_block for bool values, which reads a u8 and converts to bool
-template<> inline reader_status read_single_item<ValueType::VT_Bool, bool>( MemoryReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, bool *dest_data )
+template<> inline reader_status read_single_item<serialization_type_index::vt_bool, bool>( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, bool *dest_data )
 {
 	u8 u8val;
-	reader_status status = read_single_item<ValueType::VT_Bool, u8>( sstream, key, key_size_in_bytes, empty_value_is_allowed, &u8val );
+	reader_status status = read_single_item<serialization_type_index::vt_bool, u8>( sstream, key, key_size_in_bytes, empty_value_is_allowed, &u8val );
 	if( status != reader_status::fail )
 	{
 		( *dest_data ) = (bool)u8val;
@@ -181,16 +187,16 @@ template<> inline reader_status read_single_item<ValueType::VT_Bool, bool>( Memo
 	return status;
 };
 
-// template method that Reads a small block of a specific ValueType VT to the stream. Since most value types 
+// template method that Reads a small block of a specific serialization_type_index VT to the stream. Since most value types 
 // can have different bit depths, the second parameter I is the actual type of the data stored. The data can have more than one values of type I, the count is stored in IC.
-template<> inline reader_status read_single_item<ValueType::VT_String, string>( MemoryReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, string *dest_data )
+template<> inline reader_status read_single_item<serialization_type_index::vt_string, string>( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, string *dest_data )
 {
 	static_assert( sizeof( u64 ) == sizeof( size_t ), "Unsupported size_t, current code requires it to be 8 bytes in size, equal to u64" );
 
 	ctSanityCheck( dest_data );
 
 	// read block header
-	const u64 expected_end_position = begin_read_large_block( sstream, ValueType::VT_String, key, key_size_in_bytes );
+	const u64 expected_end_position = begin_read_large_block( sstream, serialization_type_index::vt_string, key, key_size_in_bytes );
 	if( expected_end_position == 0 )
 	{
 		ctLogError << "begin_read_large_block() failed unexpectedly" << ctLogEnd;
@@ -257,7 +263,7 @@ template<> inline reader_status read_single_item<ValueType::VT_String, string>( 
 	return reader_status::success;
 }
 
-inline reader_status end_read_empty_large_block( MemoryReadStream &sstream, const char *key, const bool empty_value_is_allowed, const u64 expected_end_position )
+inline reader_status end_read_empty_large_block( ReadStream &sstream, const char *key, const bool empty_value_is_allowed, const u64 expected_end_position )
 {
 	// check that empty value this is allowed
 	if( empty_value_is_allowed )
@@ -281,7 +287,7 @@ inline reader_status end_read_empty_large_block( MemoryReadStream &sstream, cons
 }
 
 // reads an array header and value size from the stream, and decodes into flags, then reads the index if one exists. 
-inline bool read_array_metadata_and_index( MemoryReadStream &sstream, size_t &out_per_item_size, size_t &out_item_count, const u64 block_end_position, std::vector<i32> *dest_index )
+inline bool read_array_metadata_and_index( ReadStream &sstream, size_t &out_per_item_size, size_t &out_item_count, const u64 block_end_position, std::vector<i32> *dest_index )
 {
 	static_assert( sizeof( u64 ) <= sizeof( size_t ), "Unsupported size_t, current code requires it to be at least 8 bytes in size, equal to u64" );
 
@@ -352,11 +358,11 @@ inline bool read_array_metadata_and_index( MemoryReadStream &sstream, size_t &ou
 	return true;
 }
 
-template<ValueType VT, class T> inline reader_status read_array( MemoryReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<T> *dest_items, std::vector<i32> *dest_index )
+template<serialization_type_index VT, class T> inline reader_status read_array( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<T> *dest_items, std::vector<i32> *dest_index )
 {
-	static_assert( ( VT >= ValueType::VT_Array_Bool ) && ( VT <= ValueType::VT_Array_Hash ), "Invalid type for generic read_array template" );
+	static_assert( ( VT >= serialization_type_index::VT_Array_Bool ) && ( VT <= serialization_type_index::VT_Array_Hash ), "Invalid type for generic read_array template" );
 	static_assert( sizeof( u64 ) >= sizeof( size_t ), "Unsupported size_t, current code requires it to be at max 8 bytes in size, equal to u64" );
-	const size_t value_size = sizeof( typename data_type_information<T>::value_type );
+	const size_t value_size = sizeof( typename element_type_information<T>::value_type );
 
 	ctSanityCheck( dest_items );
 
@@ -396,7 +402,7 @@ template<ValueType VT, class T> inline reader_status read_array( MemoryReadStrea
 	}
 
 	// resize the destination vector
-	const u64 type_count = item_count / data_type_information<T>::value_count;
+	const u64 type_count = item_count / element_type_information<T>::value_count;
 	dest_items->resize( type_count );
 
 	// read in the data
@@ -419,12 +425,12 @@ template<ValueType VT, class T> inline reader_status read_array( MemoryReadStrea
 }
 
 // read_array implementation for bool arrays (which need specific packing)
-template <> inline reader_status read_array<ValueType::VT_Array_Bool, bool>( MemoryReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<bool> *dest_items, std::vector<i32> *dest_index )
+template <> inline reader_status read_array<serialization_type_index::vt_array_bool, bool>( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<bool> *dest_items, std::vector<i32> *dest_index )
 {
 	ctSanityCheck( dest_items );
 
 	// read block header. if we are already at the end, the block is empty, end the block and make sure empty is allowed
-	const u64 block_end_position = begin_read_large_block( sstream, ValueType::VT_Array_Bool, key, key_size_in_bytes );
+	const u64 block_end_position = begin_read_large_block( sstream, serialization_type_index::vt_array_bool, key, key_size_in_bytes );
 	if( block_end_position == 0 )
 	{
 		ctLogError << "begin_read_large_block() failed unexpectedly" << ctLogEnd;
@@ -480,14 +486,14 @@ template <> inline reader_status read_array<ValueType::VT_Array_Bool, bool>( Mem
 	return reader_status::success;
 }
 
-template<> inline reader_status read_array<ValueType::VT_Array_String, string>( MemoryReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<string> *dest_items, std::vector<i32> *dest_index )
+template<> inline reader_status read_array<serialization_type_index::vt_array_string, string>( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<string> *dest_items, std::vector<i32> *dest_index )
 {
 	static_assert( sizeof( u64 ) == sizeof( size_t ), "Unsupported size_t, current code requires it to be 8 bytes in size, equal to u64" );
 
 	ctSanityCheck( dest_items );
 
 	// read block header. if we are already at the end, the block is empty, end the block and make sure empty is allowed
-	const u64 block_end_position = begin_read_large_block( sstream, ValueType::VT_Array_String, key, key_size_in_bytes );
+	const u64 block_end_position = begin_read_large_block( sstream, serialization_type_index::vt_array_string, key, key_size_in_bytes );
 	if( block_end_position == 0 )
 	{
 		ctLogError << "begin_read_large_block() failed unexpectedly" << ctLogEnd;
@@ -557,185 +563,8 @@ template<> inline reader_status read_array<ValueType::VT_Array_String, string>( 
 	return reader_status::success;
 }
 
-EntityReader::EntityReader( MemoryReadStream &_sstream ) : sstream( _sstream ), end_position( _sstream.GetSize() ) {}
-
-EntityReader::EntityReader( MemoryReadStream &_sstream, const u64 _end_position ) : sstream( _sstream ), end_position( _end_position ) {}
-
-// Read a section. 
-// If the section is null, the section is directly closed, nullptr+success is returned 
-// from BeginReadSection, and EndReadSection shall not be called.
-std::tuple<EntityReader *, bool> EntityReader::BeginReadSection( const char *key, const u8 key_length, const bool null_section_is_allowed )
-{
-	if( this->active_subsection )
-	{
-		ctLogError << "There is already an active subsection." << ctLogEnd;
-		return std::tuple<EntityReader *, bool>( nullptr, false );
-	}
-
-	// read block header
-	const u64 end_of_section = begin_read_large_block( sstream, ValueType::VT_Subsection, key, key_length );
-	if( end_of_section == 0 )
-	{
-		ctLogError << "begin_read_large_block() failed unexpectedly, stream is probably corrupted" << ctLogEnd;
-		return std::tuple<EntityReader *, bool>( nullptr, false );
-	}
-	else if( end_of_section == sstream.GetPosition() )
-	{
-		if( end_read_empty_large_block( sstream, key, null_section_is_allowed, end_of_section ) == reader_status::fail )
-		{
-			return std::pair<EntityReader *, bool>( nullptr, false );
-		}
-		return std::tuple<EntityReader *, bool>( nullptr, true );
-	}
-
-	// allocate the subsection and return it to the caller to be used to read items in the subsection
-	this->active_subsection = std::unique_ptr<EntityReader>( new EntityReader( this->sstream, end_of_section ) );
-	return std::tuple<EntityReader *, bool>( this->active_subsection.get(), true );
-}
-
-bool EntityReader::EndReadSection( const EntityReader *section_reader )
-{
-	if( section_reader != this->active_subsection.get() )
-	{
-		ctLogError << "Invalid parameter section_reader, it does not match the internal expected value." << ctLogEnd;
-		return false;
-	}
-
-	if( !end_read_large_block( this->sstream, this->active_subsection->end_position ) )
-	{
-		ctLogError << "end_read_large_block failed unexpectedly, the stream is probably corrupted." << ctLogEnd;
-		return false;
-	}
-
-	this->active_subsection.reset();
-	this->active_subsection_end_pos = 0;
-	return true;
-}
-
-// Build a sections array. 
-// If the section is null, the section array is directly closed, nullptr+success is returned 
-// from BeginReadSectionsArray, and EndReadSectionsArray shall not be called.
-std::tuple<EntityReader *, size_t, bool> EntityReader::BeginReadSectionsArray( const char *key, const u8 key_length, const bool null_section_array_is_allowed, std::vector<i32> *dest_index )
-{
-	if( this->active_subsection )
-	{
-		ctLogError << "There is already an active subsection." << ctLogEnd;
-		return std::tuple<EntityReader *, size_t, bool>( nullptr, 0, false );
-	}
-
-	// read block header. if we are already at the end, the block is empty, end the block and make sure empty is allowed
-	const u64 end_of_section = begin_read_large_block( sstream, ValueType::VT_Array_Subsection, key, key_length );
-	if( end_of_section == 0 )
-	{
-		ctLogError << "begin_read_large_block() failed unexpectedly, stream is probably corrupted" << ctLogEnd;
-		return std::tuple<EntityReader *, size_t, bool>( nullptr, 0, false );
-	}
-	else if( end_of_section == sstream.GetPosition() )
-	{
-		if( end_read_empty_large_block( sstream, key, null_section_array_is_allowed, end_of_section ) == reader_status::fail )
-		{
-			return std::tuple<EntityReader *, size_t, bool>( nullptr, 0, false );
-		}
-		return std::tuple<EntityReader *, size_t, bool>( nullptr, 0, true );
-	}
-
-	// read item size & count and index if it exists, or make sure we do not expect an index
-	size_t per_item_size = 0;
-	if( !read_array_metadata_and_index( sstream, per_item_size, this->active_subsection_array_size, end_of_section, dest_index ) )
-	{
-		return std::tuple<EntityReader *, size_t, bool>( nullptr, 0, false );
-	}
-	this->active_subsection_index = size_t( ~0 );
-
-	// allocate the subsection and return it to the caller to be used to read items in the subsection
-	this->active_subsection = std::unique_ptr<EntityReader>( new EntityReader( this->sstream, end_of_section ) );
-	return std::tuple<EntityReader *, size_t, bool>( this->active_subsection.get(), this->active_subsection_array_size, true );
-}
-
-bool EntityReader::BeginReadSectionInArray( const EntityReader *sections_array_reader, const size_t section_index, bool *dest_section_has_data )
-{
-	if( this->active_subsection.get() != sections_array_reader )
-	{
-		ctLogError << "Synch error, currently not writing a subsection array" << ctLogEnd;
-		return false;
-	}
-	if( ( this->active_subsection_index + 1 ) != section_index )
-	{
-		ctLogError << "Synch error, incorrect subsection index" << ctLogEnd;
-		return false;
-	}
-	if( section_index >= this->active_subsection_array_size )
-	{
-		ctLogError << "Incorrect subsection index, out of array bounds" << ctLogEnd;
-		return false;
-	}
-
-	this->active_subsection_index = section_index;
-	const u64 section_size = sstream.Read<u64>();
-	this->active_subsection_end_pos = sstream.GetPosition() + section_size;
-
-	if( dest_section_has_data == nullptr )
-	{
-		// make sure that the section size is not empty
-		if( section_size == 0 )
-		{
-			ctLogError << "Section in array in stream is marked as null, but this is not allowed for the array it is read into" << ctLogEnd;
-			return false;
-		}
-	}
-	else
-	{
-		*dest_section_has_data = ( section_size != 0 );
-	}
-
-	return true;
-}
-
-bool EntityReader::EndReadSectionInArray( const EntityReader *sections_array_reader, const size_t section_index )
-{
-	if( this->active_subsection.get() != sections_array_reader || this->active_subsection_index != section_index )
-	{
-		ctLogError << "Synch error, currently not reading a subsection array, or incorrect section index" << ctLogEnd;
-		return false;
-	}
-
-	const u64 end_pos = sstream.GetPosition();
-
-	if( end_pos != this->active_subsection_end_pos )
-	{
-		ctLogError << "The current subsection did not end where expected" << ctLogEnd;
-		return false;
-	}
-
-	return true;
-}
-
-bool EntityReader::EndReadSectionsArray( const EntityReader *sections_array_reader )
-{
-	if( this->active_subsection.get() != sections_array_reader )
-	{
-		ctLogError << "Invalid parameter section_reader, it does not match the internal expected value." << ctLogEnd;
-		return false;
-	}
-	if( ( this->active_subsection_index + 1 ) != this->active_subsection_array_size )
-	{
-		ctLogError << "Synch error, the subsection index does not equal the end of the array" << ctLogEnd;
-		return false;
-	}
-
-	if( !end_read_large_block( this->sstream, this->active_subsection->end_position ) )
-	{
-		ctLogError << "end_read_large_block failed unexpectedly, the stream is probably corrupted." << ctLogEnd;
-		return false;
-	}
-
-	this->active_subsection.reset();
-	this->active_subsection_array_size = 0;
-	this->active_subsection_index = size_t( ~0 );
-	this->active_subsection_end_pos = 0;
-	return true;
-}
-
 #include "_pds_undef_macros.inl"
 }
 // namespace pds
+
+#endif//__PDS__READER_TEMPLATES_H__

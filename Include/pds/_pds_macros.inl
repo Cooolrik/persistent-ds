@@ -22,24 +22,14 @@
 #endif//_PDS_MACROS_INCLUDED
 #define _PDS_MACROS_INCLUDED
 
-// include the ctle _macros.inl macro definitions, which we also use in pds
+// include the ctle _macros.inl macro definitions, which are also used in pds
 #include <ctle/_macros.inl>
 
 // pdsValidationError logs a validation error with the EntityValidator
 #define pdsValidationError( errorid ) if( !validator.GetRecordErrorStrings() ) { validator.ReportError( errorid ); } else { auto _errorId = errorid; std::stringstream _errorStringStream; _errorStringStream
 #define pdsValidationErrorEnd ""; validator.ReportError( _errorId , _errorStringStream.str() , __FILE__ , __LINE__ , __func__ ); }
 
-//#define pdsRuntimeCheck( statement , errorid , errortext ) if( !(statement) ) { pdsErrorLog << "Runtime check failed: (" #statement ") error id:" << (int)errorid << pdsErrorLogEnd; throw std::exception("Sanity debug check failed: (" #statement "): Error text: " #errortext ); }
-
-//#ifndef NDEBUG
-//#define pdsSanityCheckDebugMacro( statement ) if( !(statement) ) { pdsErrorLog << "Sanity debug check failed: (" #statement ")" << pdsErrorLogEnd; throw std::runtime_error("Sanity debug check failed: (" #statement ")"); }
-//#define pdsSanityCheckCoreDebugMacro( statement ) if( !(statement) ) { pdsErrorLog << "Core debug sanity check failed: (" #statement ")" << pdsErrorLogEnd; throw std::runtime_error("Core debug sanity check failed: (" #statement ")"); }
-//#else
-//#define pdsSanityCheckDebugMacro( statement ) 
-//#define pdsSanityCheckCoreDebugMacro( statement ) 
-//#endif
-
 // pdsKeyMacro is used to define a key in the pds file stream
-#define pdsKeyMacro( name ) name , (u8)(strlen(name))
+#define pdsKeyMacro( name ) (#name) , (u8(sizeof(#name)-1))
 
 

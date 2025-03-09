@@ -3,22 +3,22 @@
 
 #pragma once
 
-#include "MemoryWriteStream.h"
+#include "WriteStream.h"
 
 namespace pds
 {
 
-MemoryWriteStream::MemoryWriteStream( u64 _InitialAllocationSize ) 
+WriteStream::WriteStream( u64 _InitialAllocationSize ) 
 { 
 	this->ReserveForSize( _InitialAllocationSize ); 
 }
 
-MemoryWriteStream::~MemoryWriteStream() 
+WriteStream::~WriteStream() 
 { 
 	this->FreeAllocation(); 
 }
 
-void MemoryWriteStream::ReserveForSize( u64 reserveSize )
+void WriteStream::ReserveForSize( u64 reserveSize )
 {
 	// we need to resize the reserved data area, try doubling size
 	// and if that is not enough, set to the reserveSize
@@ -51,7 +51,7 @@ void MemoryWriteStream::ReserveForSize( u64 reserveSize )
 	this->Data = pNewData;
 }
 
-void MemoryWriteStream::FreeAllocation()
+void WriteStream::FreeAllocation()
 {
 	if( this->Data )
 	{
@@ -64,7 +64,7 @@ void MemoryWriteStream::FreeAllocation()
 	}
 }
 
-void MemoryWriteStream::Resize( u64 newSize )
+void WriteStream::Resize( u64 newSize )
 {
 	if( newSize > this->DataReservedSize )
 	{

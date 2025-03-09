@@ -13,7 +13,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	FetchContent_Declare(
 		ctle
 		GIT_REPOSITORY https://github.com/Cooolrik/ctle.git
-		GIT_TAG		   main # (latest)
+		GIT_TAG		   smallfixes # (latest)
 	)
 
 	# googletest

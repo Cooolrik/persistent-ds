@@ -9,17 +9,36 @@
 
 //using namespace TestPackA;
 
-#include <pds/pds.h>
-#include <pds/ValueTypes.h>
+//#include <ctle/ntup.h>
+//#include <pds/pds.h>
+//#include <pds/ValueTypes.h>
+//#include <pds/element_types.h>
+
+//#include <pds/writer_templates.h>
+//#include <pds/reader_templates.h>
+
+#include <pds/value_types.h>
 
 using namespace pds;
 
+#include <pds/_pds_macros.inl>
+
 int main()
 	{
+	
+
+
 	std::vector<int> myvec = {1,2,3};
+	
+	pds::clear_value_type( myvec );
 
-	pds::clear_combined_type( myvec );
+	//pds::clear_combined_type( myvec );
 
+	//WriteStream ws;
+	//
+	//f64 val = 12.3f;
+	//auto res = write_single_value<serialization_type_index::vt_float, f64>( ws, pdsKeyMacro( Hej ), &val );
+	//
 
 	//pds::EntityManager eh;
 	//

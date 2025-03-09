@@ -3,12 +3,10 @@
 
 #include "Tests.h"
 
-#include <pds/EntityWriter.h>
-#include <pds/EntityReader.h>
-#include <pds/MemoryWriteStream.h>
-#include <pds/MemoryReadStream.h>
+#include <pds/WriteStream.h>
+#include <pds/ReadStream.h>
 
-template<class T> void ExpectReadValueIs( MemoryReadStream *rs, T ref_value )
+template<class T> void ExpectReadValueIs( ReadStream *rs, T ref_value )
 {
 	T val = rs->Read<T>();
 	EXPECT_EQ( val, ref_value );
@@ -18,8 +16,8 @@ TEST( ReadWriteTests, MemoryWriteReadStream )
 {
 	setup_random_seed();
 
-	// run twice, one with flipped, one with non-flipped byte order, per pass
-	for( uint pass_index = 0; pass_index < 2 * global_number_of_passes; ++pass_index )
+	// run number of passes
+	for( uint pass_index = 0; pass_index < global_number_of_passes; ++pass_index )
 	{
 		// random values
 		const u8 u8val = u8_rand();
@@ -37,8 +35,7 @@ TEST( ReadWriteTests, MemoryWriteReadStream )
 
 		// write random stuff to write stream
 		u64 expected_size = 0;
-		MemoryWriteStream *ws = new MemoryWriteStream();
-		ws->SetFlipByteOrder( ( pass_index & 0x1 ) != 0 );
+		WriteStream *ws = new WriteStream();
 
 		for( uint i = 0; i < num_values; ++i )
 		{
@@ -85,8 +82,7 @@ TEST( ReadWriteTests, MemoryWriteReadStream )
 		ws = nullptr;
 
 		// read back everything in the same order
-		MemoryReadStream *rs = new MemoryReadStream( memdata.data(), expected_size );
-		rs->SetFlipByteOrder( ( pass_index & 0x1 ) != 0 );
+		ReadStream *rs = new ReadStream( memdata.data(), expected_size );
 		for( uint i = 0; i < num_values; ++i )
 		{
 			int item_type = order[i];

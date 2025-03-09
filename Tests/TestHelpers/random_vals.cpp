@@ -15,15 +15,15 @@ template <> u64 random_value<u64>() { return u64_rand() ; }
 template <> float random_value<float>() { return float_rand() ; }
 template <> double random_value<double>() { return double_rand() ; }
 
-template <> fvec2 random_value<fvec2>() { return fvec2( float_rand(), float_rand() ) ; }
-template <> dvec2 random_value<dvec2>() { return dvec2( double_rand(), double_rand() ) ; }
-template <> fvec3 random_value<fvec3>() { return fvec3( float_rand(), float_rand(), float_rand() ) ; }
-template <> dvec3 random_value<dvec3>() { return dvec3( double_rand(), double_rand(), double_rand() ) ; }
-template <> fvec4 random_value<fvec4>() { return fvec4( float_rand(), float_rand(), float_rand(), float_rand() ) ; }
-template <> dvec4 random_value<dvec4>() { return dvec4( double_rand(), double_rand(), double_rand(), double_rand() ) ; }
+template <> f32vec2 random_value<f32vec2>() { return f32vec2( float_rand(), float_rand() ) ; }
+template <> f64vec2 random_value<f64vec2>() { return f64vec2( double_rand(), double_rand() ) ; }
+template <> f32vec3 random_value<f32vec3>() { return f32vec3( float_rand(), float_rand(), float_rand() ) ; }
+template <> f64vec3 random_value<f64vec3>() { return f64vec3( double_rand(), double_rand(), double_rand() ) ; }
+template <> f32vec4 random_value<f32vec4>() { return f32vec4( float_rand(), float_rand(), float_rand(), float_rand() ) ; }
+template <> f64vec4 random_value<f64vec4>() { return f64vec4( double_rand(), double_rand(), double_rand(), double_rand() ) ; }
 
-template <> fquat random_value<fquat>() { return fquat( float_rand(), float_rand(), float_rand(), float_rand() ) ; }
-template <> dquat random_value<dquat>() { return dquat( double_rand(), double_rand(), double_rand(), double_rand() ) ; }
+template <> f32quat random_value<f32quat>() { return f32quat( float_rand(), float_rand(), float_rand(), float_rand() ) ; }
+template <> f64quat random_value<f64quat>() { return f64quat( double_rand(), double_rand(), double_rand(), double_rand() ) ; }
 
 template <> i8vec2 random_value<i8vec2>() { return i8vec2( u8_rand(), u8_rand() ) ; }
 template <> i16vec2 random_value<i16vec2>() { return i16vec2( u16_rand(), u16_rand() ) ; }
@@ -51,35 +51,35 @@ template <> u16vec4 random_value<u16vec4>() { return u16vec4( u16_rand(), u16_ra
 template <> u32vec4 random_value<u32vec4>() { return u32vec4( u32_rand(), u32_rand(), u32_rand(), u32_rand() ) ; }
 template <> u64vec4 random_value<u64vec4>() { return u64vec4( u64_rand(), u64_rand(), u64_rand(), u64_rand() ) ; }
 
-template <> fmat2 random_value<fmat2>() { return fmat2(
-	fvec2(float_rand(), float_rand()),
-	fvec2(float_rand(), float_rand())
+template <> f32mat2 random_value<f32mat2>() { return f32mat2(
+	f32vec2(float_rand(), float_rand()),
+	f32vec2(float_rand(), float_rand())
 ) ; }
-template <> dmat2 random_value<dmat2>() { return dmat2(
-	dvec2(double_rand(), double_rand()),
-	dvec2(double_rand(), double_rand())
+template <> f64mat2 random_value<f64mat2>() { return f64mat2(
+	f64vec2(double_rand(), double_rand()),
+	f64vec2(double_rand(), double_rand())
 ) ; }
-template <> fmat3 random_value<fmat3>() { return fmat3(
-	fvec3(float_rand(), float_rand(), float_rand()),
-	fvec3(float_rand(), float_rand(), float_rand()),
-	fvec3(float_rand(), float_rand(), float_rand())
+template <> f32mat3 random_value<f32mat3>() { return f32mat3(
+	f32vec3(float_rand(), float_rand(), float_rand()),
+	f32vec3(float_rand(), float_rand(), float_rand()),
+	f32vec3(float_rand(), float_rand(), float_rand())
 ) ; }
-template <> dmat3 random_value<dmat3>() { return dmat3(
-	dvec3(double_rand(), double_rand(), double_rand()),
-	dvec3(double_rand(), double_rand(), double_rand()),
-	dvec3(double_rand(), double_rand(), double_rand())
+template <> f64mat3 random_value<f64mat3>() { return f64mat3(
+	f64vec3(double_rand(), double_rand(), double_rand()),
+	f64vec3(double_rand(), double_rand(), double_rand()),
+	f64vec3(double_rand(), double_rand(), double_rand())
 ) ; }
-template <> fmat4 random_value<fmat4>() { return fmat4(
-	fvec4(float_rand(), float_rand(), float_rand(), float_rand()),
-	fvec4(float_rand(), float_rand(), float_rand(), float_rand()),
-	fvec4(float_rand(), float_rand(), float_rand(), float_rand()),
-	fvec4(float_rand(), float_rand(), float_rand(), float_rand())
+template <> f32mat4 random_value<f32mat4>() { return f32mat4(
+	f32vec4(float_rand(), float_rand(), float_rand(), float_rand()),
+	f32vec4(float_rand(), float_rand(), float_rand(), float_rand()),
+	f32vec4(float_rand(), float_rand(), float_rand(), float_rand()),
+	f32vec4(float_rand(), float_rand(), float_rand(), float_rand())
 ) ; }
-template <> dmat4 random_value<dmat4>() { return dmat4(
-	dvec4(double_rand(), double_rand(), double_rand(), double_rand()),
-	dvec4(double_rand(), double_rand(), double_rand(), double_rand()),
-	dvec4(double_rand(), double_rand(), double_rand(), double_rand()),
-	dvec4(double_rand(), double_rand(), double_rand(), double_rand())
+template <> f64mat4 random_value<f64mat4>() { return f64mat4(
+	f64vec4(double_rand(), double_rand(), double_rand(), double_rand()),
+	f64vec4(double_rand(), double_rand(), double_rand(), double_rand()),
+	f64vec4(double_rand(), double_rand(), double_rand(), double_rand()),
+	f64vec4(double_rand(), double_rand(), double_rand(), double_rand())
 ) ; }
 
 template <> uuid random_value<uuid>() { return uuid_rand(); }

@@ -169,11 +169,11 @@ status EntityManager::ReadTask( EntityManager *pThis, const entity_ref ref )
 	// read file header and deserialize the entity
 	bool result = {};
 	EntityReader *sectionReader;
-	std::tie( sectionReader, result ) = reader.BeginReadSection( pdsKeyMacro( "EntityFile" ), false );
+	std::tie( sectionReader, result ) = reader.BeginReadSection( pdsKeyMacro( EntityFile ), false );
 	if( !result )
 		return status::corrupted;
 	std::string entityTypeString;
-	result = sectionReader->Read<std::string>( pdsKeyMacro( "EntityType" ), entityTypeString );
+	result = sectionReader->Read<std::string>( pdsKeyMacro( EntityType ), entityTypeString );
 	if( !result )
 		return status::corrupted;
 	std::shared_ptr<Entity> entity = entityNew( pThis->Records, entityTypeString.c_str() );
@@ -258,10 +258,10 @@ std::pair<entity_ref, status> EntityManager::WriteTask( EntityManager *pThis, st
 		return std::pair<entity_ref, status>( {}, status::invalid );
 
 	// serialize to a stream
-	EntityWriter *sectionWriter = writer.BeginWriteSection( pdsKeyMacro( "EntityFile" ) );
+	EntityWriter *sectionWriter = writer.BeginWriteSection( pdsKeyMacro( EntityFile ) );
 	if( !sectionWriter )
 		return std::pair<entity_ref, status>( {}, status::undefined_error );
-	sectionWriter->Write<std::string>( pdsKeyMacro( "EntityType" ), entity->EntityTypeString() );
+	sectionWriter->Write<std::string>( pdsKeyMacro( EntityType ), entity->EntityTypeString() );
 	if( !entityWrite( pThis->Records, entity.get(), *sectionWriter ) )
 		return std::pair<entity_ref, status>( {}, status::undefined_error );
 	if( !writer.EndWriteSection( sectionWriter ) )

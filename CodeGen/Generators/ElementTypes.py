@@ -2,166 +2,201 @@
 # Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
 import CodeGeneratorHelpers as hlp
-from CodeGeneratorHelpers import int_bit_range, float_type_range, vector_dimension_range, nonconst_const_range
+from CodeGeneratorHelpers import int_bit_range, float_bit_range, vector_dimension_range, nonconst_const_range
 
-def print_type_information_header( type , value , value_count ):
+def fwd_h():
 	lines = []
-	lines.append(f'\ttemplate<> struct data_type_information<{type}>')
-	lines.append( '\t	{')
-	lines.append(f'\t	using value_type = {value}; // the value type of {type} ( {value} )')
-	lines.append(f'\t	static constexpr size_t value_count = {value_count}; // the number of values in {type} ( {value_count} )')
-	lines.append(f'\t	static constexpr const char * value_name = "{value}"; // name of the value in {type} ( "{value}" ) ')
-	lines.append(f'\t	static constexpr const char * type_name = "{type}"; // name of the type ( "{type}" ) ')
-	lines.append(f'\t	static constexpr data_type_index type_index = data_type_index::dt_{type}; // the data type index of {type} ( dt_{type} )')
-	lines.append(f'\t	static const {type} zero; // zero value of {type}')
-	lines.append(f'\t	static const {type} inf; // limit inferior (minimum possible value) of {type}')
-	if type != 'string':
-		lines.append(f'\t	static const {type} sup; // limit superior (maximum possible value) of {type}')
-	lines.append( '\t	};')
+	lines.extend( hlp.begin_header_file( "fwd.h" ) )
 	lines.append('')
-	return lines
-
-def ElementTypes_h():
-	lines = []
-	lines.extend( hlp.generate_header() )
+	lines.append('// fwd.h - Forward declaration of types used in pds')
 	lines.append('')
-	lines.append('// ElementTypes.h - All basic types which are used by pds')
-	lines.append('')
-	lines.append('#pragma once')
-	lines.append('')
-	#lines.append('// UUID and HASH definitions. Define PDS_SKIP_UUID_AND_HASH if you wish to roll your own UUID and HASH definitions.')
-	#lines.append('#ifndef PDS_SKIP_UUID_AND_HASH')
-	#lines.append('')
-	#lines.extend( hlp.inline_file( 'InlinedCode/uuid_hash_header.inl' ) )
-	#lines.append('')
-	#lines.append('#endif//PDS_SKIP_UUID_AND_HASH')
-	#lines.append('')
 	lines.append('#include <limits.h>')
 	lines.append('#include <float.h>')
-	lines.append('#include <ctle/uuid.h>')
-	lines.append('#include <ctle/hash.h>') 
-	lines.append('#include <ctle/string_funcs.h>')
-	lines.append('#include <ctle/ntup.h>')
+	lines.append('#include <string>')
+	lines.append('#include <vector>')	
+	lines.append('#include <ctle/fwd.h>')
 	lines.append('')
 
 	lines.append('namespace pds')
 	lines.append('{')
+	lines.append('')
 
 	# typedef base integer types
-	lines.append(f"\t// scalar types")
+	lines.append(f"// scalar types")
 	for bit_size in int_bit_range:
-		lines.append(f"\ttypedef std::int{bit_size}_t i{bit_size};")
+		lines.append(f"typedef std::int{bit_size}_t i{bit_size};")
 	for bit_size in int_bit_range:
-		lines.append(f"\ttypedef std::uint{bit_size}_t u{bit_size};")
+		lines.append(f"typedef std::uint{bit_size}_t u{bit_size};")
+	lines.append('typedef float f32;')
+	lines.append('typedef double f64;')
 	lines.append('')
-	lines.append(f"\ttypedef std::string string;")
-	lines.append(f"\tusing ctle::uuid;")
-	lines.append(f"\tusing hash = ctle::hash<256>;")
+	lines.append(f"using std::string;")
 	lines.append('')
-
-	# const min/max values of the standard types
-	lines.append('\t// scalar types, zero value, minimum possible value ("inf", limit inferior) and maximum possible value ("sup", limit superior)')
-	lines.append('\tconstexpr bool bool_zero = false;')
-	lines.append('\tconstexpr bool bool_inf = false;')
-	lines.append('\tconstexpr bool bool_sup = true;')
-	for bit_size in int_bit_range:
-		lines.append(f"\tconstexpr i{bit_size} i{bit_size}_zero = 0;")
-		lines.append(f"\tconstexpr i{bit_size} i{bit_size}_inf = INT{bit_size}_MIN;")
-		lines.append(f"\tconstexpr i{bit_size} i{bit_size}_sup = INT{bit_size}_MAX;")
-	for bit_size in int_bit_range:
-		lines.append(f"\tconstexpr u{bit_size} u{bit_size}_zero = 0;")
-		lines.append(f"\tconstexpr u{bit_size} u{bit_size}_inf = 0;")
-		lines.append(f"\tconstexpr u{bit_size} u{bit_size}_sup = UINT{bit_size}_MAX;")
-	lines.append('')
-	lines.append('\tconstexpr float float_zero = 0.0f;')
-	lines.append('\tconstexpr float float_inf = -FLT_MAX;')
-	lines.append('\tconstexpr float float_sup = FLT_MAX;')
-	lines.append('\tconstexpr float double_zero = 0.0;')
-	lines.append('\tconstexpr double double_inf = -DBL_MAX;')
-	lines.append('\tconstexpr double double_sup = DBL_MAX;')
-	lines.append('')
-	lines.append('\tconst string string_zero;')
-	lines.append('\tconst string string_inf;')
-	lines.append('')
-	lines.append('\tconstexpr uuid uuid_zero = {0,0};')
-	lines.append('\tconstexpr uuid uuid_inf = {0,0};')
-	lines.append('\tconstexpr uuid uuid_sup = {UINT64_MAX,UINT64_MAX};')
-	lines.append('')
-	lines.append('\tconstexpr hash hash_zero = {0,0,0,0};')
-	lines.append('\tconstexpr hash hash_inf = {0,0,0,0};')
-	lines.append('\tconstexpr hash hash_sup = {UINT64_MAX,UINT64_MAX,UINT64_MAX,UINT64_MAX};')
+	lines.append(f"using ctle::status;")
+	lines.append(f"using ctle::uuid;")
+	lines.append(f"using hash = ctle::digest<256>;")
 	lines.append('')
 
 	# typedef vector types
-	lines.append(f"\t// vector types")
-	for bit_size in int_bit_range:
+	lines.append(f"// integer vector types")
+	for signed_type in ['i','u']:
+		for bit_size in int_bit_range:
+			for vec_dim in vector_dimension_range:
+				lines.append(f"typedef ctle::n_tup<{signed_type}{bit_size},{vec_dim}> {signed_type}{bit_size}vec{vec_dim};")
+		lines.append('')
+	lines.append(f"// float vector types")
+	for bit_size in float_bit_range:
 		for vec_dim in vector_dimension_range:
-			lines.append(f"\tusing i{bit_size}vec{vec_dim} = ctle::i{bit_size}tup{vec_dim};")
+			lines.append(f"typedef ctle::n_tup<f{bit_size},{vec_dim}> f{bit_size}vec{vec_dim};")
 	lines.append('')
-	for bit_size in int_bit_range:
+	lines.append(f"// float matrix types")
+	for bit_size in float_bit_range:
 		for vec_dim in vector_dimension_range:
-			lines.append(f"\tusing u{bit_size}vec{vec_dim} = ctle::u{bit_size}tup{vec_dim};")
-	lines.append('')
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing fvec{vec_dim} = ctle::ftup{vec_dim};")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing dvec{vec_dim} = ctle::dtup{vec_dim};")
-	lines.append('')
-	
-	# typedef matrix types
-	lines.append(f"\t// matrix types")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing fmat{vec_dim} = ctle::ftup{vec_dim}x{vec_dim};")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing dmat{vec_dim} = ctle::dtup{vec_dim}x{vec_dim};")
+			lines.append(f"typedef ctle::mn_tup<f{bit_size},{vec_dim},{vec_dim}> f{bit_size}mat{vec_dim};")
 	lines.append('')
 
 	# typedef quaternions
-	lines.append(f"\t// quaternion types")
-	for ty in ['f','d']:
-		base_type = 'float' if ty == 'f' else 'double'
-		lines.append(f"\tclass {ty}quat : public ctle::{ty}tup4")
-		lines.append('\t{')
-		lines.append('\tpublic:')
-		lines.append(f'\t\t{ty}quat() : ctle::{ty}tup4() {{}}')
-		lines.append(f'\t\t{ty}quat( const {ty}quat &other ) : ctle::{ty}tup4( other ) {{}}')
-		lines.append(f'\t\t{ty}quat( {base_type} _a, {base_type} _b, {base_type} _c, {base_type} _d ) : ctle::{ty}tup4(_a,_b,_c,_d) {{}}')
-		lines.append(f'\t\t{ty}quat &operator=( const {ty}quat &other ) noexcept {{ x = other.x; y = other.y; z = other.z; w = other.w; return *this; }}')
-		lines.append('\t};')
-		lines.append('')
+	lines.append(f"// quaternion types")
+	for bit_size in float_bit_range:
+		lines.append(f"class f{bit_size}quat;")
+	lines.append('')
+
+	# typedef quaternions
+	lines.append(f"// item and entity references")
+	lines.append('class item_ref;')
+	lines.append('class entity_ref;')
 	lines.append('')
 
 	# typedef standard precision types (32 bit ints and floats)
+	lines.append(f"// shorthand for commonly used types")
+	lines.append('typedef u32 uint;')
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing ivec{vec_dim} = i32vec{vec_dim};")
+		lines.append(f"typedef i32vec{vec_dim} ivec{vec_dim};")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing uvec{vec_dim} = u32vec{vec_dim};")
+		lines.append(f"typedef u32vec{vec_dim} uvec{vec_dim};")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing vec{vec_dim} = fvec{vec_dim};")
+		lines.append(f"typedef f32vec{vec_dim} vec{vec_dim};")
 	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing mat{vec_dim} = fmat{vec_dim};")
+		lines.append(f"typedef f32mat{vec_dim} mat{vec_dim};")
 	lines.append('')
 
-	# inline entity_ref and item_ref
-	lines.extend( hlp.inline_file( 'InlinedCode/entity_ref.inl' ) )
-	lines.extend( hlp.inline_file( 'InlinedCode/item_ref.inl' ) )
+	# container types
+	lines.append('// container types')
+	lines.append('using std::vector;')
+	lines.append('using ctle::idx_vector;')
+	lines.append('using ctle::optional_idx_vector;')
+	lines.append('using ctle::optional_value;')
+	lines.append('using ctle::optional_vector;')
+	lines.append('')	
+
+	# type information on all types
+	lines.append('// @brief element_type_information stores information on the element types in pds')
+	lines.append('template <class _Ty> struct element_type_information;')
+	lines.append('')
+	lines.append('// @brief value_type_information stores information on the value types in pds, which is a combination of element types with containers')
+	lines.append('template <class _Ty> struct value_type_information;')
+	lines.append('')
+
+	# end of pds namespace
+	lines.append('}')
+	lines.append('// namespace pds')
+
+	# end of file
+	lines.append('')
+	lines.extend( hlp.end_header_file( "fwd.h" ) )
+	hlp.write_lines_to_file("../Include/pds/fwd.h",lines)
+
+def print_type_information_header( type , value , value_count ):
+	lines = []
+	lines.append(f'template<> struct element_type_information<{type}>')
+	lines.append( '{')
+	lines.append(f'\ttypedef {value} value_type; // the value type of {type} ( {value} )')
+	lines.append(f'\tstatic constexpr size_t value_count = {value_count}; // the number of values in {type} ( {value_count} )')
+	lines.append(f'\tstatic constexpr const char * value_name = "{value}"; // name of the value in {type} ( "{value}" ) ')
+	lines.append(f'\tstatic constexpr const char * type_name = "{type}"; // name of the type ( "{type}" ) ')
+	lines.append(f'\tstatic constexpr element_type_index type_index = element_type_index::dt_{type}; // the element type index of {type} ( dt_{type} )')
+	lines.append(f'\tstatic const {type} zero; // zero value of {type}')
+	lines.append(f'\tstatic const {type} inf; // limit inferior (minimum possible value) of {type}')
+	if type != 'string':
+		lines.append(f'\tstatic const {type} sup; // limit superior (maximum possible value) of {type}')
+	lines.append( '};')
+	lines.append('')
+	return lines
+
+def element_types_h():
+	lines = []
+	lines.extend( hlp.begin_header_file( "element_types.h" ) )
+	lines.append('')
+	lines.append('// element_types.h - Declaration of element types used in pds.')
+	lines.append('// Element types are the basic building blocks of the data structures, and can be serialized.')
+	lines.append('')
+	lines.append('#include <ctle/ntup.h>')
+	lines.append('')
+	lines.append('#include "entity_ref.h"')
+	lines.append('#include "item_ref.h"')
+	lines.append('')
+
+	lines.append('namespace pds')
+	lines.append('{')
+	lines.append('')
+
+	# const min/max values of the standard types
+	lines.append('// zero/inf(min)/sup(max) values for the element types')
+	lines.append('constexpr bool bool_zero = false;')
+	lines.append('constexpr bool bool_inf = false;')
+	lines.append('constexpr bool bool_sup = true;')
+	for bit_size in int_bit_range:
+		lines.append(f"constexpr i{bit_size} i{bit_size}_zero = 0;")
+		lines.append(f"constexpr i{bit_size} i{bit_size}_inf = INT{bit_size}_MIN;")
+		lines.append(f"constexpr i{bit_size} i{bit_size}_sup = INT{bit_size}_MAX;")
+	for bit_size in int_bit_range:
+		lines.append(f"constexpr u{bit_size} u{bit_size}_zero = 0;")
+		lines.append(f"constexpr u{bit_size} u{bit_size}_inf = 0;")
+		lines.append(f"constexpr u{bit_size} u{bit_size}_sup = UINT{bit_size}_MAX;")
+	lines.append('')
+	lines.append('constexpr f32 f32_zero = 0.0f;')
+	lines.append('constexpr f32 f32_inf = -FLT_MAX;')
+	lines.append('constexpr f32 f32_sup = FLT_MAX;')
+	lines.append('constexpr f64 f64_zero = 0.0;')
+	lines.append('constexpr f64 f64_inf = -DBL_MAX;')
+	lines.append('constexpr f64 f64_sup = DBL_MAX;')
+	lines.append('')
+
+	lines.append('const string string_zero;')
+	lines.append('const string string_inf;')
+	lines.append('')
+	lines.append('constexpr uuid uuid_zero = uuid::zero();')
+	lines.append('constexpr uuid uuid_inf = uuid::inf();')
+	lines.append('constexpr uuid uuid_sup = uuid::sup();')
+	lines.append('')
+	lines.append('constexpr hash hash_zero = hash::zero();')
+	lines.append('constexpr hash hash_inf = hash::inf();')
+	lines.append('constexpr hash hash_sup = hash::sup();')
+	lines.append('')
+
+	lines.append(f"// quaternion types")
+	for bit_size in float_bit_range:
+		lines.append(f"class f{bit_size}quat : public f{bit_size}vec4")
+		lines.append('{')
+		lines.append('public:')
+		lines.append(f'\tf{bit_size}quat() : f{bit_size}vec4() {{}}')
+		lines.append(f'\tf{bit_size}quat( const f{bit_size}quat &other ) : f{bit_size}vec4( other ) {{}}')
+		lines.append(f'\tf{bit_size}quat( f{bit_size} _a, f{bit_size} _b, f{bit_size} _c, f{bit_size} _d ) : f{bit_size}vec4(_a,_b,_c,_d) {{}}')
+		lines.append(f'\tf{bit_size}quat &operator=( const f{bit_size}quat &other ) noexcept {{ x = other.x; y = other.y; z = other.z; w = other.w; return *this; }}')
+		lines.append('};')
+		lines.append('')
 
 	# enum of all data types
-	lines.append('\t// all value type indices')
-	lines.append('\tenum class data_type_index')
-	lines.append('\t\t{')
+	lines.append('// all element type indices')
+	lines.append('enum class element_type_index')
+	lines.append('{')
 	for basetype_inx in range(len(hlp.base_types)):
 		basetype = hlp.base_types[basetype_inx]
 		for variant_inx in range(len(basetype.variants)):
 			variant_name = basetype.variants[variant_inx].implementing_type
 			variant_id = ( (basetype_inx+1) << 4) + (variant_inx + 1)
-			lines.append(f'\t\tdt_{variant_name} = {hex(variant_id)},')
-	lines.append('\t\t};')
-	lines.append('')
-
-	# type information on all types
-	lines.append('\t// type_information stores information on the standard types in PDS')
-	lines.append('\ttemplate <class T> struct data_type_information;')
+			lines.append(f'\tdt_{variant_name} = {hex(variant_id)},')
+	lines.append('};')
 	lines.append('')
 
 	# scalar type info
@@ -170,8 +205,8 @@ def ElementTypes_h():
 		lines.extend(print_type_information_header(f"i{bit_size}",f"i{bit_size}",1))
 	for bit_size in int_bit_range:
 		lines.extend(print_type_information_header(f"u{bit_size}",f"u{bit_size}",1))
-	lines.extend(print_type_information_header("float","float",1))
-	lines.extend(print_type_information_header("double","double",1))
+	lines.extend(print_type_information_header("f32","f32",1))
+	lines.extend(print_type_information_header("f64","f64",1))
 
 	# vector type info
 	for bit_size in int_bit_range:
@@ -180,20 +215,18 @@ def ElementTypes_h():
 	for bit_size in int_bit_range:
 		for vec_dim in vector_dimension_range:
 			lines.extend(print_type_information_header(f"u{bit_size}vec{vec_dim}",f"u{bit_size}",vec_dim))	
-	for vec_dim in vector_dimension_range:
-		lines.extend(print_type_information_header(f"fvec{vec_dim}",'float',vec_dim))	
-	for vec_dim in vector_dimension_range:
-		lines.extend(print_type_information_header(f"dvec{vec_dim}",'double',vec_dim))	
+	for bit_size in float_bit_range:			
+		for vec_dim in vector_dimension_range:
+			lines.extend(print_type_information_header(f"f{bit_size}vec{vec_dim}",f"f{bit_size}",vec_dim))	
 
 	# matrix type info
-	for vec_dim in vector_dimension_range:
-		lines.extend(print_type_information_header(f"fmat{vec_dim}",'float',vec_dim*vec_dim))	
-	for vec_dim in vector_dimension_range:
-		lines.extend(print_type_information_header(f"dmat{vec_dim}",'double',vec_dim*vec_dim))	
+	for bit_size in float_bit_range:
+		for vec_dim in vector_dimension_range:
+			lines.extend(print_type_information_header(f"f{bit_size}mat{vec_dim}",f"f{bit_size}",vec_dim*vec_dim))	
 
 	# quaternions info
-	lines.extend(print_type_information_header('fquat','float',4))
-	lines.extend(print_type_information_header('dquat','double',4))
+	lines.extend(print_type_information_header('f32quat','f32',4))
+	lines.extend(print_type_information_header('f64quat','f64',4))
 
 	# uuid info
 	lines.extend(print_type_information_header('uuid','uuid',1))
@@ -207,31 +240,18 @@ def ElementTypes_h():
 	lines.extend(print_type_information_header('string','string',1))
 
 	# end of pds namespace
-	lines.append('    };')
-	
-	# define stuff in std namespace
-	lines.append('')
-	lines.append('// inject hash functions into std')
-	lines.append('template<>')
-	lines.append('struct std::hash<pds::item_ref>')
-	lines.append('    {')
-	lines.append('    std::size_t operator()(pds::item_ref const& val) const noexcept')
-	lines.append('        {')
-	lines.append('        return std::hash<ctle::uuid>{}( val );')
-	lines.append('        }')
-	lines.append('    };')
-	lines.append('')
-	lines.append('template<>')
-	lines.append('struct std::hash<pds::entity_ref>')
-	lines.append('    {')
-	lines.append('    std::size_t operator()(pds::entity_ref const& val) const noexcept')
-	lines.append('        {')
-	lines.append('        return std::hash<pds::hash>{}( pds::hash( val ) );')
-	lines.append('        }')
-	lines.append('    };')
+	lines.append('}')
+	lines.append('// namespace pds')
 
+	lines.append('#ifdef PDS_IMPLEMENTATION')
+	lines.append('#include "element_types.inl"')
+	lines.append('#endif//PDS_IMPLEMENTATION')
+	
 	# end of file
-	hlp.write_lines_to_file("../Include/pds/ElementTypes.h",lines)
+	lines.append('')
+	lines.extend( hlp.end_header_file( "element_types.h" ) )	
+	hlp.write_lines_to_file("../Include/pds/element_types.h",lines)
+
 
 def print_type_information_source( type , value , value_count ):
 	lines = []
@@ -246,10 +266,10 @@ def print_type_information_source( type , value , value_count ):
 			inf += ','
 			sup += ','
 
-	lines.append(f'\tconst {type} data_type_information<{type}>::zero = {type}({zero}); // zero value of {type}')
-	lines.append(f'\tconst {type} data_type_information<{type}>::inf = {type}({inf}); // limit inferior (minimum bound) of {type}')
+	lines.append(f'\tconst {type} element_type_information<{type}>::zero = {type}({zero}); // zero value of {type}')
+	lines.append(f'\tconst {type} element_type_information<{type}>::inf = {type}({inf}); // limit inferior (minimum bound) of {type}')
 	if type != 'string':
-		lines.append(f'\tconst {type} data_type_information<{type}>::sup = {type}({sup}); // limit superior (maximum bound) of {type}')
+		lines.append(f'\tconst {type} element_type_information<{type}>::sup = {type}({sup}); // limit superior (maximum bound) of {type}')
 	lines.append('')
 	return lines
 
@@ -277,22 +297,18 @@ def print_matrix_type_information_source( type , subtype , value , value_count )
 			inf += ','
 			sup += ','
 
-	lines.append(f'\tconst {type} data_type_information<{type}>::zero = {type}({zero}); // zero value of {type}')
-	lines.append(f'\tconst {type} data_type_information<{type}>::inf = {type}({inf}); // limit inferior (minimum bound) of {type}')
-	lines.append(f'\tconst {type} data_type_information<{type}>::sup = {type}({sup}); // limit superior (maximum bound) of {type}')
+	lines.append(f'\tconst {type} element_type_information<{type}>::zero = {type}({zero}); // zero value of {type}')
+	lines.append(f'\tconst {type} element_type_information<{type}>::inf = {type}({inf}); // limit inferior (minimum bound) of {type}')
+	lines.append(f'\tconst {type} element_type_information<{type}>::sup = {type}({sup}); // limit superior (maximum bound) of {type}')
 	lines.append('')
 	return lines
 
-def ElementTypes_inl():
+def element_types_inl():
 	lines = []
-	lines.extend( hlp.generate_header() )
+	lines.extend( hlp.begin_header_file('element_types.inl') )
 	lines.append('')
-	#lines.append('#include <glm/glm.hpp>')
-	#lines.append('#include <glm/gtc/type_ptr.hpp>')
-	lines.append('')
-	lines.append('#include "pds.h"')
-	lines.append('')
-	#lines.extend( hlp.inline_file( 'InlinedCode/uuid_hash_source.inl' ) )
+	lines.append('// element_types.inl - Implementation of element_types constants in in pds.')
+	lines.append('// Don''t include this file directly, it is included by element_types.h when implementing pds.')
 	lines.append('')
 	lines.append('namespace pds')
 	lines.append('{')
@@ -303,8 +319,8 @@ def ElementTypes_inl():
 		lines.extend(print_type_information_source(f"i{bit_size}",f"i{bit_size}",1))
 	for bit_size in int_bit_range:
 		lines.extend(print_type_information_source(f"u{bit_size}",f"u{bit_size}",1))
-	lines.extend(print_type_information_source("float","float",1))
-	lines.extend(print_type_information_source("double","double",1))
+	for bit_size in float_bit_range:		
+		lines.extend(print_type_information_source(f"f{bit_size}",f"f{bit_size}",1))
 
 	# vector type info
 	for bit_size in int_bit_range:
@@ -313,42 +329,37 @@ def ElementTypes_inl():
 	for bit_size in int_bit_range:
 		for vec_dim in vector_dimension_range:
 			lines.extend(print_type_information_source(f"u{bit_size}vec{vec_dim}",f"u{bit_size}",vec_dim))	
-	for vec_dim in vector_dimension_range:
-		lines.extend(print_type_information_source(f"fvec{vec_dim}",'float',vec_dim))	
-	for vec_dim in vector_dimension_range:
-		lines.extend(print_type_information_source(f"dvec{vec_dim}",'double',vec_dim))	
+	for bit_size in float_bit_range:
+		for vec_dim in vector_dimension_range:
+			lines.extend(print_type_information_source(f"f{bit_size}vec{vec_dim}",f"f{bit_size}",vec_dim))	
 
 	# matrix type info
-	for vec_dim in vector_dimension_range:
-		lines.extend(print_matrix_type_information_source(f"fmat{vec_dim}",f"fvec{vec_dim}",'float',vec_dim))	
-	for vec_dim in vector_dimension_range:
-		lines.extend(print_matrix_type_information_source(f"dmat{vec_dim}",f"dvec{vec_dim}",'double',vec_dim))	
+	for bit_size in float_bit_range:
+		for vec_dim in vector_dimension_range:
+			lines.extend(print_matrix_type_information_source(f"f{bit_size}mat{vec_dim}",f"f{bit_size}vec{vec_dim}",f"f{bit_size}",vec_dim))	
 
 	# quaternions info
-	lines.extend(print_type_information_source('fquat','float',4))
-	lines.extend(print_type_information_source('dquat','double',4))
+	for bit_size in float_bit_range:
+		lines.extend(print_type_information_source(f'f{bit_size}quat',f'f{bit_size}',4))
 
 	# other types that are atomic
 	same_type_range = ['uuid','entity_ref','hash','item_ref','string']
 	for type in same_type_range:
 		lines.extend(print_type_information_source(type,type,1))
-	lines.append('};')
 
-	hlp.write_lines_to_file("../Include/pds/ElementTypes.inl",lines)
+	lines.append('}')
+	lines.append('// namespace pds')
 
-def ElementValuePointers_h():
+	lines.extend( hlp.end_header_file('element_types.inl') )
+	hlp.write_lines_to_file("../Include/pds/element_types.inl",lines)
+
+def element_value_ptrs_h():
 	lines = []
-	lines.extend( hlp.generate_header() )
+	lines.extend( hlp.begin_header_file("element_value_ptrs.h") )
 	lines.append('')
-	lines.append('#pragma once')
-	lines.append('')
-	lines.append('#include "pds.h"')
+	lines.append('#include "element_types.h"')
 	lines.append('')
 
-	#lines.extend( hlp.generate_push_and_disable_warnings( [4201] , [] ) )
-	#lines.append('')
-	#lines.append('#include <glm/gtc/type_ptr.hpp>')
-	lines.append('')
 	lines.append('namespace pds')
 	lines.append('{')
 
@@ -363,9 +374,9 @@ def ElementValuePointers_h():
 		for const_type in nonconst_const_range:
 			lines.append(f"inline {const_type}u{bit_size} *value_ptr( {const_type}u{bit_size} &value ) {{ return &value; }}")
 	lines.append('')
-	for float_type in float_type_range:
+	for bit_size in float_bit_range:
 		for const_type in nonconst_const_range:
-			lines.append(f"inline {const_type}{float_type} *value_ptr( {const_type}{float_type} &value ) {{ return &value; }}")
+			lines.append(f"inline {const_type}f{bit_size} *value_ptr( {const_type}f{bit_size} &value ) {{ return &value; }}")
 	lines.append('')
 	for bit_size in int_bit_range:
 		for vec_dim in vector_dimension_range:
@@ -379,28 +390,23 @@ def ElementValuePointers_h():
 	lines.append('')
 
 	# vectors
-	for vec_dim in vector_dimension_range:
-		for const_type in nonconst_const_range:
-			lines.append(f"inline {const_type}float *value_ptr( {const_type}fvec{vec_dim} &value ) {{ return value.data(); }}")
-	for vec_dim in vector_dimension_range:
-		for const_type in nonconst_const_range:
-			lines.append(f"inline {const_type}double *value_ptr( {const_type}dvec{vec_dim} &value ) {{ return value.data(); }}")
+	for bit_size in float_bit_range:	
+		for vec_dim in vector_dimension_range:
+			for const_type in nonconst_const_range:
+				lines.append(f"inline {const_type}f{bit_size} *value_ptr( {const_type}f{bit_size}vec{vec_dim} &value ) {{ return value.data(); }}")
 	lines.append('')
 
 	# matrices
-	for vec_dim in vector_dimension_range:
-		for const_type in nonconst_const_range:
-			lines.append(f"inline {const_type}float *value_ptr( {const_type}fmat{vec_dim} &value ) {{ return value.data()->data(); }}")
-	for vec_dim in vector_dimension_range:
-		for const_type in nonconst_const_range:
-			lines.append(f"inline {const_type}double *value_ptr( {const_type}dmat{vec_dim} &value ) {{ return value.data()->data(); }}")
+	for bit_size in float_bit_range:
+		for vec_dim in vector_dimension_range:
+			for const_type in nonconst_const_range:
+				lines.append(f"inline {const_type}f{bit_size} *value_ptr( {const_type}f{bit_size}mat{vec_dim} &value ) {{ return value.data(); }}")
 	lines.append('')
 
 	# quaternions
-	for const_type in nonconst_const_range:
-		lines.append(f"inline {const_type}float *value_ptr( {const_type}fquat &value ) {{ return value.data(); }}")
-	for const_type in nonconst_const_range:
-		lines.append(f"inline {const_type}double *value_ptr( {const_type}dquat &value ) {{ return value.data(); }}")
+	for bit_size in float_bit_range:	
+		for const_type in nonconst_const_range:
+			lines.append(f"inline {const_type}f{bit_size} *value_ptr( {const_type}f{bit_size}quat &value ) {{ return value.data(); }}")
 	lines.append('')
 
 	# other types that have no inner item pointer
@@ -413,13 +419,12 @@ def ElementValuePointers_h():
 	lines.append('}')
 	lines.append('// namespace pds')
 	lines.append('')
-
-	# reenable warning
-	#lines.extend( hlp.generate_pop_warnings() )
 	
-	hlp.write_lines_to_file("../Include/pds/ElementValuePointers.h",lines)
+	lines.extend(hlp.end_header_file("element_value_ptrs.h"))
+	hlp.write_lines_to_file("../Include/pds/element_value_ptrs.h",lines)
 
 def run():
-	ElementTypes_h()
-	ElementTypes_inl()
-	ElementValuePointers_h()
+	fwd_h()
+	element_types_h()
+	element_types_inl()
+	element_value_ptrs_h()
