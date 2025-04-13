@@ -287,7 +287,7 @@ inline reader_status end_read_empty_large_block( ReadStream &sstream, const char
 }
 
 // reads an array header and value size from the stream, and decodes into flags, then reads the index if one exists. 
-inline bool read_array_metadata_and_index( ReadStream &sstream, size_t &out_per_item_size, size_t &out_item_count, const u64 block_end_position, std::vector<i32> *dest_index )
+inline bool read_array_metadata_and_index( ReadStream &sstream, size_t &out_per_item_size, size_t &out_item_count, const u64 block_end_position, vector<u32> *dest_index )
 {
 	static_assert( sizeof( u64 ) <= sizeof( size_t ), "Unsupported size_t, current code requires it to be at least 8 bytes in size, equal to u64" );
 
@@ -333,7 +333,7 @@ inline bool read_array_metadata_and_index( ReadStream &sstream, size_t &out_per_
 		dest_index->resize( index_count );
 
 		// read in the data
-		i32 *p_index_data = dest_index->data();
+		u32 *p_index_data = dest_index->data();
 		sstream.Read( p_index_data, index_count );
 
 		// modify the expected end position
@@ -358,7 +358,7 @@ inline bool read_array_metadata_and_index( ReadStream &sstream, size_t &out_per_
 	return true;
 }
 
-template<serialization_type_index VT, class T> inline reader_status read_array( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<T> *dest_items, std::vector<i32> *dest_index )
+template<serialization_type_index VT, class T> inline reader_status read_array( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, vector<T> *dest_items, vector<u32> *dest_index )
 {
 	static_assert( ( VT >= serialization_type_index::vt_array_bool ) && ( VT <= serialization_type_index::vt_array_hash ), "Invalid type for generic read_array template" );
 	static_assert( sizeof( u64 ) >= sizeof( size_t ), "Unsupported size_t, current code requires it to be at max 8 bytes in size, equal to u64" );
@@ -425,7 +425,7 @@ template<serialization_type_index VT, class T> inline reader_status read_array( 
 }
 
 // read_array implementation for bool arrays (which need specific packing)
-template <> inline reader_status read_array<serialization_type_index::vt_array_bool, bool>( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<bool> *dest_items, std::vector<i32> *dest_index )
+template <> inline reader_status read_array<serialization_type_index::vt_array_bool, bool>( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, vector<bool> *dest_items, vector<u32> *dest_index )
 {
 	ctSanityCheck( dest_items );
 
@@ -486,7 +486,7 @@ template <> inline reader_status read_array<serialization_type_index::vt_array_b
 	return reader_status::success;
 }
 
-template<> inline reader_status read_array<serialization_type_index::vt_array_string, string>( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<string> *dest_items, std::vector<i32> *dest_index )
+template<> inline reader_status read_array<serialization_type_index::vt_array_string, string>( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, vector<string> *dest_items, vector<u32> *dest_index )
 {
 	static_assert( sizeof( u64 ) == sizeof( size_t ), "Unsupported size_t, current code requires it to be 8 bytes in size, equal to u64" );
 

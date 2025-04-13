@@ -56,7 +56,7 @@ status EntityReader::EndReadSection( const EntityReader *section_reader )
 // Build a sections array. 
 // If the section is null, the section array is directly closed, nullptr+success is returned 
 // from BeginReadSectionsArray, and EndReadSectionsArray shall not be called.
-status_return<EntityReader *> EntityReader::BeginReadSectionsArray( const char *key, const u8 key_length, const bool null_section_array_is_allowed, std::vector<i32> *dest_index )
+status_return<EntityReader *> EntityReader::BeginReadSectionsArray( const char *key, const u8 key_length, const bool null_section_array_is_allowed, vector<u32> *dest_index )
 {
 	ctValidate(!this->active_subsection, status::invalid)
 		<< "This reader already has an active subsection. Close the subsection before opening a new."

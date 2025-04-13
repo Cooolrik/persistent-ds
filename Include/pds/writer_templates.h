@@ -23,7 +23,7 @@ status end_write_large_block( WriteStream &dstream, u64 start_pos );
 template<serialization_type_index VT, class T> status write_single_value( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const T *data );
 
 // Write an array to stream.
-template<serialization_type_index VT, class T> status write_array( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const std::vector<T> *items, const std::vector<i32> *index );
+template<serialization_type_index VT, class T> status write_array( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const vector<T> *items, const vector<u32> *index );
 
 // called to begin a large block
 inline status begin_write_large_block( WriteStream &dstream, const serialization_type_index VT, const char *key, const u8 key_size_in_bytes )
@@ -122,7 +122,7 @@ template<> inline status write_single_value<serialization_type_index::vt_bool, b
 }
 
 // specialization of write_single_value for strings, which are encoded differently from other single block values
-template<> inline status write_single_value<serialization_type_index::vt_string, std::string>( WriteStream &dstream, const char *key, const u8 key_length, const std::string *string_value )
+template<> inline status write_single_value<serialization_type_index::vt_string, string>( WriteStream &dstream, const char *key, const u8 key_length, const string *string_value )
 {
 	// record start position, we need this in the end block
 	const u64 start_pos = dstream.GetPosition();
@@ -169,7 +169,7 @@ template<> inline status write_single_value<serialization_type_index::vt_string,
 }
 
 // write metadata and index for an array
-inline status write_array_metadata_and_index( WriteStream &dstream, size_t per_item_size, size_t item_count, const std::vector<i32> *index )
+inline status write_array_metadata_and_index( WriteStream &dstream, size_t per_item_size, size_t item_count, const vector<u32> *index )
 {
 	static_assert( sizeof( u64 ) <= sizeof( size_t ), "Unsupported size_t, current code requires it to be at least 8 bytes in size, equal to u64" );
 	ctSanityCheck( per_item_size <= 0xff ); // max 8 bits for per item size
@@ -192,7 +192,7 @@ inline status write_array_metadata_and_index( WriteStream &dstream, size_t per_i
 		dstream.Write( index_count );
 		dstream.Write( index->data(), index_count );
 
-		index_size = ( index_count * sizeof( i32 ) ) + sizeof( u64 ); // the index values and the value count
+		index_size = ( index_count * sizeof( u32 ) ) + sizeof( u64 ); // the index values and the value count
 	}
 
 	// make sure all data was written
@@ -212,7 +212,7 @@ inline status write_array_metadata_and_index( WriteStream &dstream, size_t per_i
 }
 
 // write array to stream
-template<serialization_type_index VT, class T> inline status write_array( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const std::vector<T> *items, const std::vector<i32> *index )
+template<serialization_type_index VT, class T> inline status write_array( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const vector<T> *items, const vector<u32> *index )
 {
 	static_assert( ( VT >= serialization_type_index::vt_array_bool ) && ( VT <= serialization_type_index::vt_array_hash ), "Invalid type for write_array" );
 	static_assert( sizeof( typename element_type_information<T>::value_type ) <= 0xff, "Invalid value size, cannot exceed 255 bytes" );
@@ -257,7 +257,7 @@ template<serialization_type_index VT, class T> inline status write_array( WriteS
 }
 
 // specialization of write_array for bool arrays
-template<> inline status write_array<serialization_type_index::vt_array_bool, bool>( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const std::vector<bool> *items, const std::vector<i32> *index )
+template<> inline status write_array<serialization_type_index::vt_array_bool, bool>( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const vector<bool> *items, const vector<u32> *index )
 {
 	// record start position, we need this in the end block
 	const u64 start_pos = dstream.GetPosition();
@@ -309,7 +309,7 @@ template<> inline status write_array<serialization_type_index::vt_array_bool, bo
 }
 
 // specialization of write_array for string arrays
-template<> inline status write_array<serialization_type_index::vt_array_string, std::string>( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const std::vector<std::string> *items, const std::vector<i32> *index )
+template<> inline status write_array<serialization_type_index::vt_array_string, string>( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const vector<string> *items, const vector<u32> *index )
 {
 	// record start position, we need this in the end block
 	const u64 start_pos = dstream.GetPosition();

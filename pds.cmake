@@ -42,7 +42,8 @@ set(
 	#./Include/pds/DirectedGraph.h
 	#./Include/pds/DirectedGraph_MF.h
 	./Include/pds/IndexedVector.h
-	./Include/pds/IndexedVector_MF.h
+	./Include/pds/IndexedVector.inl
+	./Include/pds/mf/IndexedVector_MF.h
 	#./Include/pds/ItemTable.h
 	#./Include/pds/ItemTable_MF.h
 

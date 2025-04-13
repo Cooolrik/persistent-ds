@@ -107,11 +107,11 @@ typedef f32mat3 mat3;
 typedef f32mat4 mat4;
 
 // container types
-using std::vector;
-using ctle::idx_vector;
-using ctle::optional_idx_vector;
-using ctle::optional_value;
-using ctle::optional_vector;
+template <class _Ty> using vector = std::vector<_Ty>;
+template <class _Ty> using idx_vector = ctle::idx_vector<_Ty,vector<u32>>;
+template <class _Ty> using optional_idx_vector = ctle::optional_idx_vector<_Ty,vector<u32>>;
+template <class _Ty> using optional_value = ctle::optional_value<_Ty>;
+template <class _Ty> using optional_vector = ctle::optional_vector<_Ty>;
 
 // @brief element_type_information stores information on the element types in pds
 template <class _Ty> struct element_type_information;
@@ -125,11 +125,22 @@ enum class container_type_index : uint;
 // @brief element_type_index stores the element type index in pds
 enum class element_type_index : uint;
 
+// @brief validation_error_flag lists validation error flags in pds
+enum class validation_error_flag : u64;
+
 class Entity;
 class EntityWriter;
 class EntityReader;
 class WriteStream;
 class ReadStream;
+
+// @brief IndexedVector is the template class for all indexed vectors in pds
+template <
+	class _Ty, /* the type of the value in the vector */
+	class _IdxTy = u32, /* the type of the index in the vector */
+	class _Base = ctle::idx_vector<_Ty,std::vector<_IdxTy>> /* the base class of the vector, use to override implementation and allocations etc. */
+> class IndexedVector;
+
 }
 // namespace pds
 

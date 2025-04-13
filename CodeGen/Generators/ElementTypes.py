@@ -86,11 +86,11 @@ def fwd_h():
 
 	# container types
 	lines.append('// container types')
-	lines.append('using std::vector;')
-	lines.append('using ctle::idx_vector;')
-	lines.append('using ctle::optional_idx_vector;')
-	lines.append('using ctle::optional_value;')
-	lines.append('using ctle::optional_vector;')
+	lines.append('template <class _Ty> using vector = std::vector<_Ty>;')
+	lines.append('template <class _Ty> using idx_vector = ctle::idx_vector<_Ty,vector<u32>>;')
+	lines.append('template <class _Ty> using optional_idx_vector = ctle::optional_idx_vector<_Ty,vector<u32>>;')
+	lines.append('template <class _Ty> using optional_value = ctle::optional_value<_Ty>;')
+	lines.append('template <class _Ty> using optional_vector = ctle::optional_vector<_Ty>;')
 	lines.append('')	
 
 	# type information on all types
@@ -106,6 +106,9 @@ def fwd_h():
 	lines.append('// @brief element_type_index stores the element type index in pds')
 	lines.append('enum class element_type_index : uint;')
 	lines.append('')
+	lines.append('// @brief validation_error_flag lists validation error flags in pds')
+	lines.append('enum class validation_error_flag : u64;')
+	lines.append('')
 
 	# fwd declarations of classes
 	lines.append('class Entity;')
@@ -113,6 +116,14 @@ def fwd_h():
 	lines.append('class EntityReader;')
 	lines.append('class WriteStream;')
 	lines.append('class ReadStream;')
+	lines.append('')
+	lines.append('// @brief IndexedVector is the template class for all indexed vectors in pds')
+	lines.append('template <')
+	lines.append('\tclass _Ty, /* the type of the value in the vector */')
+	lines.append('\tclass _IdxTy = u32, /* the type of the index in the vector */')
+	lines.append('\tclass _Base = ctle::idx_vector<_Ty,std::vector<_IdxTy>> /* the base class of the vector, use to override implementation and allocations etc. */')
+	lines.append('> class IndexedVector;')
+	lines.append('')
 
 	# end of pds namespace
 	lines.append('}')

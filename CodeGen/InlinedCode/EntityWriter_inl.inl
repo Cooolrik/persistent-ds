@@ -38,7 +38,7 @@ status EntityWriter::WriteNullSection( const char *key, const u8 key_length )
 	return this->EndWriteSection( subsection );
 }
 
-status_return<EntityWriter*> EntityWriter::BeginWriteSectionsArray( const char *key, const u8 key_length, const size_t array_size, const std::vector<i32> *index )
+status_return<EntityWriter*> EntityWriter::BeginWriteSectionsArray( const char *key, const u8 key_length, const size_t array_size, const vector<u32> *index )
 {
 	ctValidate(!this->active_subsection, status::invalid)
 		<< "This reader already has an active subsection. Close the subsection before opening a new."

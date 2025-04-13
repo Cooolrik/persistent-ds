@@ -12,12 +12,12 @@ namespace pds
 
 enum class validation_error_flag : u64
 {
-	vf_invalid_count	= 0x01,	// an invalid size of lists etc
-	vf_null_not_allowed	= 0x02,	// an object which is not allowed to be empty/null, is empty/null
-	vf_missing_bject	= 0x04,	// a required object is missing
-	vf_invalid_object	= 0x08,	// an object is invalid or used in an invalid way
-	vf_invalid_setup	= 0x10,	// the set up of an object or system is invalid 
-	vf_invalid_value	= 0x20,	// a value or index is out of bounds or not allowed
+	invalid_count	 = 0x01, // an invalid size of lists etc
+	null_not_allowed = 0x02, // an object which is not allowed to be empty/null, is empty/null
+	missing_object	 = 0x04, // a required object is missing
+	invalid_object	 = 0x08, // an object is invalid or used in an invalid way
+	invalid_setup	 = 0x10, // the set up of an object or system is invalid 
+	invalid_value	 = 0x20, // a value or index is out of bounds or not allowed
 };
 
 // EntityValidator is used to validate an entity's integrity before locking the entity and writing it to disk
@@ -39,23 +39,17 @@ public:
 		this->Errors |= errorid;
 	}
 
-	void ReportError( u64 errorid, const std::string &errorDescription, const char *filename, int fileline, const char *funcsig )
+	void ReportErrorDescription( u64 errorid, const std::string &errorDescription, const char *filename, int fileline, const char *funcsig )
 	{
-		this->ReportError( errorid );
-
-		// if set, reports individual error strings to the error strings log
-		if( this->RecordErrorDescriptions )
-		{
-			this->ErrorDescriptions.emplace_back(
-				ErrorDescription{ 
-					errorid,
-					errorDescription,
-					(filename)?(std::string(filename)):(std::string("")),
-					fileline,
-					(funcsig)?(std::string(funcsig)):(std::string(""))
-				}
-			);
-		}
+		this->ErrorDescriptions.emplace_back(
+			ErrorDescription{ 
+				errorid,
+				errorDescription,
+				(filename)?(std::string(filename)):(std::string("")),
+				fileline,
+				(funcsig)?(std::string(funcsig)):(std::string(""))
+			}
+		);
 	}
 
 	void SetRecordErrorDescriptions( bool value )
@@ -85,7 +79,7 @@ public:
 		return this->Errors;
 	}
 
-	const std::vector<ErrorDescription> &GetErrorDescriptions() const
+	const vector<ErrorDescription> &GetErrorDescriptions() const
 	{
 		return this->ErrorDescriptions;
 	}
@@ -93,7 +87,7 @@ public:
 private:
 	uint ErrorCount = 0;
 	u64 Errors = 0;
-	std::vector<ErrorDescription> ErrorDescriptions;
+	vector<ErrorDescription> ErrorDescriptions;
 	bool RecordErrorDescriptions = true;
 };
 
