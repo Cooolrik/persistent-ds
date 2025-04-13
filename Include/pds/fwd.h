@@ -13,6 +13,8 @@
 #include <float.h>
 #include <string>
 #include <vector>
+#include <memory>
+
 #include <ctle/fwd.h>
 
 namespace pds
@@ -31,8 +33,10 @@ typedef float f32;
 typedef double f64;
 
 using std::string;
+using std::unique_ptr;
 
 using ctle::status;
+template<class _ValTy> using status_return = ctle::status_return<ctle::status, _ValTy>;
 using ctle::uuid;
 using hash = ctle::digest<256>;
 
@@ -115,6 +119,17 @@ template <class _Ty> struct element_type_information;
 // @brief value_type_information stores information on the value types in pds, which is a combination of element types with containers
 template <class _Ty> struct value_type_information;
 
+// @brief container_type_index stores the container type index of the container types in pds
+enum class container_type_index : uint;
+
+// @brief element_type_index stores the element type index in pds
+enum class element_type_index : uint;
+
+class Entity;
+class EntityWriter;
+class EntityReader;
+class WriteStream;
+class ReadStream;
 }
 // namespace pds
 

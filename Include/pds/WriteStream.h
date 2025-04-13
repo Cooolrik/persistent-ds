@@ -3,7 +3,9 @@
 
 #pragma once
 
-#include "pds.h"
+#include "fwd.h"
+#include <ctle/uuid.h>
+#include <ctle/digest.h>
 
 namespace pds
 {

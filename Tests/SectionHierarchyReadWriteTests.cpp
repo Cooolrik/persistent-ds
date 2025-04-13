@@ -5,8 +5,8 @@
 
 #include <pds/EntityWriter.h>
 #include <pds/EntityReader.h>
-#include <pds/MemoryWriteStream.h>
-#include <pds/MemoryReadStream.h>
+#include <pds/WriteStream.h>
+#include <pds/ReadStream.h>
 
 class section_array;
 
@@ -23,8 +23,8 @@ public:
 	void SetupRandom( int levels_left );
 	uint CountItems() const;
 	void Compare( const section_object *other ) const;
-	bool Write( const MemoryWriteStream &ws, EntityWriter &ew );
-	bool Read( const MemoryReadStream &rs, EntityReader &er );
+	bool Write( const WriteStream &ws, EntityWriter &ew );
+	bool Read( const ReadStream &rs, EntityReader &er );
 };
 
 void section_object::SetupRandom( int levels_left )
@@ -137,7 +137,7 @@ void section_object::Compare( const section_object *other ) const
 	}
 }
 
-bool section_object::Write( const MemoryWriteStream &ws, EntityWriter &ew )
+bool section_object::Write( const WriteStream &ws, EntityWriter &ew )
 {
 	EXPECT_TRUE( ew.Write( "object_name", 11, object_name ) );
 
@@ -145,7 +145,9 @@ bool section_object::Write( const MemoryWriteStream &ws, EntityWriter &ew )
 
 	if( sub )
 	{
-		EntityWriter *section_writer = ew.BeginWriteSection( "sub", 3 );
+		auto result = ew.BeginWriteSection( "sub", 3 );
+		EXPECT_TRUE( result );
+		EntityWriter *section_writer = result.value();
 		EXPECT_NE( section_writer, nullptr );
 		if( section_writer )
 		{
@@ -160,8 +162,10 @@ bool section_object::Write( const MemoryWriteStream &ws, EntityWriter &ew )
 
 	if( true )
 	{
-		EntityWriter *section_array_writer = ew.BeginWriteSectionsArray( "vec", 3, vec.size() );
-		EXPECT_TRUE( section_array_writer != nullptr );
+		auto result = ew.BeginWriteSectionsArray( "vec", 3, vec.size() );
+		EXPECT_TRUE( result );
+		EntityWriter *section_array_writer = result.value();
+		EXPECT_NE( section_array_writer, nullptr );
 		if( section_array_writer )
 		{
 			for( size_t i = 0; i < vec.size(); ++i )
@@ -180,7 +184,9 @@ bool section_object::Write( const MemoryWriteStream &ws, EntityWriter &ew )
 
 	if( opt_arr.has_value() )
 	{
-		EntityWriter *section_array_writer = ew.BeginWriteSectionsArray( "opt_arr", 7, opt_arr.values().size(), &opt_arr.index() );
+		auto result = ew.BeginWriteSectionsArray( "opt_arr", 7, opt_arr.values().size(), &opt_arr.index() );
+		EXPECT_TRUE( result );
+		EntityWriter *section_array_writer = result.value();
 		EXPECT_NE( section_array_writer, nullptr );
 		if( section_array_writer )
 		{
@@ -205,18 +211,16 @@ bool section_object::Write( const MemoryWriteStream &ws, EntityWriter &ew )
 	return true;
 }
 
-bool section_object::Read( const MemoryReadStream &rs, EntityReader &er )
+bool section_object::Read( const ReadStream &rs, EntityReader &er )
 {
-	bool success = false;
-
 	EXPECT_TRUE( er.Read( "object_name", 11, object_name ) );
 
 	EXPECT_TRUE( er.Read( "object_transform", 16, object_transform ) );
 
 	// read sub section
-	EntityReader *section_reader = nullptr;
-	std::tie( section_reader, success ) = er.BeginReadSection( "sub", 3, true );
-	EXPECT_TRUE( success );
+	auto result = er.BeginReadSection( "sub", 3, true );
+	EXPECT_TRUE( result );
+	EntityReader *section_reader = result.value();
 	if( section_reader )
 	{
 		this->sub = std::make_unique<section_object>();
@@ -229,10 +233,10 @@ bool section_object::Read( const MemoryReadStream &rs, EntityReader &er )
 	}
 
 	// read vector
-	size_t array_size = 0;
-	EntityReader *section_array_reader = nullptr;
-	std::tie( section_array_reader, array_size, success ) = er.BeginReadSectionsArray( "vec", 3, false );
-	EXPECT_TRUE( success );
+	result = er.BeginReadSectionsArray( "vec", 3, false );
+	EXPECT_TRUE( result );
+	size_t array_size = er.GetReadSectionsArraySize();
+	EntityReader *section_array_reader = result.value();
 	if( section_array_reader )
 	{
 		this->vec.resize( array_size );
@@ -252,8 +256,10 @@ bool section_object::Read( const MemoryReadStream &rs, EntityReader &er )
 
 	// read optional indexed vector
 	opt_arr.set();
-	std::tie( section_array_reader, array_size, success ) = er.BeginReadSectionsArray( "opt_arr", 7, true, &opt_arr.index() );
-	EXPECT_TRUE( success );
+	result = er.BeginReadSectionsArray( "opt_arr", 7, true, &opt_arr.index() );
+	EXPECT_TRUE( result );
+	array_size = er.GetReadSectionsArraySize();
+	section_array_reader = result.value();
 	if( section_array_reader )
 	{
 		this->opt_arr.values().resize( array_size );
@@ -289,13 +295,12 @@ TEST( SectionHierarchyReadWriteTests, TestEntitySectionWriterAndReadback )
 		section_object my_hierarchy;
 		my_hierarchy.SetupRandom( (int)capped_rand( 2, 5 ) );
 
-		MemoryWriteStream ws;
+		WriteStream ws;
 		EntityWriter ew( ws );
-		ws.SetFlipByteOrder( random_value<bool>() );
 
 		EXPECT_TRUE( my_hierarchy.Write( ws, ew ) );
 
-		MemoryReadStream rs( ws.GetData(), ws.GetSize(), ws.GetFlipByteOrder() );
+		ReadStream rs( ws.GetData(), ws.GetSize() );
 		EntityReader er( rs );
 
 		section_object readback_hierarchy;

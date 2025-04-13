@@ -1,6 +1,12 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#endif
+
 //#include "TestPackA/TestEntityA.h"
 //#include "TestPackA/TestEntityB.h"
 
@@ -12,25 +18,38 @@
 //#include <ctle/ntup.h>
 //#include <pds/pds.h>
 //#include <pds/ValueTypes.h>
-//#include <pds/element_types.h>
 
 //#include <pds/writer_templates.h>
 //#include <pds/reader_templates.h>
 
-#include <pds/value_types.h>
+//#include <pds/dynamic_types.h>
+//#include <pds/element_types.h>
+//#include <pds/container_types.h>
+
+#include <pds/WriteStream.h>
+#include <pds/EntityWriter.h>
 
 using namespace pds;
-
 #include <pds/_pds_macros.inl>
 
 int main()
 	{
 	
+	//auto type = dynamic_types::new_type( element_type_index::dt_bool, container_type_index::ct_vector );
+	//
+	WriteStream ws;
+	EntityWriter ew(ws);
+   
+	auto section = ew.BeginWriteSection( pdsKeyMacro(Hej) );
 
+	f32 val = 123;
+	section->Write( pdsKeyMacro(Hoj), val );
 
-	std::vector<int> myvec = {1,2,3};
+	ew.EndWriteSection(section);
+
+	//std::vector<int> myvec = {1,2,3};
 	
-	pds::clear_value_type( myvec );
+	//pds::clear_value_type( myvec );
 
 	//pds::clear_combined_type( myvec );
 

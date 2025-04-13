@@ -7,8 +7,7 @@
 
 // container_types.h - information of the container types supported by pds
 
-#include <vector>
-#include <ctle/fwd.h>
+#include "fwd.h"
 
 #include <ctle/idx_vector.h>
 #include <ctle/optional_value.h>
@@ -19,7 +18,7 @@ namespace pds
 {
 
 // enumeration of container types
-enum class container_type_index
+enum class container_type_index : uint
 {
 	ct_none = 0x0,
 	ct_optional_value = 0x1,

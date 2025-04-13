@@ -31,47 +31,47 @@ class ContainerType:
 		self.implementing_type = implementing_type
 		self.is_template = is_template
 
-base_type_Bool = BaseType('Bool',[BaseTypeVariant('bool','bool',1)])
-base_type_Int =  BaseType('Int',[BaseTypeVariant('i8','i8',1),BaseTypeVariant('i16','i16',1),BaseTypeVariant('i32','i32',1),BaseTypeVariant('i64','i64',1)])
-base_type_UInt =  BaseType('UInt',[BaseTypeVariant('u8','u8',1),BaseTypeVariant('u16','u16',1),BaseTypeVariant('u32','u32',1),BaseTypeVariant('u64','u64',1)])
-base_type_Float =  BaseType('Float',[BaseTypeVariant('f32','f32',1),BaseTypeVariant('f64','f64',1)])
-base_type_Vec2 =  BaseType('Vec2',[BaseTypeVariant('f32vec2','f32',2),BaseTypeVariant('f64vec2','f64',2)]) 
-base_type_Vec3 =  BaseType('Vec3',[BaseTypeVariant('f32vec3','f32',3),BaseTypeVariant('f64vec3','f64',3)])  
-base_type_Vec4 =  BaseType('Vec4',[BaseTypeVariant('f32vec4','f32',4),BaseTypeVariant('f64vec4','f64',4)])  
-base_type_IVec2 =  BaseType('IVec2',[BaseTypeVariant('i8vec2','i8',2),BaseTypeVariant('i16vec2','i16',2),BaseTypeVariant('i32vec2','i32',2),BaseTypeVariant('i64vec2','i64',2)])    
-base_type_IVec3 =  BaseType('IVec3',[BaseTypeVariant('i8vec3','i8',3),BaseTypeVariant('i16vec3','i16',3),BaseTypeVariant('i32vec3','i32',3),BaseTypeVariant('i64vec3','i64',3)])    
-base_type_IVec4 =  BaseType('IVec4',[BaseTypeVariant('i8vec4','i8',4),BaseTypeVariant('i16vec4','i16',4),BaseTypeVariant('i32vec4','i32',4),BaseTypeVariant('i64vec4','i64',4)])    
-base_type_UVec2 =  BaseType('UVec2',[BaseTypeVariant('u8vec2','u8',2),BaseTypeVariant('u16vec2','u16',2),BaseTypeVariant('u32vec2','u32',2),BaseTypeVariant('u64vec2','u64',2)])    
-base_type_UVec3 =  BaseType('UVec3',[BaseTypeVariant('u8vec3','u8',3),BaseTypeVariant('u16vec3','u16',3),BaseTypeVariant('u32vec3','u32',3),BaseTypeVariant('u64vec3','u64',3)])    
-base_type_UVec4 =  BaseType('UVec4',[BaseTypeVariant('u8vec4','u8',4),BaseTypeVariant('u16vec4','u16',4),BaseTypeVariant('u32vec4','u32',4),BaseTypeVariant('u64vec4','u64',4)])    
-base_type_Mat2 =  BaseType('Mat2',[BaseTypeVariant('f32mat2','f32',4),BaseTypeVariant('f64mat2','f64',4)])    
-base_type_Mat3 =  BaseType('Mat3',[BaseTypeVariant('f32mat3','f32',9),BaseTypeVariant('f64mat3','f64',9)])    
-base_type_Mat4 =  BaseType('Mat4',[BaseTypeVariant('f32mat4','f32',16),BaseTypeVariant('f64mat4','f64',16)])
-base_type_Quat =  BaseType('Quat',[BaseTypeVariant('f32quat','f32',4),BaseTypeVariant('f64quat','f64',4)])
-base_type_Uuid =  BaseType('Uuid',[BaseTypeVariant('uuid','uuid',1),BaseTypeVariant('item_ref','uuid',1,True)])
-base_type_Hash =  BaseType('Hash',[BaseTypeVariant('hash','hash',1),BaseTypeVariant('entity_ref','hash',1,True)])
-base_type_String = BaseType('String',[BaseTypeVariant('string','string',1)])
+base_type_bool = BaseType('bool',[BaseTypeVariant('bool','bool',1)])
+base_type_int =  BaseType('int',[BaseTypeVariant('i8','i8',1),BaseTypeVariant('i16','i16',1),BaseTypeVariant('i32','i32',1),BaseTypeVariant('i64','i64',1)])
+base_type_uint =  BaseType('uint',[BaseTypeVariant('u8','u8',1),BaseTypeVariant('u16','u16',1),BaseTypeVariant('u32','u32',1),BaseTypeVariant('u64','u64',1)])
+base_type_float =  BaseType('float',[BaseTypeVariant('f32','f32',1),BaseTypeVariant('f64','f64',1)])
+base_type_vec2 =  BaseType('vec2',[BaseTypeVariant('f32vec2','f32',2),BaseTypeVariant('f64vec2','f64',2)]) 
+base_type_vec3 =  BaseType('vec3',[BaseTypeVariant('f32vec3','f32',3),BaseTypeVariant('f64vec3','f64',3)])  
+base_type_vec4 =  BaseType('vec4',[BaseTypeVariant('f32vec4','f32',4),BaseTypeVariant('f64vec4','f64',4)])  
+base_type_ivec2 =  BaseType('ivec2',[BaseTypeVariant('i8vec2','i8',2),BaseTypeVariant('i16vec2','i16',2),BaseTypeVariant('i32vec2','i32',2),BaseTypeVariant('i64vec2','i64',2)])    
+base_type_ivec3 =  BaseType('ivec3',[BaseTypeVariant('i8vec3','i8',3),BaseTypeVariant('i16vec3','i16',3),BaseTypeVariant('i32vec3','i32',3),BaseTypeVariant('i64vec3','i64',3)])    
+base_type_ivec4 =  BaseType('ivec4',[BaseTypeVariant('i8vec4','i8',4),BaseTypeVariant('i16vec4','i16',4),BaseTypeVariant('i32vec4','i32',4),BaseTypeVariant('i64vec4','i64',4)])    
+base_type_uvec2 =  BaseType('uvec2',[BaseTypeVariant('u8vec2','u8',2),BaseTypeVariant('u16vec2','u16',2),BaseTypeVariant('u32vec2','u32',2),BaseTypeVariant('u64vec2','u64',2)])    
+base_type_uvec3 =  BaseType('uvec3',[BaseTypeVariant('u8vec3','u8',3),BaseTypeVariant('u16vec3','u16',3),BaseTypeVariant('u32vec3','u32',3),BaseTypeVariant('u64vec3','u64',3)])    
+base_type_uvec4 =  BaseType('uvec4',[BaseTypeVariant('u8vec4','u8',4),BaseTypeVariant('u16vec4','u16',4),BaseTypeVariant('u32vec4','u32',4),BaseTypeVariant('u64vec4','u64',4)])    
+base_type_mat2 =  BaseType('mat2',[BaseTypeVariant('f32mat2','f32',4),BaseTypeVariant('f64mat2','f64',4)])    
+base_type_mat3 =  BaseType('mat3',[BaseTypeVariant('f32mat3','f32',9),BaseTypeVariant('f64mat3','f64',9)])    
+base_type_mat4 =  BaseType('mat4',[BaseTypeVariant('f32mat4','f32',16),BaseTypeVariant('f64mat4','f64',16)])
+base_type_quat =  BaseType('quat',[BaseTypeVariant('f32quat','f32',4),BaseTypeVariant('f64quat','f64',4)])
+base_type_uuid =  BaseType('uuid',[BaseTypeVariant('uuid','uuid',1),BaseTypeVariant('item_ref','uuid',1,True)])
+base_type_hash =  BaseType('hash',[BaseTypeVariant('hash','hash',1),BaseTypeVariant('entity_ref','hash',1,True)])
+base_type_string = BaseType('string',[BaseTypeVariant('string','string',1)])
 
-base_types = [base_type_Bool,
-			  base_type_Int,
-			  base_type_UInt,
-			  base_type_Float,
-			  base_type_Vec2,
-			  base_type_Vec3,
-			  base_type_Vec4,
-			  base_type_IVec2,
-			  base_type_IVec3,
-			  base_type_IVec4,
-			  base_type_UVec2,
-			  base_type_UVec3,
-			  base_type_UVec4,
-			  base_type_Mat2,
-			  base_type_Mat3,
-			  base_type_Mat4,
-			  base_type_Quat,
-			  base_type_Uuid,
-			  base_type_Hash,
-			  base_type_String]
+base_types = [base_type_bool,
+			  base_type_int,
+			  base_type_uint,
+			  base_type_float,
+			  base_type_vec2,
+			  base_type_vec3,
+			  base_type_vec4,
+			  base_type_ivec2,
+			  base_type_ivec3,
+			  base_type_ivec4,
+			  base_type_uvec2,
+			  base_type_uvec3,
+			  base_type_uvec4,
+			  base_type_mat2,
+			  base_type_mat3,
+			  base_type_mat4,
+			  base_type_quat,
+			  base_type_uuid,
+			  base_type_hash,
+			  base_type_string]
 
 container_types = [ContainerType(0x00,'none',False),
 				   ContainerType(0x01,'optional_value'),

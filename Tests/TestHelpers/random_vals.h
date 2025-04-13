@@ -72,7 +72,7 @@ template<class T> T random_value( T &dest )
 template<class T> void random_nonzero_value( T &dest )
 	{
 	dest = random_value<T>();
-	while( dest == data_type_information<T>::zero )
+	while( dest == element_type_information<T>::zero )
 		dest = random_value<T>();
 	}
 
@@ -96,7 +96,7 @@ template<class T> void random_optional_value( optional_value<T> &dest )
 template<class T> void random_nonzero_optional_value( optional_value<T> &dest )
 	{
 	dest.set( random_value<T>() );
-	while( dest.value() == data_type_information<T>::zero )
+	while( dest.value() == element_type_information<T>::zero )
 		dest.set( random_value<T>() );
 	}
 

@@ -360,7 +360,7 @@ inline bool read_array_metadata_and_index( ReadStream &sstream, size_t &out_per_
 
 template<serialization_type_index VT, class T> inline reader_status read_array( ReadStream &sstream, const char *key, const u8 key_size_in_bytes, const bool empty_value_is_allowed, std::vector<T> *dest_items, std::vector<i32> *dest_index )
 {
-	static_assert( ( VT >= serialization_type_index::VT_Array_Bool ) && ( VT <= serialization_type_index::VT_Array_Hash ), "Invalid type for generic read_array template" );
+	static_assert( ( VT >= serialization_type_index::vt_array_bool ) && ( VT <= serialization_type_index::vt_array_hash ), "Invalid type for generic read_array template" );
 	static_assert( sizeof( u64 ) >= sizeof( size_t ), "Unsupported size_t, current code requires it to be at max 8 bytes in size, equal to u64" );
 	const size_t value_size = sizeof( typename element_type_information<T>::value_type );
 

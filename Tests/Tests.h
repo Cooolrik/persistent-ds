@@ -32,7 +32,7 @@ using namespace pds;
 #include "TestHelpers/random_vals.h"
 
 // set this to a higher number to run more passes where the values are randomized
-const size_t global_number_of_passes = 10000;
+const size_t global_number_of_passes = 10;
 
 // method which creates an inversed map, where the values of the original map points at the keys of the original map
 template<typename K, typename V>

@@ -13,7 +13,9 @@ def fwd_h():
 	lines.append('#include <limits.h>')
 	lines.append('#include <float.h>')
 	lines.append('#include <string>')
-	lines.append('#include <vector>')	
+	lines.append('#include <vector>')
+	lines.append('#include <memory>')	
+	lines.append('')
 	lines.append('#include <ctle/fwd.h>')
 	lines.append('')
 
@@ -31,8 +33,10 @@ def fwd_h():
 	lines.append('typedef double f64;')
 	lines.append('')
 	lines.append(f"using std::string;")
+	lines.append(f"using std::unique_ptr;")	
 	lines.append('')
 	lines.append(f"using ctle::status;")
+	lines.append(f"template<class _ValTy> using status_return = ctle::status_return<ctle::status, _ValTy>;")	
 	lines.append(f"using ctle::uuid;")
 	lines.append(f"using hash = ctle::digest<256>;")
 	lines.append('')
@@ -96,6 +100,19 @@ def fwd_h():
 	lines.append('// @brief value_type_information stores information on the value types in pds, which is a combination of element types with containers')
 	lines.append('template <class _Ty> struct value_type_information;')
 	lines.append('')
+	lines.append('// @brief container_type_index stores the container type index of the container types in pds')
+	lines.append('enum class container_type_index : uint;')
+	lines.append('')
+	lines.append('// @brief element_type_index stores the element type index in pds')
+	lines.append('enum class element_type_index : uint;')
+	lines.append('')
+
+	# fwd declarations of classes
+	lines.append('class Entity;')
+	lines.append('class EntityWriter;')
+	lines.append('class EntityReader;')
+	lines.append('class WriteStream;')
+	lines.append('class ReadStream;')
 
 	# end of pds namespace
 	lines.append('}')
@@ -188,7 +205,7 @@ def element_types_h():
 
 	# enum of all data types
 	lines.append('// all element type indices')
-	lines.append('enum class element_type_index')
+	lines.append('enum class element_type_index : uint')
 	lines.append('{')
 	for basetype_inx in range(len(hlp.base_types)):
 		basetype = hlp.base_types[basetype_inx]

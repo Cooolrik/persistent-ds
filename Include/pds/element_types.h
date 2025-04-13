@@ -85,7 +85,7 @@ public:
 };
 
 // all element type indices
-enum class element_type_index
+enum class element_type_index : uint
 {
 	dt_bool = 0x11,
 	dt_i8 = 0x21,

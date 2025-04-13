@@ -4,35 +4,28 @@
 #ifndef __PDS__PDS_H__
 #define __PDS__PDS_H__
 
-#include <ctle/status.h>
-
-#include "element_types.h"
-
-namespace pds
-{
-class EntityValidator;
-class EntityWriter;
-class EntityReader;
-class EntityManager;
-class MemoryReadStream;
-class MemoryWriteStream;
-
-}
-// namespace pds
-
-//#include "Entity.h"
+#include "fwd.h"
 
 #ifdef PDS_IMPLEMENTATION
 
 #include <ctle/log.h>
 
-//#include "DynamicTypes.h"
+#include "element_types.h"
 #include "value_types.h"
 #include "element_value_ptrs.h"
 
-//#include "EntityWriter.h"
-//#include "EntityReader.h"
+#include "WriteStream.h"
+#include "ReadStream.h"
+
+#include "EntityWriter.h"
+#include "EntityReader.h"
 //#include "EntityValidator.h"
+//#include "EntityManager.h"
+
+#include "dynamic_types.h"
+
+
+
 //
 //#include "Varying_MF.h"
 //#include "BidirectionalMap_MF.h"
@@ -40,23 +33,7 @@ class MemoryWriteStream;
 //#include "IndexedVector_MF.h"
 //#include "ItemTable_MF.h"
 
-#ifdef _MSC_VER
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#endif
 
-#include "WriteStream.h"
-#include "ReadStream.h"
-
-//#include "element_types.inl"
-//#include "ValueTypes.inl"
-//#include "EntityWriter.inl"
-//#include "EntityReader.inl"
-//#include "DynamicTypes.inl"
-//#include "MemoryWriteStream.inl"
-//#include "MemoryReadStream.inl"
-//#include "EntityManager.inl"
 //#include "Varying.inl"
 //#include "Varying_MF.inl"
 

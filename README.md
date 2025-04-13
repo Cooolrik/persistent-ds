@@ -12,6 +12,9 @@ Container types are a few types (optinal value, vector, indexed vector) which, w
 ### Value type
 Value types are the basic values of Items (see Item below), and can be either Element types or a combination of an element type and a container. Currently, pds supports std::vector, ctle::idx_vector (vector extended with an addition index vector), as well as optional variants of these containers. (Note that pds supports all C++ versions from C++14, and therefore does not use the std::optional template). The value types are defined in [ValueTypes.h](./Include/pds/ValueTypes.h).
 
+### Dynamic types
+Dynamic types is a reflection and management layer, which makes it possible to dynamically allocate value types, clear and serialize the types. All value types have a dynamic type counterpart.
+
 ### Item
 An item is a class in the persistent data structure. An Item class contains information which is serialized with the Item. Note that Items in pds do not inherit a specific base class, and *any* class can be an Item, as long as it implements needed methods for item serialization and other management (see MF).
 

@@ -172,26 +172,21 @@ template<> inline status write_single_value<serialization_type_index::vt_string,
 inline status write_array_metadata_and_index( WriteStream &dstream, size_t per_item_size, size_t item_count, const std::vector<i32> *index )
 {
 	static_assert( sizeof( u64 ) <= sizeof( size_t ), "Unsupported size_t, current code requires it to be at least 8 bytes in size, equal to u64" );
-	ctSanityCheck( per_item_size <= 0xfff ); // max 12 bits for per item size
+	ctSanityCheck( per_item_size <= 0xff ); // max 8 bits for per item size
 	const u64 start_pos = dstream.GetPosition();
 	
 	// set flags for the array
-	const bool has_index = (index) ? (true) : (false);
-	const bool index_is_64bit = false; // we do not support 64 bit indices yet
-
-	// indexed array flags: size of each item (if need to decode array outside regular decoding) and bit set if index is used 
-	const u16 array_flags =
-		  (has_index) ? (0x1000) : (0)		// bit 12 for has_index
-		| (index_is_64bit) ? (0x2000) : (0) // bit 13 for index_is_64bit
-		| (u16)(per_item_size);				// bits 0-11 for per item size
-	dstream.Write(array_flags);
+	const u16 has_index_flag = ( index ) ? ( 0x100 ) : ( 0 );
+	const u16 index_is_64bit_flag = ( false ) ? ( 0x200 ) : ( 0 ); // we do not support 64 bit indices yet
+	const u16 array_flags = has_index_flag | index_is_64bit_flag | u16( per_item_size );
+	dstream.Write( array_flags );
 
 	// write the number of items
 	dstream.Write( u64( item_count ) );
 
 	// if we have an index, write it 
 	u64 index_size = 0;
-	if( has_index )
+	if( index )
 	{
 		const u64 index_count = index->size();
 		dstream.Write( index_count );
@@ -219,7 +214,7 @@ inline status write_array_metadata_and_index( WriteStream &dstream, size_t per_i
 // write array to stream
 template<serialization_type_index VT, class T> inline status write_array( WriteStream &dstream, const char *key, const u8 key_size_in_bytes, const std::vector<T> *items, const std::vector<i32> *index )
 {
-	static_assert( ( VT >= serialization_type_index::vt_array_bool ) && ( VT <= serialization_type_index::VT_Array_Hash ), "Invalid type for write_array" );
+	static_assert( ( VT >= serialization_type_index::vt_array_bool ) && ( VT <= serialization_type_index::vt_array_hash ), "Invalid type for write_array" );
 	static_assert( sizeof( typename element_type_information<T>::value_type ) <= 0xff, "Invalid value size, cannot exceed 255 bytes" );
 	static_assert( sizeof( u64 ) >= sizeof( size_t ), "Unsupported size_t, current code requires it to be at most 8 bytes in size, equal to an u64" ); // assuming sizeof(u64) >= sizeof(size_t)
 	const size_t value_size = sizeof( typename element_type_information<T>::value_type );

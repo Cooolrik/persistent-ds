@@ -3,40 +3,49 @@ set(
 	pds_library_files
 
 	# library files
-	#./Include/pds/BidirectionalMap.h
-	#./Include/pds/BidirectionalMap_MF.h
+	./Include/pds/value_types.h
+	./Include/pds/value_types.inl
+
+	./Include/pds/container_types.h
+	
 	./Include/pds/element_types.h
 	./Include/pds/element_types.inl
 	./Include/pds/element_value_ptrs.h
-	#./Include/pds/DirectedGraph.h
-	#./Include/pds/DirectedGraph_MF.h
-	#./Include/pds/DynamicTypes.h
-	#./Include/pds/DynamicTypes.inl
-	#./Include/pds/EntityManager.h
-	#./Include/pds/EntityManager.inl
-	#./Include/pds/EntityReader.h
-	#./Include/pds/EntityReader.inl
-	#./Include/pds/EntityReaderTemplates.inl
-	#./Include/pds/EntityValidator.h
-	#./Include/pds/EntityWriter.h
-	#./Include/pds/EntityWriter.inl
-	./Include/pds/fileops_common.h		
+
 	./Include/pds/entity_ref.h		
 	./Include/pds/fwd.h	
+	
+	./Include/pds/dynamic_types.h
+	./Include/pds/dynamic_types.inl
+
+	./Include/pds/fileops_common.h		
+
+	#./Include/pds/EntityManager.h
+	#./Include/pds/EntityManager.inl
+	./Include/pds/EntityReader.h
+	./Include/pds/EntityReader.inl
+	./Include/pds/EntityValidator.h
+	./Include/pds/EntityWriter.h
+	./Include/pds/EntityWriter.inl
 	./Include/pds/writer_templates.h
 	./Include/pds/reader_templates.h
-	#./Include/pds/IndexedVector.h
-	#./Include/pds/IndexedVector_MF.h
-	#./Include/pds/ItemTable.h
-	#./Include/pds/ItemTable_MF.h
+
 	./Include/pds/item_ref.h		
 	./Include/pds/ReadStream.h
 	./Include/pds/ReadStream.inl
 	./Include/pds/WriteStream.h
 	./Include/pds/WriteStream.inl
 	./Include/pds/pds.h
-	#./Include/pds/ValueTypes.h
-	#./Include/pds/ValueTypes.inl
+	
+	#./Include/pds/BidirectionalMap.h
+	#./Include/pds/BidirectionalMap_MF.h
+	#./Include/pds/DirectedGraph.h
+	#./Include/pds/DirectedGraph_MF.h
+	./Include/pds/IndexedVector.h
+	./Include/pds/IndexedVector_MF.h
+	#./Include/pds/ItemTable.h
+	#./Include/pds/ItemTable_MF.h
+
 	#./Include/pds/Varying.h
 	#./Include/pds/Varying_MF.h
 	#./Include/pds/Varying.inl
@@ -108,15 +117,15 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Tests/HeaderLibraries.cpp 
 		#./Tests/BidirectionalMapTests.cpp
 		#./Tests/DirectedGraphTests.cpp
-		#./Tests/DynamicTypesTests.cpp
-		#./Tests/EntityReaderRandomTests.cpp
-		#./Tests/EntityReadWriteTests.cpp
+		./Tests/DynamicTypesTests.cpp
+		./Tests/EntityReaderRandomTests.cpp
+		./Tests/EntityReadWriteTests.cpp
 		#./Tests/EntityTests.cpp
 		#./Tests/ItemTableTests.cpp
-		#./Tests/IndexedVectorTests.cpp
+		./Tests/IndexedVectorTests.cpp
 		./Tests/ReadWriteTests.cpp
-		#./Tests/SectionHierarchyReadWriteTests.cpp
-		#./Tests/TypeTests.cpp 
+		./Tests/SectionHierarchyReadWriteTests.cpp
+		./Tests/TypeTests.cpp 
 		./Tests/TestHelpers/random_vals.h
 		./Tests/TestHelpers/random_vals.cpp 
 		#./Tests/TestPackA/TestPackA.cpp 
