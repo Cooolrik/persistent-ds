@@ -7,21 +7,21 @@
 #include <queue>
 #include <ctle/log.h>
 
-#include "DirectedGraph.h"
+#include "../DirectedGraph.h"
 
-#include "EntityWriter.h"
-#include "EntityReader.h"
-#include "EntityValidator.h"
+#include "../EntityWriter.h"
+#include "../EntityReader.h"
+#include "../EntityValidator.h"
 
 namespace pds
 {
-#include "_pds_macros.inl"
+#include "../_pds_macros.inl"
 
 // Management Functions for the DirectedGraph template class
-template<class _Ty, uint _Flags, class _SetTy>
-class DirectedGraph<_Ty, _Flags, _SetTy>::MF
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+class DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF
 {
-	using _MgmCl = DirectedGraph<_Ty, _Flags, _SetTy>;
+	using _MgmCl = DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>;
 
 	static bool set_contains( const std::set<_Ty> &set, const _Ty &val );
 
@@ -40,22 +40,22 @@ public:
 	template<class _Table> static bool ValidateAllKeysAreContainedInTable( const _MgmCl &obj, EntityValidator &validator, const _Table &otherTable, const char *otherTableName );
 };
 
-template<class _Ty, uint _Flags, class _SetTy>
-inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::set_contains( const std::set<_Ty> &set, const _Ty &val )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+inline bool DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::set_contains( const std::set<_Ty> &set, const _Ty &val )
 {
 	return set.find( val ) != set.end();
 }
 
-template<class _Ty, uint _Flags, class _SetTy>
-inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Clear( _MgmCl &obj )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+inline status DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::Clear( _MgmCl &obj )
 {
 	obj.v_Roots.clear();
 	obj.v_Edges.clear();
 	return status::ok;
 }
 
-template<class _Ty, uint _Flags, class _SetTy>
-inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+inline status DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
 {
 	if( !source )
 	{
@@ -69,8 +69,8 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::DeepCopy( _MgmCl &dest, co
 	return status::ok;
 }
 
-template<class _Ty, uint _Flags, class _SetTy>
-inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Equals( const _MgmCl *lval, const _MgmCl *rval )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+inline bool DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::Equals( const _MgmCl *lval, const _MgmCl *rval )
 {
 	// early out if the pointers are equal (includes nullptr)
 	if( lval == rval )
@@ -111,8 +111,8 @@ inline bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::Equals( const _MgmCl *lval, 
 	return true;
 }
 
-template<class _Ty, uint _Flags, class _SetTy>
-inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+inline status DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
 {
 	// store the roots 
 	std::vector<_Ty> roots( obj.v_Roots.begin(), obj.v_Roots.end() );
@@ -136,8 +136,8 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Write( const _MgmCl &obj, 
 	return status::ok;
 }
 
-template<class _Ty, uint _Flags, class _SetTy>
-inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+inline status DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	size_t map_size = {};
 
@@ -163,8 +163,8 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Read( _MgmCl &obj, EntityR
 	return status::ok;
 }
 
-template<class _Ty, uint _Flags, class _SetTy>
-void DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateNoCycles( const _MgmCl::set_type &edges, EntityValidator &validator )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+void DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::ValidateNoCycles( const _MgmCl::set_type &edges, EntityValidator &validator )
 {
 	// Do a depth-first search, find all nodes starting from the root nodes 
 	// Note: Only reports first found cycle, if any
@@ -204,8 +204,8 @@ void DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateNoCycles( const _MgmCl::set
 			}
 
 			// list all nodes downstream from curr
-			auto itr = edges.lower_bound( std::pair<_Ty, _Ty>( curr, data_type_information<_Ty>::inf ) );
-			auto itr_end = edges.upper_bound( std::pair<_Ty, _Ty>( curr, data_type_information<_Ty>::sup ) );
+			auto itr = edges.lower_bound( std::pair<_Ty, _Ty>( curr, element_type_information<_Ty>::inf ) );
+			auto itr_end = edges.upper_bound( std::pair<_Ty, _Ty>( curr, element_type_information<_Ty>::sup ) );
 			while( itr != itr_end )
 			{
 				ctSanityCheck( itr->first == curr );
@@ -220,8 +220,9 @@ void DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateNoCycles( const _MgmCl::set
 				{
 					// This child node is already marked on the stack, so we have already visited it once 
 					// We have a cycle, report it, and return
-					pdsValidationError( ValidationError::InvalidSetup )
-						<< "The node " << child << " in Graph is a part of a cycle, but the graph is acyclic."
+					pdsValidationError( validation_error_flags::invalid_setup )
+						<< "The node " << to_string(child)
+						<< " in Graph is a part of a cycle, but the graph is flagged as being acyclic."
 						<< pdsValidationErrorEnd;
 					return;
 				}
@@ -234,8 +235,8 @@ void DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateNoCycles( const _MgmCl::set
 	// no cycles found, all good
 }
 
-template<class _Ty, uint _Flags, class _SetTy>
-inline void DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateRooted( const std::set<_Ty> &roots, const std::set<_Ty> &downstream_nodes, const _MgmCl::set_type &edges, EntityValidator &validator )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+inline void DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::ValidateRooted( const std::set<_Ty> &roots, const std::set<_Ty> &downstream_nodes, const _MgmCl::set_type &edges, EntityValidator &validator )
 {
 	std::queue<_Ty> queue;
 	std::set<_Ty> reached;
@@ -261,8 +262,8 @@ inline void DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateRooted( const std::s
 		reached.insert( curr );
 
 		// check downstream nodes
-		auto itr = edges.lower_bound( std::pair<_Ty, _Ty>( curr, data_type_information<_Ty>::inf ) );
-		auto itr_end = edges.upper_bound( std::pair<_Ty, _Ty>( curr, data_type_information<_Ty>::sup ) );
+		auto itr = edges.lower_bound( std::pair<_Ty, _Ty>( curr, element_type_information<_Ty>::inf ) );
+		auto itr_end = edges.upper_bound( std::pair<_Ty, _Ty>( curr, element_type_information<_Ty>::sup ) );
 		while( itr != itr_end )
 		{
 			ctSanityCheck( itr->first == curr );
@@ -284,15 +285,16 @@ inline void DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateRooted( const std::s
 		{
 			// This child node is already marked on the stack, so we have already visited it once 
 			// We have a cycle, report it, and return
-			pdsValidationError( ValidationError::InvalidSetup )
-				<< "The node " << n << " in Graph could not be reached from (any of) the root(s) in the Roots set."
+			pdsValidationError( validation_error_flags::invalid_setup )
+				<< "The node " << to_string(n)
+				<< " in Graph could not be reached from (any of) the root(s) in the Roots set."
 				<< pdsValidationErrorEnd;
 		}
 	}
 }
 
-template<class _Ty, uint _Flags, class _SetTy>
-inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
+inline status DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
 {
 	// make a set of all nodes with incoming edges
 	std::set<_Ty> downstream_nodes;
@@ -315,7 +317,10 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &ob
 	{
 		if( root_nodes.size() != 1 )
 		{
-			pdsValidationError( ValidationError::InvalidCount ) << "The number of roots found when searching through the graph is " << root_nodes.size() << " but the graph is required to have exactly one root." << pdsValidationErrorEnd;
+			pdsValidationError( validation_error_flags::invalid_count ) 
+				<< "The number of roots found when searching through the graph is " << root_nodes.size() 
+				<< " but the graph is required to have exactly one root." 
+				<< pdsValidationErrorEnd;
 		}
 	}
 
@@ -326,7 +331,10 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &ob
 		{
 			if( obj.v_Roots.size() != 1 )
 			{
-				pdsValidationError( ValidationError::InvalidCount ) << "The graph is single rooted, but the Roots set has " << obj.v_Roots.size() << " nodes. The Roots set must have exactly one node." << pdsValidationErrorEnd;
+				pdsValidationError( validation_error_flags::invalid_count ) 
+					<< "The graph is single rooted, but the Roots set has " << obj.v_Roots.size() 
+					<< " nodes. The Roots set must have exactly one node." 
+					<< pdsValidationErrorEnd;
 			}
 		}
 
@@ -335,8 +343,8 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &ob
 		{
 			if( set_contains( downstream_nodes, n ) )
 			{
-				pdsValidationError( ValidationError::InvalidObject )
-					<< "Node " << n << " in the Roots set has incoming edges, which makes it invalid as a root node."
+				pdsValidationError( validation_error_flags::invalid_object ) 
+					<< "Node " << to_string(n) << " in the Roots set has incoming edges, which makes it invalid as a root node."
 					<< pdsValidationErrorEnd;
 			}
 		}
@@ -346,8 +354,8 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &ob
 		{
 			if( !set_contains( obj.v_Roots, n ) )
 			{
-				pdsValidationError( ValidationError::MissingObject )
-					<< "Node " << n << " has no incoming edges, so is by definition a root, but is not listed in the Roots set."
+				pdsValidationError( validation_error_flags::missing_object ) 
+					<< "Node " << to_string(n) << " has no incoming edges, so is by definition a root, but is not listed in the Roots set."
 					<< pdsValidationErrorEnd;
 			}
 		}
@@ -366,9 +374,9 @@ inline status DirectedGraph<_Ty, _Flags, _SetTy>::MF::Validate( const _MgmCl &ob
 }
 
 
-template<class _Ty, uint _Flags, class _SetTy>
+template<class _Ty, directed_graph_flags _Flags, class _EdgesSetTy, class _RootsSetTy>
 template<class _Table>
-bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateAllKeysAreContainedInTable( const _MgmCl &obj, EntityValidator &validator, const _Table &otherTable, const char *otherTableName )
+bool DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::ValidateAllKeysAreContainedInTable( const _MgmCl &obj, EntityValidator &validator, const _Table &otherTable, const char *otherTableName )
 {
 	// collect all items 
 	std::set<_Ty> nodes;
@@ -385,13 +393,16 @@ bool DirectedGraph<_Ty, _Flags, _SetTy>::MF::ValidateAllKeysAreContainedInTable(
 	{
 		if( !_Table::MF::ContainsKey( otherTable, ( *it ) ) )
 		{
-			pdsValidationError( ValidationError::MissingObject ) << "The key " << ( *it ) << " is missing in " << otherTableName << pdsValidationErrorEnd;
+			pdsValidationError( validation_error_flags::missing_object ) 
+				<< "The key " << ( *it ) 
+				<< " is missing in " << otherTableName 
+				<< pdsValidationErrorEnd;
 		}
 	}
 
 	return true;
 }
 
-#include "_pds_undef_macros.inl"
+#include "../_pds_undef_macros.inl"
 }
 // namespace pds

@@ -39,6 +39,8 @@ def fwd_h():
 	lines.append(f"template<class _ValTy> using status_return = ctle::status_return<ctle::status, _ValTy>;")	
 	lines.append(f"using ctle::uuid;")
 	lines.append(f"using hash = ctle::digest<256>;")
+	lines.append(f"using ctle::to_string;")
+	lines.append(f"using ctle::to_hex_string;")
 	lines.append('')
 
 	# typedef vector types
@@ -106,8 +108,13 @@ def fwd_h():
 	lines.append('// @brief element_type_index stores the element type index in pds')
 	lines.append('enum class element_type_index : uint;')
 	lines.append('')
-	lines.append('// @brief validation_error_flag lists validation error flags in pds')
-	lines.append('enum class validation_error_flag : u64;')
+	lines.append('// @brief validation_error_flags is a bitmask of validation error flags in pds')
+	lines.append('enum class validation_error_flags : u64;')
+	lines.append('constexpr validation_error_flags operator|(validation_error_flags lhs, validation_error_flags rhs) { return validation_error_flags( u64(lhs) | u64(rhs) ); }')
+	lines.append('')
+	lines.append('// @brief directed_graph_flags is a bitmask of flags used to control the set up and validation of DirectedGraph')
+	lines.append('enum class directed_graph_flags : uint;')
+	lines.append('constexpr directed_graph_flags operator|(directed_graph_flags lhs, directed_graph_flags rhs) { return directed_graph_flags( uint(lhs) | uint(rhs) ); }')
 	lines.append('')
 
 	# fwd declarations of classes
@@ -124,6 +131,20 @@ def fwd_h():
 	lines.append('\tclass _Base = ctle::idx_vector<_Ty,std::vector<_IdxTy>> /* the base class of the vector, use to override implementation and allocations etc. */')
 	lines.append('> class IndexedVector;')
 	lines.append('')
+	lines.append('// @brief BidirectionalMap is a bi-directional map class, which can be traversed in both directions')
+	lines.append('template <')
+	lines.append('	class _Kty,')
+	lines.append('	class _Vty,')
+	lines.append('	class _Base = ctle::bimap<_Kty, _Vty>')
+	lines.append('> class BidirectionalMap;')
+	lines.append('')
+	lines.append('// @brief DirectedGraph is a directed graph class, with support for multiple roots and acyclic graph validation')
+	lines.append('template <')
+	lines.append('	class _Ty,')
+	lines.append('	directed_graph_flags _Flags = directed_graph_flags(0),')
+	lines.append('	class _EdgesSetTy = std::set<std::pair<const _Ty, const _Ty>>,')
+	lines.append('	class _RootsSetTy = std::set<_Ty>')
+	lines.append('> class DirectedGraph;')
 
 	# end of pds namespace
 	lines.append('}')

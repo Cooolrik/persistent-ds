@@ -3,12 +3,12 @@
 
 #include "Tests.h"
 
-#include <pds/DirectedGraph_MF.h>
+#include <pds/mf/DirectedGraph_MF.h>
 #include <pds/EntityValidator.h>
 #include <pds/EntityWriter.h>
 #include <pds/EntityReader.h>
-#include <pds/MemoryWriteStream.h>
-#include <pds/MemoryReadStream.h>
+#include <pds/WriteStream.h>
+#include <pds/ReadStream.h>
 
 #include "TestHelpers/structure_generation.h"
 
@@ -17,7 +17,7 @@ TEST( DirectedGraphTests, DirectedGraphBasicTest )
 	setup_random_seed();
 
 	// create basic graph
-	typedef DirectedGraph<int, 0> Graph;
+	typedef DirectedGraph<int> Graph;
 	Graph dg;
 
 	dg.Edges().emplace( 0, 1 );
@@ -35,7 +35,7 @@ TEST( DirectedGraphTests, DirectedGraphItemRefTest )
 	setup_random_seed();
 
 	// create basic graph
-	typedef DirectedGraph<item_ref, Acyclic> Graph;
+	typedef DirectedGraph<item_ref, directed_graph_flags::acyclic> Graph;
 	Graph dg;
 
 	item_ref A = item_ref::make_ref();
@@ -58,7 +58,7 @@ TEST( DirectedGraphTests, DirectedGraphDuplicateEdgesTest )
 	setup_random_seed();
 
 	// create basic graph
-	typedef DirectedGraph<int, 0> Graph;
+	typedef DirectedGraph<int> Graph;
 	Graph dg;
 
 	// create two identical edges in the graph
@@ -78,7 +78,7 @@ TEST( DirectedGraphTests, DirectedGraphAcyclicTest )
 {
 	setup_random_seed();
 
-	typedef DirectedGraph<i64, DirectedGraphFlags::Acyclic> Graph;
+	typedef DirectedGraph<i64, directed_graph_flags::acyclic> Graph;
 
 	// create a tree, which by definition does not have cycles
 	Graph dg;
@@ -98,14 +98,14 @@ TEST( DirectedGraphTests, DirectedGraphAcyclicTest )
 	validator.Clear();
 	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_NE( validator.GetErrorCount(), uint( 0 ) );
-	EXPECT_TRUE( validator.GetErrorIds() == ValidationError::InvalidSetup );
+	EXPECT_TRUE( validator.GetErrors() == validation_error_flags::invalid_setup );
 }
 
 TEST( DirectedGraphTests, DirectedGraphSingleRootTest )
 {
 	setup_random_seed();
 
-	typedef DirectedGraph<i64, DirectedGraphFlags::SingleRoot> Graph;
+	typedef DirectedGraph<i64, directed_graph_flags::single_root> Graph;
 
 	// create a tree, which by definition only has one root
 	Graph dg;
@@ -123,14 +123,14 @@ TEST( DirectedGraphTests, DirectedGraphSingleRootTest )
 	validator.Clear();
 	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_NE( validator.GetErrorCount(), uint( 0 ) );
-	EXPECT_TRUE( validator.GetErrorIds() == ValidationError::InvalidCount );
+	EXPECT_TRUE( validator.GetErrors() == validation_error_flags::invalid_count );
 }
 
 TEST( DirectedGraphTests, DirectedGraphRootedTest )
 {
 	setup_random_seed();
 
-	typedef DirectedGraph<i64, DirectedGraphFlags::Rooted> Graph;
+	typedef DirectedGraph<i64, directed_graph_flags::rooted> Graph;
 
 	// create a forest of trees with multiple roots
 	Graph dg;
@@ -155,7 +155,7 @@ TEST( DirectedGraphTests, DirectedGraphRootedTest )
 	validator.Clear();
 	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_NE( validator.GetErrorCount(), uint( 0 ) );
-	EXPECT_EQ( validator.GetErrorIds(), ( ValidationError::InvalidSetup | ValidationError::MissingObject ) );
+	EXPECT_EQ( validator.GetErrors(), ( validation_error_flags::invalid_setup | validation_error_flags::missing_object ) );
 }
 
 TEST( DirectedGraphTests, DirectedGraphSceneGraphTest )
@@ -163,7 +163,7 @@ TEST( DirectedGraphTests, DirectedGraphSceneGraphTest )
 	setup_random_seed();
 
 	// single root, acyclic, with root defined in the Roots list
-	typedef DirectedGraph<ctle::uuid, ( DirectedGraphFlags::Acyclic | DirectedGraphFlags::Rooted | DirectedGraphFlags::SingleRoot )> Graph;
+	typedef DirectedGraph<ctle::uuid, ( directed_graph_flags::acyclic | directed_graph_flags::rooted | directed_graph_flags::single_root )> Graph;
 
 	// create a tree, which by definition does not have cycles, a single root, and add the root to the roots list
 	Graph dg;
@@ -201,17 +201,17 @@ TEST( DirectedGraphTests, DirectedGraphSceneGraphTest )
 	validator.Clear();
 	EXPECT_EQ( Graph::MF::Validate( dg, validator ), status::ok );
 	EXPECT_NE( validator.GetErrorCount(), uint( 0 ) );
-	const u64 expected_error = (
-		ValidationError::InvalidSetup
-		| ValidationError::MissingObject
-		| ValidationError::InvalidObject
-		| ValidationError::InvalidCount
+	const validation_error_flags expected_error = (
+		validation_error_flags::invalid_setup
+		| validation_error_flags::missing_object
+		| validation_error_flags::invalid_object
+		| validation_error_flags::invalid_count
 		);
-	EXPECT_EQ( validator.GetErrorIds(), expected_error );
+	EXPECT_EQ( validator.GetErrors(), expected_error );
 }
 
-template<class _Ty, uint _Flags>
-void ReadWriteTest( MemoryWriteStream &ws, EntityWriter &ew )
+template<class _Ty, directed_graph_flags _Flags>
+void ReadWriteTest( WriteStream &ws, EntityWriter &ew )
 {
 	typedef DirectedGraph<_Ty, _Flags> Graph;
 
@@ -230,7 +230,7 @@ void ReadWriteTest( MemoryWriteStream &ws, EntityWriter &ew )
 	EXPECT_EQ( Graph::MF::Write( dg, ew ), status::ok );
 
 	// read from file
-	MemoryReadStream rs( ws.GetData(), ws.GetSize(), ws.GetFlipByteOrder() );
+	ReadStream rs( ws.GetData(), ws.GetSize() );
 	EntityReader er( rs );
 	rs.SetPosition( start_pos );
 
@@ -243,38 +243,27 @@ void ReadWriteTest( MemoryWriteStream &ws, EntityWriter &ew )
 }
 
 template<class _Ty>
-void ReadWriteTypeTest( MemoryWriteStream &ws, EntityWriter &ew )
+void ReadWriteTypeTest( WriteStream &ws, EntityWriter &ew )
 {
 	// all combinations of Acyclic (0x1), Rooted (0x2), and Single root (0x4)
-	ReadWriteTest<_Ty, 0x0>( ws, ew );
-	ReadWriteTest<_Ty, 0x1>( ws, ew );
-	ReadWriteTest<_Ty, 0x2>( ws, ew );
-	ReadWriteTest<_Ty, 0x3>( ws, ew );
-	ReadWriteTest<_Ty, 0x4>( ws, ew );
-	ReadWriteTest<_Ty, 0x5>( ws, ew );
-	ReadWriteTest<_Ty, 0x6>( ws, ew );
-	ReadWriteTest<_Ty, 0x7>( ws, ew );
+	ReadWriteTest<_Ty, directed_graph_flags(0x0)>( ws, ew );
+	ReadWriteTest<_Ty, directed_graph_flags(0x1)>( ws, ew );
+	ReadWriteTest<_Ty, directed_graph_flags(0x2)>( ws, ew );
+	ReadWriteTest<_Ty, directed_graph_flags(0x3)>( ws, ew );
+	ReadWriteTest<_Ty, directed_graph_flags(0x4)>( ws, ew );
+	ReadWriteTest<_Ty, directed_graph_flags(0x5)>( ws, ew );
+	ReadWriteTest<_Ty, directed_graph_flags(0x6)>( ws, ew );
+	ReadWriteTest<_Ty, directed_graph_flags(0x7)>( ws, ew );
 }
 
 TEST( DirectedGraphTests, DirectedGraphSerializeTest )
 {
 	setup_random_seed();
 
-	for( uint pass_index = 0; pass_index < ( 2 * global_number_of_passes ); ++pass_index )
+	for( uint pass_index = 0; pass_index < global_number_of_passes; ++pass_index )
 	{
-		MemoryWriteStream ws;
+		WriteStream ws;
 		EntityWriter ew( ws );
-
-		ws.SetFlipByteOrder( ( pass_index & 0x1 ) != 0 );
-
-		// log the pass
-		std::stringstream ss;
-		ss << "Pass #" << ( pass_index / 2 ) + 1 << " ";
-		if( ws.GetFlipByteOrder() )
-			ss << "Testing flipped byte order\n";
-		else
-			ss << "Testing native byte order\n";
-		//Logger::WriteMessage( ss.str().c_str() );
 
 		ReadWriteTypeTest<int>( ws, ew );
 		ReadWriteTypeTest<uint>( ws, ew );

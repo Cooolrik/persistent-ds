@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "BidirectionalMap.h"
+#include "../BidirectionalMap.h"
 
 namespace pds 
 {
-#include "_pds_macros.inl"
+#include "../_pds_macros.inl"
 
 
 template<class _Kty, class _Vty, class _Base>
@@ -121,6 +121,6 @@ bool BidirectionalMap<_Kty, _Vty, _Base>::MF::ContainsKey( const _MgmCl &obj, co
 }
 
 
-#include "_pds_undef_macros.inl"
+#include "../_pds_undef_macros.inl"
 }
 // namespace pds

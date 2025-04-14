@@ -1,7 +1,9 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
+
 #include "Tests.h"
+#include <pds/mf/IndexedVector_MF.h>
 
 #include <pds/EntityValidator.h>
 #include <pds/EntityWriter.h>
@@ -9,7 +11,6 @@
 #include <pds/WriteStream.h>
 #include <pds/ReadStream.h>
 
-#include <pds/mf/IndexedVector_MF.h>
 
 using pds::IndexedVector;
 

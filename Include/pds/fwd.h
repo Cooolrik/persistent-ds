@@ -39,6 +39,8 @@ using ctle::status;
 template<class _ValTy> using status_return = ctle::status_return<ctle::status, _ValTy>;
 using ctle::uuid;
 using hash = ctle::digest<256>;
+using ctle::to_string;
+using ctle::to_hex_string;
 
 // integer vector types
 typedef ctle::n_tup<i8,2> i8vec2;
@@ -125,8 +127,13 @@ enum class container_type_index : uint;
 // @brief element_type_index stores the element type index in pds
 enum class element_type_index : uint;
 
-// @brief validation_error_flag lists validation error flags in pds
-enum class validation_error_flag : u64;
+// @brief validation_error_flags is a bitmask of validation error flags in pds
+enum class validation_error_flags : u64;
+constexpr validation_error_flags operator|(validation_error_flags lhs, validation_error_flags rhs) { return validation_error_flags( u64(lhs) | u64(rhs) ); }
+
+// @brief directed_graph_flags is a bitmask of flags used to control the set up and validation of DirectedGraph
+enum class directed_graph_flags : uint;
+constexpr directed_graph_flags operator|(directed_graph_flags lhs, directed_graph_flags rhs) { return directed_graph_flags( uint(lhs) | uint(rhs) ); }
 
 class Entity;
 class EntityWriter;
@@ -141,6 +148,20 @@ template <
 	class _Base = ctle::idx_vector<_Ty,std::vector<_IdxTy>> /* the base class of the vector, use to override implementation and allocations etc. */
 > class IndexedVector;
 
+// @brief BidirectionalMap is a bi-directional map class, which can be traversed in both directions
+template <
+	class _Kty,
+	class _Vty,
+	class _Base = ctle::bimap<_Kty, _Vty>
+> class BidirectionalMap;
+
+// @brief DirectedGraph is a directed graph class, with support for multiple roots and acyclic graph validation
+template <
+	class _Ty,
+	directed_graph_flags _Flags = directed_graph_flags(0),
+	class _EdgesSetTy = std::set<std::pair<const _Ty, const _Ty>>,
+	class _RootsSetTy = std::set<_Ty>
+> class DirectedGraph;
 }
 // namespace pds
 

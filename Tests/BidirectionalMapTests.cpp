@@ -6,10 +6,10 @@
 #include <pds/EntityValidator.h>
 #include <pds/EntityWriter.h>
 #include <pds/EntityReader.h>
-#include <pds/MemoryWriteStream.h>
-#include <pds/MemoryReadStream.h>
+#include <pds/WriteStream.h>
+#include <pds/ReadStream.h>
 
-#include <pds/BidirectionalMap_MF.h>
+#include <pds/mf/BidirectionalMap_MF.h>
 
 using pds::BidirectionalMap;
 
@@ -42,7 +42,7 @@ TEST( BidirectionalMapTests, InversedMapTest )
 	}
 }
 
-template<class T> void BidirectionalMapTests_TestKeyType( const MemoryWriteStream &ws, EntityWriter &ew )
+template<class T> void BidirectionalMapTests_TestKeyType( const WriteStream &ws, EntityWriter &ew )
 {
 	typedef BidirectionalMap<T, string> Dict;
 
@@ -76,7 +76,7 @@ template<class T> void BidirectionalMapTests_TestKeyType( const MemoryWriteStrea
 	EXPECT_EQ( Dict::MF::Write( random_dict, ew ), status::ok );
 
 	// set up a temporary entity reader 
-	MemoryReadStream rs( ws.GetData(), ws.GetSize(), ws.GetFlipByteOrder() );
+	ReadStream rs( ws.GetData(), ws.GetSize() );
 	EntityReader er( rs );
 	rs.SetPosition( start_pos );
 
@@ -110,12 +110,10 @@ TEST( BidirectionalMapTests, ReadWriteTests )
 {
 	setup_random_seed();
 
-	for( uint pass_index = 0; pass_index < ( 2 * global_number_of_passes ); ++pass_index )
+	for( uint pass_index = 0; pass_index < global_number_of_passes; ++pass_index )
 	{
-		MemoryWriteStream ws;
+		WriteStream ws;
 		EntityWriter ew( ws );
-
-		ws.SetFlipByteOrder( ( pass_index & 0x1 ) != 0 );
 
 		BidirectionalMapTests_TestKeyType<i8>( ws, ew );
 		BidirectionalMapTests_TestKeyType<i16>( ws, ew );

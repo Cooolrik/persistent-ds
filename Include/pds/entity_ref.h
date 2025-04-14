@@ -1,3 +1,6 @@
+// pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
+// Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
+
 #pragma once
 #ifndef __PDS__ENTITY_REF_H__
 #define __PDS__ENTITY_REF_H__
@@ -57,6 +60,13 @@ struct std::hash <pds::entity_ref>
 		return std::hash<pds::hash>{}( pds::hash( val ) );
 	}
 };
+
+// ctle::to_string implementation
+template <>
+std::string ctle::to_string<pds::entity_ref>( const pds::entity_ref &val )
+{
+	return ctle::to_string<pds::hash>( pds::hash( val ) );
+}
 
 namespace pds
 {

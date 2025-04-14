@@ -87,7 +87,7 @@ inline status IndexedVector<_Ty, _IdxTy, _Base>::MF::Validate( const _MgmCl &obj
 		// values vector is empty
 		if( obj.index().size() != 0 )
 		{
-			pdsValidationError( validation_error_flag::invalid_count ) 
+			pdsValidationError( validation_error_flags::invalid_count ) 
 				<< "The value vector of IndexedVector can only be empty if the index vector is also empty, and it is not."
 				<< pdsValidationErrorEnd;
 		}
@@ -100,7 +100,7 @@ inline status IndexedVector<_Ty, _IdxTy, _Base>::MF::Validate( const _MgmCl &obj
 
 		if( values_vector_max_index > max_allowed_index )
 		{
-			pdsValidationError( validation_error_flag::invalid_count ) 
+			pdsValidationError( validation_error_flags::invalid_count ) 
 				<< "This IndexedVector has too many values in the values vector."
 				<< " The maximum supported value is:" << element_type_information<typename _IdxTy>::sup
 				<< pdsValidationErrorEnd;
@@ -110,7 +110,7 @@ inline status IndexedVector<_Ty, _IdxTy, _Base>::MF::Validate( const _MgmCl &obj
 		{
 			if( (size_t)obj.index()[i] >= max_index_value )
 			{
-				pdsValidationError( validation_error_flag::invalid_value ) 
+				pdsValidationError( validation_error_flags::invalid_value ) 
 					<< "The value " << obj.index()[i] 
 					<< " at position " << i 
 					<< " of the index vector is out of bounds." 

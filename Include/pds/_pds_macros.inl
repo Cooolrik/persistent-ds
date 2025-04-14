@@ -26,8 +26,8 @@
 #include <ctle/_macros.inl>
 
 // pdsValidationError logs a validation error with the EntityValidator
-#define pdsValidationError( errorid ) if( !validator.GetRecordErrorDescriptions() ) { validator.ReportError( (u64)errorid ); } else { auto _errorId = errorid; std::stringstream _errorStringStream; _errorStringStream
-#define pdsValidationErrorEnd ""; validator.ReportErrorDescription( (u64)_errorId , _errorStringStream.str() , __FILE__ , __LINE__ , __func__ ); }
+#define pdsValidationError( errorid ) if( !validator.GetRecordErrorDescriptions() ) { validator.ReportError( errorid ); } else { auto _errorId = errorid; std::stringstream _errorStringStream; _errorStringStream
+#define pdsValidationErrorEnd ""; validator.ReportErrorDescription( _errorId , _errorStringStream.str() , __FILE__ , __LINE__ , __func__ ); }
 
 // pdsKeyMacro is used to define a key in the pds file stream
 #define pdsKeyMacro( name ) (#name) , (u8(sizeof(#name)-1))

@@ -37,13 +37,15 @@ set(
 	./Include/pds/WriteStream.inl
 	./Include/pds/pds.h
 	
-	#./Include/pds/BidirectionalMap.h
-	#./Include/pds/BidirectionalMap_MF.h
-	#./Include/pds/DirectedGraph.h
-	#./Include/pds/DirectedGraph_MF.h
+	./Include/pds/BidirectionalMap.h
+	./Include/pds/BidirectionalMap.inl
+	./Include/pds/mf/BidirectionalMap_MF.h
 	./Include/pds/IndexedVector.h
 	./Include/pds/IndexedVector.inl
 	./Include/pds/mf/IndexedVector_MF.h
+	./Include/pds/DirectedGraph.h
+	./Include/pds/DirectedGraph.inl
+	./Include/pds/mf/DirectedGraph_MF.h
 	#./Include/pds/ItemTable.h
 	#./Include/pds/ItemTable_MF.h
 
@@ -116,8 +118,8 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Tests/Tests.h 
 		./Tests/Tests.cpp 
 		./Tests/HeaderLibraries.cpp 
-		#./Tests/BidirectionalMapTests.cpp
-		#./Tests/DirectedGraphTests.cpp
+		./Tests/BidirectionalMapTests.cpp
+		./Tests/DirectedGraphTests.cpp
 		./Tests/DynamicTypesTests.cpp
 		./Tests/EntityReaderRandomTests.cpp
 		./Tests/EntityReadWriteTests.cpp

@@ -1,3 +1,6 @@
+// pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
+// Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
+
 #pragma once
 #ifndef __PDS__ITEM_REF_H__
 #define __PDS__ITEM_REF_H__
@@ -64,9 +67,16 @@ struct std::hash<pds::item_ref>
 {
 	std::size_t operator()(pds::item_ref const& val) const noexcept
 	{
-		return std::hash<ctle::uuid>{}( val );
+		return std::hash<ctle::uuid>{}( ctle::uuid(val) );
 	}
 };
+
+// ctle::to_string implementation
+template <>
+std::string ctle::to_string<pds::item_ref>( const pds::item_ref &val )
+{
+	return ctle::to_string<ctle::uuid>( ctle::uuid(val) );
+}
 
 namespace pds
 {
@@ -74,7 +84,7 @@ namespace pds
 // std::ostream operator implementation
 std::ostream &operator<<( std::ostream &os, const item_ref &ref )
 {
-	return os << ctle::to_string((uuid)ref);
+	return os << ctle::to_string( ctle::uuid(ref) );
 }
 
 // make a new item reference
@@ -85,6 +95,7 @@ item_ref item_ref::make_ref()
 
 }
 // namespace pds
+
 
 #endif//PDS_IMPLEMENTATION
 
