@@ -116,6 +116,10 @@ def fwd_h():
 	lines.append('enum class directed_graph_flags : uint;')
 	lines.append('constexpr directed_graph_flags operator|(directed_graph_flags lhs, directed_graph_flags rhs) { return directed_graph_flags( uint(lhs) | uint(rhs) ); }')
 	lines.append('')
+	lines.append('// @brief item_table_flags is a bitmask of flags used to control the set up and validation of item table')
+	lines.append('enum class item_table_flags : uint;')
+	lines.append('constexpr item_table_flags operator|(item_table_flags lhs, item_table_flags rhs) { return item_table_flags( uint(lhs) | uint(rhs) ); }')
+	lines.append('')
 
 	# fwd declarations of classes
 	lines.append('class Entity;')
@@ -145,6 +149,14 @@ def fwd_h():
 	lines.append('	class _EdgesSetTy = std::set<std::pair<const _Ty, const _Ty>>,')
 	lines.append('	class _RootsSetTy = std::set<_Ty>')
 	lines.append('> class DirectedGraph;')
+	lines.append('')
+	lines.append('// @brief ItemTable holds a map of key values to unique memory mapped objects, items in a pds entity.')
+	lines.append('template <')
+	lines.append('	class _Kty,')
+	lines.append('	class _Ty,')
+	lines.append('	item_table_flags _Flags = item_table_flags(0),')
+	lines.append('	class _MapTy = std::unordered_map<_Kty, std::unique_ptr<_Ty>>')
+	lines.append('> class ItemTable;')
 
 	# end of pds namespace
 	lines.append('}')

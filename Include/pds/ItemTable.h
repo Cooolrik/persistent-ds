@@ -12,14 +12,18 @@ namespace pds
 // ItemTable holds a map of key values to unique memory mapped objects. 
 // This table class is the main holder of most objects in ISD.
 
-enum ItemTableFlags : uint
+enum class item_table_flags : uint
 {
-	ZeroKeys = 0x1, // if set, validation will allow zero value keys (0 for ints, all 0 in a uuids, empty strings) 
-	NullEntities = 0x2, // if set, validation will allow that null entities exist in the registry
+	zero_keys = 0x1,		// if set, validation will allow zero value keys (0 for ints, all 0s in uuids, empty strings) 
+	null_entities = 0x02,	// if set, validation will allow that null entities exist in the table
 };
 
-template<class _Kty, class _Ty, uint _Flags = 0, class _MapTy = std::unordered_map<_Kty, std::unique_ptr<_Ty>>>
-class ItemTable
+template<
+	class _Kty, 
+	class _Ty, 
+	item_table_flags _Flags, // = 0, a combination of item_table_flags flags for the behaviour of the item table
+	class _MapTy			 // = std::unordered_map<_Kty, std::unique_ptr<_Ty>>
+> class ItemTable
 {
 public:
 	using key_type = _Kty;

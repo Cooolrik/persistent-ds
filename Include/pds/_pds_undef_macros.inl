@@ -1,5 +1,5 @@
-// pds Copyright (c) 2022 Ulrik Lindahl
-// Licensed under the MIT license https://github.com/Cooolrik/ctle/blob/main/LICENSE
+// pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
+// Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 //
 // _pds_macros.inl & _pds_undef_macros.inl are used to define convenience macros 
 // for implementation files. 

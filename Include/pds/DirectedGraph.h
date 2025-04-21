@@ -25,9 +25,9 @@ enum class directed_graph_flags : uint
 
 template<
 	class _Ty, 
-	directed_graph_flags _Flags	/* = 0, a combination of directed_graph_flags flags for the behaviour of the graph */, 
-	class _EdgesSetTy			/* = std::set<std::pair<const _Ty, const _Ty>>, the set type to use for the graph */,
-	class _RootsSetTy			/* = std::set<_Ty>, the set type to use for the graph root(s)*/
+	directed_graph_flags _Flags, // = 0, a combination of directed_graph_flags flags for the behaviour of the graph
+	class _EdgesSetTy,			 // = std::set<std::pair<const _Ty, const _Ty>>, the set type to use for the graph
+	class _RootsSetTy			 // = std::set<_Ty>, the set type to use for the graph root(s)
 > class DirectedGraph
 {
 public:
@@ -75,6 +75,10 @@ public:
 	// direct access to Roots set
 	roots_set_type &Roots() noexcept { return this->v_Roots; }
 	const roots_set_type &Roots() const noexcept { return this->v_Roots; }
+
+	// value compare operators
+	bool operator==( const DirectedGraph &rval ) const;
+	bool operator!=( const DirectedGraph &rval ) const;
 
 private:
 	friend MF;

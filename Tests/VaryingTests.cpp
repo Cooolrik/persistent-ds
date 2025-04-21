@@ -9,7 +9,8 @@
 #include <pds/WriteStream.h>
 #include <pds/ReadStream.h>
 
-#include <pds/mf/Varying_MF.h>
+//#include <pds/mf/Varying_MF.h>
+#include <pds/Varying.h>
 
 using pds::Varying;
 //

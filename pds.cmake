@@ -46,13 +46,12 @@ set(
 	./Include/pds/DirectedGraph.h
 	./Include/pds/DirectedGraph.inl
 	./Include/pds/mf/DirectedGraph_MF.h
-	#./Include/pds/ItemTable.h
-	#./Include/pds/ItemTable_MF.h
+	./Include/pds/ItemTable.h
+	./Include/pds/mf/ItemTable_MF.h
 
-	#./Include/pds/Varying.h
-	#./Include/pds/Varying_MF.h
-	#./Include/pds/Varying.inl
-	#./Include/pds/Varying_MF.inl
+	./Include/pds/Varying.h
+	./Include/pds/mf/Varying_MF.h
+	./Include/pds/Varying.inl
 
 	# compilation helper files
 	./Include/pds/_pds_macros.inl
@@ -132,6 +131,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Tests/TestHelpers/random_vals.h
 		./Tests/TestHelpers/random_vals.cpp 
 		#./Tests/TestPackA/TestPackA.cpp 
+		./Tests/VaryingTests.cpp
 		
 		dependencies.cmake
 		pds.cmake

@@ -7,8 +7,6 @@ def EntityWriter_h():
 	lines = []
 	lines.extend( hlp.begin_header_file('EntityWriter.h') )
 	lines.append('')
-	lines.append('#pragma once')
-	lines.append('')
 	lines.append('#include "fwd.h"')
 	lines.append('')
 	lines.append('namespace pds')

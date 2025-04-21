@@ -24,7 +24,7 @@
 
 #include "dynamic_types.h"
 
-
+#include "Varying.h"
 
 //
 //#include "Varying_MF.h"

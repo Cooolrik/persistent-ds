@@ -1,18 +1,50 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
-#pragma once
-
-#include <pds/EntityWriter.h>
-#include <pds/EntityReader.h>
-#include <pds/EntityValidator.h>
-
-#include "Varying_MF.h"
-
 namespace pds
 {
 #include "_pds_macros.inl"
 
+template <class _Ty> _Ty &Varying::Initialize()
+{
+	ctStatusCallThrow( this->Initialize( combined_type_information<_Ty>::type_index, combined_type_information<_Ty>::container_index ) )
+	return *( (_Ty *)data_m );
+}
+
+// Check if the data is of the template class type _Ty
+template<class _Ty> bool Varying::IsA() const noexcept
+{
+	return this->type_m == combined_type_information<_Ty>::type_index
+		&& this->container_type_m == combined_type_information<_Ty>::container_index;
+}
+
+// Retreive a reference to the data in the object
+template<class _Ty> const _Ty &Varying::Data() const
+{
+	ctValidate( this->IsA<_Ty>() , status::not_initialized ) << "Trying to dereferece a non-initialized object" << ctValidateThrow;
+	return *( (const _Ty *)data_m );
+};
+template<class _Ty> _Ty &Varying::Data()
+{
+	return const_cast<_Ty&>( this->Data() );
+};
+
+#include "_pds_undef_macros.inl"
+}
+// namespace pds
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------
+// Implementation section
+
+#ifdef PDS_IMPLEMENTATION
+
+#include "dynamic_types.h"
+
+#include "mf/Varying_MF.h"
+
+namespace pds
+{
+#include "_pds_macros.inl"
 
 Varying::Varying( const Varying &rval )
 {
@@ -111,3 +143,5 @@ bool Varying::IsInitialized() const noexcept
 #include "_pds_undef_macros.inl"
 }
 // namespace pds
+
+#endif//PDS_IMPLEMENTATION

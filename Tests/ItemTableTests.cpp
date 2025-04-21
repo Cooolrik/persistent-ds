@@ -6,10 +6,10 @@
 #include <pds/EntityValidator.h>
 #include <pds/EntityWriter.h>
 #include <pds/EntityReader.h>
-#include <pds/MemoryWriteStream.h>
-#include <pds/MemoryReadStream.h>
+#include <pds/WriteStream.h>
+#include <pds/ReadStream.h>
 
-#include <pds/ItemTable_MF.h>
+#include <pds/mf/ItemTable_MF.h>
 
 #include "TestPackA/TestEntityA.h"
 #include "TestHelpers/structure_generation.h"

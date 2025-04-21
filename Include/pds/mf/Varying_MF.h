@@ -3,7 +3,13 @@
 
 #pragma once
 
+#include <ctle/log.h>
+
 #include "../Varying.h"
+
+#include "../EntityWriter.h"
+#include "../EntityReader.h"
+#include "../EntityValidator.h"
 
 namespace pds
 {
@@ -21,14 +27,14 @@ public:
 	static status Validate( const Varying &obj, EntityValidator &validator );
 
 	// Method to set the type of the data in the varying object, either using a parameter, or as a template method
-	static status SetType( Varying &obj, data_type_index dataType, container_type_index containerType );
+	static status SetType( Varying &obj, element_type_index dataType, container_type_index containerType );
 	template <class _Ty> static status SetType( Varying &obj )
 	{
 		return SetType( obj, combined_type_information<_Ty>::type_index, combined_type_information<_Ty>::container_index );
 	}
 };
 
-#include "_pds_macros.inl"
+#include "../_pds_macros.inl"
 
 status Varying::MF::Clear( Varying &obj )
 {
@@ -142,7 +148,7 @@ status Varying::MF::Validate( const Varying &obj, EntityValidator &validator )
 	return status::ok;
 }
 
-status Varying::MF::SetType( Varying &obj, data_type_index dataType, container_type_index containerType )
+status Varying::MF::SetType( Varying &obj, element_type_index dataType, container_type_index containerType )
 {
 	bool success = {};
 
@@ -159,7 +165,7 @@ status Varying::MF::SetType( Varying &obj, data_type_index dataType, container_t
 }
 
 
-#include "_pds_undef_macros.inl"
+#include "../_pds_undef_macros.inl"
 
 }
 // namespace pds

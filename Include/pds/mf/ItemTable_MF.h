@@ -5,17 +5,17 @@
 
 #include <ctle/log.h>
 
-#include "ItemTable.h"
+#include "../ItemTable.h"
 
-#include "EntityWriter.h"
-#include "EntityReader.h"
-#include "EntityValidator.h"
+#include "../EntityWriter.h"
+#include "../EntityReader.h"
+#include "../EntityValidator.h"
 
 namespace pds
 {
-#include "_pds_macros.inl"
+#include "../_pds_macros.inl"
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 class ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF
 {
 	using _MgmCl = ItemTable<_Kty, _Ty, _Flags, _MapTy>;
@@ -37,14 +37,14 @@ public:
 	static bool ContainsKey( const _MgmCl &obj, const _Kty &key );
 };
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Clear( _MgmCl &obj )
 {
 	obj.v_Entries.clear();
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
 {
 	MF::Clear( dest );
@@ -59,7 +59,7 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::DeepCopy( _MgmCl &dest, const _
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Equals( const _MgmCl *lval, const _MgmCl *rval )
 {
 	// early out if the pointers are equal (includes nullptr)
@@ -106,7 +106,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Equals( const _MgmCl *lval, const
 }
 
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
 {
 	// collect the keys into a vector, and store in stream as an array
@@ -150,7 +150,7 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, Entit
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	EntityReader *section_reader = {};
@@ -209,7 +209,7 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
 {
 	// check if a zero key exists in the dictionary
@@ -238,7 +238,7 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, En
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 template<class _Table>
 bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::ValidateAllKeysAreContainedInTable( const _MgmCl &obj, EntityValidator &validator, const _Table &otherTable, const char *otherTableName )
 {
@@ -252,11 +252,11 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::ValidateAllKeysAreContainedInTabl
 	return true;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::ContainsKey( const _MgmCl &obj, const _Kty &key )
 {
 	return obj.v_Entries.find( key ) != obj.v_Entries.end();
 }
 
-#include "_pds_undef_macros.inl"
+#include "../_pds_undef_macros.inl"
 };
