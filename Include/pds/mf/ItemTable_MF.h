@@ -1,7 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__ITEMTABLE_MF_H__
+#define __PDS__ITEMTABLE_MF_H__
 
 #include <ctle/log.h>
 
@@ -259,4 +260,8 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::ContainsKey( const _MgmCl &obj, c
 }
 
 #include "../_pds_undef_macros.inl"
-};
+
+}
+// namespace pds
+
+#endif//__PDS__ITEMTABLE_MF_H__

@@ -141,6 +141,7 @@ constexpr item_table_flags operator|(item_table_flags lhs, item_table_flags rhs)
 class Entity;
 class EntityWriter;
 class EntityReader;
+class EntityValidator;
 class WriteStream;
 class ReadStream;
 

@@ -1,6 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 #pragma once
+#ifndef __PDS__WRITESTREAM_H__
+#define __PDS__WRITESTREAM_H__
 
 #include "fwd.h"
 #include <ctle/uuid.h>
@@ -184,3 +186,4 @@ inline void WriteStream::Write( const hash *src, u64 count )
 #include "WriteStream.inl"
 #endif//PDS_IMPLEMENTATION
 
+#endif//__PDS__WRITESTREAM_H__

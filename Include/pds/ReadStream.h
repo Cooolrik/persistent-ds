@@ -1,7 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__READSTREAM_H__
+#define __PDS__READSTREAM_H__
 
 #include "pds.h"
 
@@ -169,3 +170,4 @@ inline u64 ReadStream::Read( hash *dest, u64 count )
 #include "ReadStream.inl"
 #endif//PDS_IMPLEMENTATION
 
+#endif//__PDS__READSTREAM_H__

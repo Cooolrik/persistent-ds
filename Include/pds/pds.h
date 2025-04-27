@@ -19,23 +19,12 @@
 
 #include "EntityWriter.h"
 #include "EntityReader.h"
-//#include "EntityValidator.h"
-//#include "EntityManager.h"
+#include "EntityValidator.h"
+////#include "EntityManager.h"
 
 #include "dynamic_types.h"
 
 #include "Varying.h"
-
-//
-//#include "Varying_MF.h"
-//#include "BidirectionalMap_MF.h"
-//#include "DirectedGraph_MF.h"
-//#include "IndexedVector_MF.h"
-//#include "ItemTable_MF.h"
-
-
-//#include "Varying.inl"
-//#include "Varying_MF.inl"
 
 #endif//PDS_IMPLEMENTATION
 

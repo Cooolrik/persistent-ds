@@ -1,7 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__DIRECTEDGRAPH_MF_H__
+#define __PDS__DIRECTEDGRAPH_MF_H__
 
 #include <stack>
 #include <queue>
@@ -406,3 +407,4 @@ bool DirectedGraph<_Ty, _Flags, _EdgesSetTy, _RootsSetTy>::MF::ValidateAllKeysAr
 #include "../_pds_undef_macros.inl"
 }
 // namespace pds
+#endif//__PDS__DIRECTEDGRAPH_MF_H__

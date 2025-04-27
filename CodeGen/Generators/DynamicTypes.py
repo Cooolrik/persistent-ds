@@ -199,8 +199,6 @@ def DynamicTypes_inl():
 
 	lines.extend(hlp.end_header_file("dynamic_types.inl"))
 	hlp.write_lines_to_file("../Include/pds/dynamic_types.inl",lines)
-	
-
 
 def DynamicTypesTests_cpp():
 	lines = []
@@ -265,7 +263,7 @@ def DynamicTypesTests_cpp():
 	lines.append('    {')
 
 	lines.append('    setup_random_seed();')
-	lines.append('    for( uint pass_index=0; pass_index<(2*global_number_of_passes); ++pass_index )')
+	lines.append('    for( uint pass_index=0; pass_index<global_number_of_passes; ++pass_index )')
 	lines.append('        {')
 
 	for basetype in hlp.base_types:
@@ -277,6 +275,105 @@ def DynamicTypesTests_cpp():
 
 	hlp.write_lines_to_file("../Tests/DynamicTypesTests.cpp",lines)	
 	
+def VaryingTests_cpp():
+	lines = []
+	lines.extend( hlp.generate_header() )
+	lines.append('#include "Tests.h"')
+	lines.append('#include <pds/mf/Varying_MF.h>')
+	lines.append('#include <pds/EntityWriter.h>')
+	lines.append('#include <pds/EntityReader.h>')
+	lines.append('#include <pds/WriteStream.h>')
+	lines.append('#include <pds/ReadStream.h>')
+	lines.append('')
+	lines.append('using pds::Varying;')
+	lines.append('')
+	lines.append('template<class _Ty> void VaryingValueTester()')
+	lines.append('    {')
+	lines.append('    constexpr pds::element_type_index element_index = pds::element_type_information<_Ty>::type_index;')
+	lines.append('')
+
+	for cont in hlp.container_types:
+
+		type_str = f'pds::{cont.implementing_type}<_Ty>' if cont.is_template else '_Ty'
+
+		lines.append(f'    // test container type: {cont.implementing_type} ')
+		lines.append('    {')
+		lines.append(f'        constexpr pds::container_type_index container_index = container_type_index::ct_{cont.implementing_type};')
+		lines.append('')
+		lines.append('        // create objects of the type, one dynamically typed in the heap and one statically typed on the stack')
+		lines.append('        Varying value;')
+		lines.append('        EXPECT_FALSE( value.IsInitialized() );')
+		lines.append('        status result = value.Initialize( element_index, container_index );')
+		lines.append('        EXPECT_TRUE( result );')
+		lines.append('        EXPECT_TRUE( value.IsInitialized() );')
+		lines.append(f'        EXPECT_TRUE( value.IsA<{type_str}>() );')
+		lines.append(f'        {type_str} &dataA = value.Data<{type_str}>();')
+		if cont.is_template:
+			lines.append(f'        random_nonzero_{cont.implementing_type}<_Ty>( dataA );')
+		else:
+			lines.append('        random_nonzero_value<_Ty>( dataA );')
+		lines.append('        Varying value2;')
+		lines.append('        EXPECT_FALSE( value2.IsInitialized() );')
+		lines.append('        EXPECT_FALSE( Varying::MF::Equals( &value, &value2) );')
+		lines.append('        Varying::MF::DeepCopy( value2, &value );')
+		lines.append('        EXPECT_TRUE( Varying::MF::Equals( &value, &value2) );')
+		lines.append('        Varying::MF::Clear( value );')
+		lines.append('        EXPECT_FALSE( Varying::MF::Equals( &value, &value2) );')
+		lines.append('        Varying::MF::Clear( value2 );')
+		lines.append('        EXPECT_TRUE( Varying::MF::Equals( &value, &value2) );')
+		#lines.append('    dataA = result.value();')
+		#if cont.is_template:
+		#	lines.append(f'    pds::{cont.implementing_type}<_Ty> ct_{cont.implementing_type}_valueB;')
+		#else:
+		#	lines.append(f'    _Ty ct_{cont.implementing_type}_valueB = pds::element_type_information<_Ty>::zero;')
+
+		#lines.append(f'    dataB = &ct_{cont.implementing_type}_valueB;')
+		#lines.append('')
+		#lines.append('    // clear A, make sure they match')
+		#lines.append(f'    EXPECT_TRUE( pds::dynamic_types::clear( type_index , ct_{cont.implementing_type} , dataA ) );')
+		#lines.append(f'    EXPECT_TRUE( pds::dynamic_types::equals( type_index , ct_{cont.implementing_type} , dataA, dataB ).value() );')
+		#lines.append('')
+		#lines.append('    // give A a random non-zero value')
+		#if cont.is_template:
+		#	lines.append(f'    random_nonzero_{cont.implementing_type}<_Ty>( *(({cont.implementing_type}<_Ty>*)dataA) );')
+		#else:
+		#	lines.append(f'    random_nonzero_value<_Ty>( *((_Ty*)dataA) );')
+		#lines.append('')
+		#lines.append('    // try comparing, clearing and copying')
+		#lines.append(f'    EXPECT_FALSE( pds::dynamic_types::equals( type_index , ct_{cont.implementing_type} , dataA, dataB ).value() );')
+		#lines.append(f'    EXPECT_TRUE( pds::dynamic_types::copy( type_index , ct_{cont.implementing_type} , dataB, dataA ) );')
+		#lines.append(f'    EXPECT_TRUE( pds::dynamic_types::equals( type_index , ct_{cont.implementing_type} , dataA, dataB ).value() );')
+		#lines.append(f'    EXPECT_TRUE( pds::dynamic_types::clear( type_index , ct_{cont.implementing_type} , dataA ) );')
+		#lines.append(f'    EXPECT_FALSE( pds::dynamic_types::equals( type_index , ct_{cont.implementing_type} , dataA, dataB ).value() );')
+		#lines.append(f'    EXPECT_TRUE( pds::dynamic_types::copy( type_index , ct_{cont.implementing_type} , dataB, dataA ) );')
+		#lines.append(f'    EXPECT_TRUE( pds::dynamic_types::equals( type_index , ct_{cont.implementing_type} , dataA, dataB ).value() );')
+		#lines.append('')
+		#lines.append('    // delete the heap allocated data')
+		#lines.append(f'    EXPECT_TRUE( pds::dynamic_types::delete_type( type_index , ct_{cont.implementing_type} , dataA ) );')
+		#lines.append('')
+		lines.append('    }')
+		lines.append('')
+
+	lines.append('    }')
+	lines.append('')
+
+	lines.append('TEST( VaryingTests , VaryingValues )')
+	lines.append('    {')
+
+	lines.append('    setup_random_seed();')
+	lines.append('    for( uint pass_index=0; pass_index<global_number_of_passes; ++pass_index )')
+	lines.append('        {')
+
+	for basetype in hlp.base_types:
+		for var in basetype.variants:
+			lines.append(f'        VaryingValueTester<{var.implementing_type}>();')
+
+	lines.append('        }')
+	lines.append('    }')
+
+	hlp.write_lines_to_file("../Tests/VaryingTests.cpp",lines)	
+
 def run():
 	DynamicTypes_inl()
 	DynamicTypesTests_cpp()
+	VaryingTests_cpp()

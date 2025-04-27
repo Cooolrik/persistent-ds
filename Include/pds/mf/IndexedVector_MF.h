@@ -1,7 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__INDEXEDVECTOR_MF_H__
+#define __PDS__INDEXEDVECTOR_MF_H__
 
 #include "../IndexedVector.h"
 
@@ -124,5 +125,8 @@ inline status IndexedVector<_Ty, _IdxTy, _Base>::MF::Validate( const _MgmCl &obj
 }
 
 #include "../_pds_undef_macros.inl"
+
 }
 // namespace pds
+
+#endif//__PDS__INDEXEDVECTOR_MF_H__

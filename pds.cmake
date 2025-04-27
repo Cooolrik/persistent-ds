@@ -123,7 +123,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Tests/EntityReaderRandomTests.cpp
 		./Tests/EntityReadWriteTests.cpp
 		#./Tests/EntityTests.cpp
-		#./Tests/ItemTableTests.cpp
+		./Tests/ItemTableTests.cpp
 		./Tests/IndexedVectorTests.cpp
 		./Tests/ReadWriteTests.cpp
 		./Tests/SectionHierarchyReadWriteTests.cpp

@@ -22,7 +22,7 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 	// check with no validation
 	if( true )
 	{
-		typedef ItemTable<_Kty, TestEntityA, ItemTableFlags::NullEntities | ItemTableFlags::ZeroKeys> Dict;
+		typedef ItemTable<_Kty, TestEntityA, item_table_flags::null_entities | item_table_flags::zero_keys> Dict;
 		Dict dict;
 
 		EntityValidator validator;
@@ -40,7 +40,7 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 	// check zero key validation
 	if( true )
 	{
-		typedef ItemTable<_Kty, TestEntityA, ~ItemTableFlags::ZeroKeys> Dict;
+		typedef ItemTable<_Kty, TestEntityA, ~item_table_flags::zero_keys> Dict;
 		Dict dict;
 
 		EntityValidator validator;
@@ -58,7 +58,7 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 	// check null value validation
 	if( true )
 	{
-		typedef ItemTable<_Kty, TestEntityA, ~ItemTableFlags::NullEntities> Dict;
+		typedef ItemTable<_Kty, TestEntityA, ~item_table_flags::null_entities> Dict;
 		Dict dict;
 
 		EntityValidator validator;
@@ -76,7 +76,7 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 	// check all validations
 	if( true )
 	{
-		typedef ItemTable < _Kty, TestEntityA, ~( ItemTableFlags::NullEntities | ItemTableFlags::ZeroKeys ) > Dict;
+		typedef ItemTable < _Kty, TestEntityA, ~( item_table_flags::null_entities | item_table_flags::zero_keys ) > Dict;
 		Dict dict;
 
 		EntityValidator validator;
@@ -165,7 +165,7 @@ TEST( ItemTableTests, BasicTests )
 	ItemTableBasicTests_Validation<string>();
 }
 
-template<class T> void ItemTableReadWriteTests_TestKeyType( const MemoryWriteStream &ws, EntityWriter &ew )
+template<class T> void ItemTableReadWriteTests_TestKeyType( const WriteStream &ws, EntityWriter &ew )
 {
 	typedef ItemTable<T, TestEntityA> Dict;
 
@@ -221,12 +221,10 @@ TEST( ItemTableTests, ReadWriteTests )
 {
 	setup_random_seed();
 
-	for( uint pass_index = 0; pass_index < ( 2 * global_number_of_passes ); ++pass_index )
+	for( uint pass_index = 0; pass_index < global_number_of_passes; ++pass_index )
 	{
-		MemoryWriteStream ws;
+		WriteStream ws;
 		EntityWriter ew( ws );
-
-		ws.SetFlipByteOrder( ( pass_index & 0x1 ) != 0 );
 
 		ItemTableReadWriteTests_TestKeyType<i8>( ws, ew );
 		ItemTableReadWriteTests_TestKeyType<i16>( ws, ew );

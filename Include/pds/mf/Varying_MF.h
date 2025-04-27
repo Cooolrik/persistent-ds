@@ -1,15 +1,10 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
-
-#include <ctle/log.h>
+#ifndef __PDS__VARYING_MF_H__
+#define __PDS__VARYING_MF_H__
 
 #include "../Varying.h"
-
-#include "../EntityWriter.h"
-#include "../EntityReader.h"
-#include "../EntityValidator.h"
 
 namespace pds
 {
@@ -34,6 +29,24 @@ public:
 	}
 };
 
+}
+// namespace pds
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------
+// Implementation section
+
+#ifdef PDS_IMPLEMENTATION
+
+#include <ctle/log.h>
+
+#include "../dynamic_types.h"
+
+#include "../EntityWriter.h"
+#include "../EntityReader.h"
+#include "../EntityValidator.h"
+
+namespace pds
+{
 #include "../_pds_macros.inl"
 
 status Varying::MF::Clear( Varying &obj )
@@ -87,7 +100,9 @@ bool Varying::MF::Equals( const Varying *lvar, const Varying *rvar )
 		return false;
 
 	// types match, compare data in type
-	return dynamic_types::equals( lvar->type_m, lvar->container_type_m, lvar->data_m, rvar->data_m );
+	auto result = dynamic_types::equals( lvar->type_m, lvar->container_type_m, lvar->data_m, rvar->data_m );
+	ctValidate( result.status(), status::invalid_param ) << "Varying: Invalid parameter type or combo" << ctValidateThrow;
+	return result.value();
 }
 
 status Varying::MF::Write( const Varying &obj, EntityWriter &writer )
@@ -95,11 +110,11 @@ status Varying::MF::Write( const Varying &obj, EntityWriter &writer )
 	ctValidate( obj.IsInitialized(), status::not_initialized ) << "Cannot write uninitialized Varying to stream. Use optional_value template for optional Varying data." << ctValidateEnd;
 
 	// store the data type index
-	if( !writer.Write( pdsKeyMacro( Type ), (u16)obj.type_m ) )
+	if( !writer.Write( pdsKeyMacro( ElTy ), (u16)obj.type_m ) )
 		return status::cant_write;
 
 	// store the container type index
-	if( !writer.Write( pdsKeyMacro( ContainerType ), (u16)obj.container_type_m ) )
+	if( !writer.Write( pdsKeyMacro( CnTy ), (u16)obj.container_type_m ) )
 		return status::cant_write;
 
 	// store the data
@@ -118,15 +133,15 @@ status Varying::MF::Read( Varying &obj, EntityReader &reader )
 	u16 container_type_u16 = {};
 
 	// load the data type index
-	if( !reader.Read( pdsKeyMacro( Type ), type_u16 ) )
+	if( !reader.Read( pdsKeyMacro( ElTy ), type_u16 ) )
 		return status::cant_read;
 
 	// load the container type index
-	if( !reader.Read( pdsKeyMacro( ContainerType ), container_type_u16 ) )
+	if( !reader.Read( pdsKeyMacro( CnTy ), container_type_u16 ) )
 		return status::cant_read;
 
 	// set the data type
-	if( !SetType( obj, (data_type_index)type_u16, (container_type_index)container_type_u16 ) )
+	if( !SetType( obj, (element_type_index)type_u16, (container_type_index)container_type_u16 ) )
 		return status::cant_read;
 
 	// store the data
@@ -140,7 +155,7 @@ status Varying::MF::Validate( const Varying &obj, EntityValidator &validator )
 {
 	if( !obj.IsInitialized() )
 	{
-		pdsValidationError( ValidationError::NullNotAllowed )
+		pdsValidationError( validation_error_flags::null_not_allowed )
 			<< "Object is not initialized, and does not have a type set. All Varying objects need to be initialized to be valid. To have an optional Varying object, use the optional_value template."
 			<< pdsValidationErrorEnd;
 	}
@@ -150,22 +165,21 @@ status Varying::MF::Validate( const Varying &obj, EntityValidator &validator )
 
 status Varying::MF::SetType( Varying &obj, element_type_index dataType, container_type_index containerType )
 {
-	bool success = {};
-
 	// clear current type if it is set
 	ctValidate( obj.Deinitialize(), status::corrupted ) << "Cannot Deinitialize varying data object, it is corrupted." << ctValidateEnd;
 
 	// set type and allocate the data
 	obj.type_m = dataType;
 	obj.container_type_m = containerType;
-	std::tie( obj.data_m, success ) = dynamic_types::new_type( obj.type_m, obj.container_type_m );
-	ctValidate( success, status::not_initialized ) << "Could not set type of varying object" << ctValidateEnd;
+	ctStatusReturnCall( obj.data_m, dynamic_types::new_type( obj.type_m, obj.container_type_m ) );
 
 	return status::ok;
 }
 
-
 #include "../_pds_undef_macros.inl"
-
 }
 // namespace pds
+
+#endif//PDS_IMPLEMENTATION
+
+#endif//__PDS__VARYING_MF_H__

@@ -1,7 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__ITEMTABLE_H__
+#define __PDS__ITEMTABLE_H__
 
 #include <unordered_map>
 #include "pds.h"
@@ -76,3 +77,4 @@ public:
 };
 
 };
+#endif//__PDS__ITEMTABLE_H__

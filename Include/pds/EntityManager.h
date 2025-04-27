@@ -1,7 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__ENTITYMANAGER_H__
+#define __PDS__ENTITYMANAGER_H__
 
 #include <future>
 #include <ctle/readers_writer_lock.h>
@@ -77,3 +78,4 @@ public:
 
 }
 // namespace pds
+#endif//__PDS__ENTITYMANAGER_H__

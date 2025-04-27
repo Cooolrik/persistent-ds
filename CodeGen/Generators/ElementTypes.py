@@ -125,6 +125,7 @@ def fwd_h():
 	lines.append('class Entity;')
 	lines.append('class EntityWriter;')
 	lines.append('class EntityReader;')
+	lines.append('class EntityValidator;')
 	lines.append('class WriteStream;')
 	lines.append('class ReadStream;')
 	lines.append('')
