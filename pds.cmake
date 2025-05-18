@@ -87,7 +87,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	add_executable( 
 		systemtest
 		./Tests/SystemTest.cpp 
-		./Tests/TestPackA/TestPackA.cpp 
+		./Tests/TestPackA/TestPackA.cpp
 		./Tests/HeaderLibraries.cpp 
 		
 		${pds_library_files}
@@ -122,7 +122,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Tests/DynamicTypesTests.cpp
 		./Tests/EntityReaderRandomTests.cpp
 		./Tests/EntityReadWriteTests.cpp
-		#./Tests/EntityTests.cpp
+		./Tests/EntityTests.cpp
 		./Tests/ItemTableTests.cpp
 		./Tests/IndexedVectorTests.cpp
 		./Tests/ReadWriteTests.cpp
@@ -130,7 +130,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		./Tests/TypeTests.cpp 
 		./Tests/TestHelpers/random_vals.h
 		./Tests/TestHelpers/random_vals.cpp 
-		#./Tests/TestPackA/TestPackA.cpp 
+		./Tests/TestPackA/TestPackA.cpp
 		./Tests/VaryingTests.cpp
 		
 		dependencies.cmake

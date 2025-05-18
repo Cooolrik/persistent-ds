@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <set>
+#include <unordered_map>
 
 #include <ctle/fwd.h>
 
@@ -144,6 +146,7 @@ class EntityReader;
 class EntityValidator;
 class WriteStream;
 class ReadStream;
+class Varying;
 
 // @brief IndexedVector is the template class for all indexed vectors in pds
 template <

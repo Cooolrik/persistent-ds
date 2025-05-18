@@ -25,7 +25,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 
 	FetchContent_MakeAvailable( 
 		ctle 
-		googletest 
+		googletest
 		)
 
 endif() #BUILD_PERSISTENT_DS_TESTS

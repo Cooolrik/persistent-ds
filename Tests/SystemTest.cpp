@@ -7,7 +7,7 @@
 #include <Windows.h>
 #endif
 
-//#include "TestPackA/TestEntityA.h"
+#include "TestPackA/fwd.h"
 //#include "TestPackA/TestEntityB.h"
 
 //#include <pds/ValueTypes.h>
@@ -34,18 +34,21 @@ using namespace pds;
 
 int main()
 	{
+	TestPackA::f32 val;
+
+	val = 32.f;
 	
 	//auto type = dynamic_types::new_type( element_type_index::dt_bool, container_type_index::ct_vector );
 	//
-	WriteStream ws;
-	EntityWriter ew(ws);
-   
-	auto section = ew.BeginWriteSection( pdsKeyMacro(Hej) );
-
-	f32 val = 123;
-	section->Write( pdsKeyMacro(Hoj), val );
-
-	ew.EndWriteSection(section);
+	//WriteStream ws;
+	//EntityWriter ew(ws);
+   	//
+	//auto section = ew.BeginWriteSection( pdsKeyMacro(Hej) );
+	//
+	//f32 val = 123;
+	//section->Write( pdsKeyMacro(Hoj), val );
+	//
+	//ew.EndWriteSection(section);
 
 	//std::vector<int> myvec = {1,2,3};
 	

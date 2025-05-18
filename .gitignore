@@ -36,3 +36,5 @@ x64
 /Include/pds/ElementValuePointers.h
 /CodeGen/ctle_code_gen
 /Include/pds/dynamic_types.inl
+/Tests/TestPackA.old
+/CodeGen/ctlepy

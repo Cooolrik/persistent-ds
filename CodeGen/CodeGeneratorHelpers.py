@@ -191,7 +191,7 @@ def generate_pop_warnings( comment = 're-enable warnings again' ):
 	return lines
 
 def import_ctle_code_gen( ctle_path:str = '../build/_deps/ctle-src' ):
-	if not (Path.cwd() / 'ctle_code_gen').exists():
+	if not (Path.cwd() / 'code_gen' / 'ctlepy').exists():
 		
 		if ctle_path == '':
 			ctle_path = Path.cwd() / '../build/_deps/ctle-src'
@@ -200,13 +200,13 @@ def import_ctle_code_gen( ctle_path:str = '../build/_deps/ctle-src' ):
 			if not ctle_path.is_absolute():
 				ctle_path = Path.cwd() / ctle_path
 		
-		ctle_code_gen_path = ctle_path / 'ctle_code_gen'
+		ctlepy_path = ctle_path / 'code_gen' / 'ctlepy'
 		
-		if ctle_code_gen_path.exists():
-			print( f'Copying {ctle_code_gen_path} to local ctle_code_gen copy.')
-			shutil.copytree(ctle_code_gen_path, 'ctle_code_gen', dirs_exist_ok=True)
+		if ctlepy_path.exists():
+			print( f'Copying {ctlepy_path} to local ctlepy copy.')
+			shutil.copytree(ctlepy_path, 'ctlepy', dirs_exist_ok=True)
 		else:
-			print( f'Error: the ctle code gen path: {ctle_code_gen_path} does not exist. Cannot continue' )
+			print( f'Error: the ctle code gen path: {ctlepy_path} does not exist. Cannot continue' )
 			exit(-1)
 	
 

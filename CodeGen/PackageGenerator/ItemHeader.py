@@ -2,128 +2,141 @@ from EntitiesHelpers import *
 import os
 import CodeGeneratorHelpers as hlp
 from CodeGeneratorHelpers import int_bit_range, vector_dimension_range, nonconst_const_range
-from ctle_code_gen.formatted_output import formatted_output
+from ctlepy.formatted_output import formatted_output
+from pathlib import Path
 
 from ctypes import c_ulonglong 
 from ctypes import c_ubyte
 
-def CreateItemHeader(item: Item):
-	packageName = item.Package.Name
-	versionName = item.Version.Name
+def CreateItemClass(op: formatted_output, item: Item) -> None:
+	package = item.Package
+	version = item.Version
+	
+	# list dependences that only needs a forward reference in the header
+	for dep in item.Dependencies:
+		if not dep.IncludeInHeader:
+			op.ln(f'    class {dep.Name};')
+	op.ln()
+	op.comment_ln(f'{item.Name} class')
 
-	lines = []
-	lines.extend( hlp.generate_header() )
-	lines.append('')
-	lines.append('#pragma once')
-	lines.append('')
-	lines.append(f'#include "../pdsImportsAndDefines.h"')
+	op.ln(f'class {item.Name} {": public pds::Entity" if item.IsEntity else ""}')
+	with op.blk(no_indent=True, add_semicolon=True):
 
-	# is this an alias of a previous version?
-	if item.IdenticalToPreviousVersion:
-		previousVersionName = item.PreviousVersion.Version.Name
+		# initalization of the class
+		op.ln('public:')
+		with op.tab():
 
-		# if this is just an alias, define a using and reference back to the actual entity
-		lines.append(f'#include "../{previousVersionName}/{previousVersionName}_{item.Name}.h"')
-		lines.append('')
-		lines.append(f'namespace {packageName}')
-		lines.append('{')
-		lines.append(f'namespace {versionName}')
-		lines.append('{')
-		lines.append(f'// {item.Name} is identical to the previous version {previousVersionName}')
-		lines.append(f'using {item.Name} = {previousVersionName}::{item.Name};')
-		lines.append('}')
-		lines.append(f'// namespace {versionName}')
-		lines.append('}')		
-		lines.append(f'// namespace {packageName}')
+			# list typedefs of templates
+			if len(item.Templates) > 0:
+				for typ in item.Templates:
+					op.ln(typ.Declaration)
+				op.ln()
+
+			op.ln('class MF;')
+			op.ln('friend MF;')
+			op.ln(f'static constexpr const char *ItemTypeString = "{package.Name}.{version.Name}.{item.Name}";')
+			if item.IsEntity:
+				op.ln(f'virtual const char *EntityTypeString() const;')
+			op.ln()
+
+			op.ln(f'{item.Name}() = default;')
+			op.ln(f'{item.Name}( const {item.Name} &rval );')
+			op.ln(f'{item.Name} &operator=( const {item.Name} &rval );')
+			op.ln(f'{item.Name}( {item.Name} &&rval ) = default;')
+			op.ln(f'{item.Name} &operator=( {item.Name} &&rval ) = default;')
+			op.ln(f'{"virtual " if item.IsEntity else ""}~{item.Name}() = default;')
+			op.ln()
+
+			op.comment_ln('value compare operators')
+			op.ln(f'bool operator==( const {item.Name} &rval ) const;')
+			op.ln(f'bool operator!=( const {item.Name} &rval ) const;')
+			op.ln()
+
+		# variable declarations
+		op.ln('private:')
+		with op.tab():
+			for var in item.Variables:
+				if var.IsSimpleBaseType:
+					op.ln(f'{var.TypeString} v_{var.Name} = {{}};')
+				else:
+					op.ln(f'{var.TypeString} v_{var.Name};')
+			op.ln()
+
+		# variable accessors, const and non-const versions
+		op.ln('public:')
+		with op.tab():		
+			for var in item.Variables:
+				op.ln(f'// accessor for referencing variable {var.Name}')
+				op.ln(f'const {var.TypeString} & {var.Name}() const {{ return this->v_{var.Name}; }}')
+				op.ln(f'{var.TypeString} & {var.Name}() {{ return this->v_{var.Name}; }}')
+				op.ln('')
+
+
+def CreateItemHeader(item: Item, in_version_folder:bool ) -> None:
+	package = item.Package
+	version = item.Version
+	version_prefix = version.Name + '_'
+
+	# set up the file path and name
+	file_path = Path(package.Path) / version.Name / f'{version.Name}_{item.Name}.h'
+	file_name = file_path.name
+
+	# check if this is only an alias of a previous version, or the release version, and if so, use the previous version's class
+	if item.IsReleaseVersion or item.IsIdenticalToPreviousVersion:
+		if item.IsReleaseVersion:
+			implementing_class_name:str = f'{package.Name}::{item.Name}'
+		else:
+			implementing_class_name:str = f'{package.Name}::{item.PreviousVersion.Version.Name}::{item.Name}'
+
+		# generate the header file with a forward declaration of the class
+		op = formatted_output()
+		op.generate_license_header()
+		with op.header_guard( file_name=file_name, project_name=package.Name ):
+			op.comment_ln(f'class: {item.Name}')
+			op.comment_ln(f'version: {version.Name}')
+			op.ln('')
+			op.ln(f'#include "{item.GetImplementingHeaderFilePath()}"')
+			op.ln('')
+			with op.ns(package.Name, add_empty_line=False):
+				with op.ns(version.Name):
+					op.ln(f'using {item.Name} = {implementing_class_name};')
+		op.write_lines_to_file(str(file_path))
+
+		# if this is an alias of a previous item, we are done
+		if item.IsIdenticalToPreviousVersion:
+			return
 		
-	else:
-		# not an alias, defined the whole class
-		if item.IsModifiedFromPreviousVersion:
-			previousVersionName = item.PreviousVersion.Version.Name
-			lines.append(f'#include "../{previousVersionName}/{previousVersionName}_{item.Name}.h"')
-		
+		# if this is the release version, we also need to create the header file with the class definition
+		file_path = Path(package.Path) / f'{item.Name}.h'
+		file_name = file_path.name
+		version_prefix = ''
+
+	# this is not an alias, so we need to create the header file with the class definition
+	op = formatted_output()
+	op.generate_license_header()
+	with op.header_guard( file_name=file_name, project_name=package.Name ):
+		op.comment_ln(f'class: {item.Name}')
+		op.comment_ln(f'version: {version.Name}')
+		op.ln('')
+
+		# include forward declaration of the classes and pds types
+		op.ln(f'#include "{item.GetPathToRoot()}fwd.h"')
+		#if item.IsModifiedFromPreviousVersion:
+		#	op.ln(f'#include "{item.GetPathToPreviousVersion()}"')
+
 		# list dependences that needs to be included in the header
 		for dep in item.Dependencies:
 			if dep.IncludeInHeader:
 				if dep.PDSType:
-					lines.append(f'#include <pds/{dep.Name}.h>')
+					op.ln(f'#include <pds/{dep.Name}.h>')
 				else:
-					lines.append(f'#include "{versionName}_{dep.Name}.h"')				
+					op.ln(f'#include "{version_prefix}{dep.Name}.h"')
 
-		lines.append('')
-		lines.append(f'namespace {packageName}')
-		lines.append('{')
-		lines.append(f'namespace {versionName}')
-		lines.append('{')
-
-		# list dependences that only needs a forward reference in the header
-		for dep in item.Dependencies:
-			if not dep.IncludeInHeader:
-				lines.append(f'    class {dep.Name};')
-
-		if item.IsEntity:
-			lines.append(f'    class {item.Name} : public pds::Entity')
-		else:
-			lines.append(f'    class {item.Name}')
-		lines.append('        {')
-		lines.append('        public:')
-
-		# list typedefs of templates
-		if len(item.Templates) > 0:
-			for typ in item.Templates:
-				lines.append(typ.Declaration)
-			lines.append('')
-
-		lines.append('            class MF;')
-		lines.append('            friend MF;')
-		lines.append('')
-		lines.append(f'            static constexpr const char *ItemTypeString = "{packageName}.{versionName}.{item.Name}";')
-		lines.append('')
-		
-		if item.IsEntity:
-			lines.append(f'            virtual const char *EntityTypeString() const;')
-			lines.append('')
-
-		lines.append(f'            {item.Name}() = default;')
-		lines.append(f'            {item.Name}( const {item.Name} &rval );')
-		lines.append(f'            {item.Name} &operator=( const {item.Name} &rval );')
-		lines.append(f'            {item.Name}( {item.Name} &&rval ) = default;')
-		lines.append(f'            {item.Name} &operator=( {item.Name} &&rval ) = default;')
-		if item.IsEntity:
-			lines.append(f'            virtual ~{item.Name}() = default;')
-		else:
-			lines.append(f'            ~{item.Name}() = default;')
-		lines.append('')
-
-		lines.append('            // value compare operators')
-		lines.append(f'            bool operator==( const {item.Name} &rval ) const;')
-		lines.append(f'            bool operator!=( const {item.Name} &rval ) const;')
-		lines.append('')
-
-		lines.append('        protected:')
-		
-		# list variables in item
-		for var in item.Variables:
-			if var.IsSimpleBaseType:
-				lines.append(f'            {var.TypeString} v_{var.Name} = {{}};')
+		op.ln()
+		with op.ns(package.Name, add_empty_line=False):
+			if item.IsReleaseVersion:
+				CreateItemClass(op, item)
 			else:
-				lines.append(f'            {var.TypeString} v_{var.Name};')
-
-		lines.append('')
-		lines.append('        public:')
-
-		# create accessor ref for variables, const and non-const versions
-		for var in item.Variables:
-			lines.append(f'            // accessor for referencing variable {var.Name}')
-			lines.append(f'            const {var.TypeString} & {var.Name}() const {{ return this->v_{var.Name}; }}')
-			lines.append(f'            {var.TypeString} & {var.Name}() {{ return this->v_{var.Name}; }}')
-			lines.append('')
-
-		lines.append('        };')
-
-		lines.append('}')
-		lines.append(f'// namespace {versionName}')
-		lines.append('}')		
-		lines.append(f'// namespace {packageName}')
-  
-	hlp.write_lines_to_file(f"{item.Package.Path}/{versionName}/{versionName}_{item.Name}.h",lines)
+				with op.ns(version.Name):
+					CreateItemClass(op, item)
+	op.write_lines_to_file(str(file_path))

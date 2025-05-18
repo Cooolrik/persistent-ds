@@ -1,17 +1,223 @@
 # pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 # Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
-from EntitiesHelpers import * 
 import os
 import CodeGeneratorHelpers as hlp
-from CodeGeneratorHelpers import int_bit_range, vector_dimension_range
-from ctle_code_gen.formatted_output import formatted_output
+from CodeGeneratorHelpers import int_bit_range, float_bit_range, vector_dimension_range
+from ctlepy.formatted_output import formatted_output, set_default_license_header_values
+from EntitiesHelpers import * 
 
 from .ItemHeader import CreateItemHeader
 from .MFHeader import CreateMFHeader
 
 from ctypes import c_ulonglong 
 from ctypes import c_ubyte
+
+release_version = None
+
+def SetupReleaseVersion( package: Package , version_str:str ):
+
+	global release_version
+
+	# if version is "Latest", we need to find the latest version of the package
+	# latest is the verion which does not have a later version pointing at it
+	if version_str == "Latest":
+		version_str = None
+		for ver in package.Versions:	
+			# for each version, check if any other version points at it
+			hasLater = False
+			for laterVer in package.Versions:	
+				if laterVer == ver:
+					continue
+				if laterVer.PreviousVersion == ver:
+					hasLater = True
+					break
+			if not hasLater:
+				if version_str != None:
+					print('Error: The package has "Latest" set as selected default version, but there are more than one leaf versions.')
+					exit(1)
+				version_str = ver.Name
+				break
+
+	# find the version object in the package
+	release_version = next( (ver for ver in package.Versions if ver.Name == version_str) , None )
+	if release_version == None:
+		print('Error: The package has "Latest" set as selected default version, but no leaf version was found.')
+		exit(1)
+
+	# log info
+	print(f'PackageGenerator: Using version "{release_version.Name}" as the release version of the package.')
+
+	# list the versions in order from release to first version
+	current_version = release_version.PreviousVersion
+	while current_version != None:
+		print(f'PackageGenerator: Found earlier version "{current_version.Name}" in the package.')
+		current_version = current_version.PreviousVersion
+
+	# for each item in the release version, find the version of the item to use as the release version
+	# this is either the release version of the item, or the latest previous version of the item
+	for item in release_version.Items:
+		implementing_item = item.GetImplementingItem()
+		if implementing_item != None:
+			implementing_item.IsReleaseVersion = True
+			print(f'PackageGenerator: Using {implementing_item.Version.Name} version of {item.Name} as release item version.')
+
+
+# create a header for the package, which has all needed references and definitions
+def CreatePackageHeader( package ):
+
+	op = formatted_output()
+	op.generate_license_header()
+	with op.header_guard( file_name='fwd.h', project_name=package.Name ):
+		op.ln('#include <pds/fwd.h>')
+		op.ln()
+		with op.ns(package.Name):
+			op.comment_ln('imports from pds')
+			op.ln('')
+
+			# typedef base integer types
+			op.comment_ln('scalar types')
+			for bit_size in int_bit_range:
+				op.ln(f'using pds::i{bit_size};')
+			for bit_size in int_bit_range:
+				op.ln(f'using pds::u{bit_size};')
+			for bit_size in float_bit_range:
+				op.ln(f'using pds::f{bit_size};')				
+			op.ln('')
+			op.ln('using pds::status;')
+			op.ln('')
+			op.comment_ln('ids, hashes and strings')
+			op.ln('using pds::uuid;')
+			op.ln('using pds::hash;')
+			op.ln('using pds::string;')
+			op.ln('')
+
+			op.comment_ln('container types')
+			op.ln('using pds::vector;')
+			op.ln('using pds::idx_vector;')
+			op.ln('using pds::optional_idx_vector;')
+			op.ln('using pds::optional_value;')
+			op.ln('using pds::optional_vector;')
+			op.ln('')
+
+			# typedef vector types
+			op.comment_ln('vector types')
+			for bit_size in int_bit_range:
+				for vec_dim in vector_dimension_range:
+					op.ln(f'using pds::i{bit_size}vec{vec_dim};')
+			op.ln('')
+			for bit_size in int_bit_range:
+				for vec_dim in vector_dimension_range:
+					op.ln(f'using pds::u{bit_size}vec{vec_dim};')
+			op.ln('')
+			for bit_size in float_bit_range:
+				for vec_dim in vector_dimension_range:
+					op.ln(f'using pds::f{bit_size}vec{vec_dim};')
+			op.ln('')
+			
+			# typedef matrix types
+			op.comment_ln('matrix types')
+			for bit_size in float_bit_range:
+				for vec_dim in vector_dimension_range:
+					op.ln(f'using pds::f{bit_size}mat{vec_dim};')
+			op.ln('')
+
+			# typedef quaternions
+			op.comment_ln('quaternion types')
+			for bit_size in float_bit_range:
+				op.ln(f'using pds::f{bit_size}quat;')
+			op.ln('')
+
+			# typedef standard types
+			op.comment_ln('standard types from glm')
+			for vec_dim in vector_dimension_range:
+				op.ln(f'using pds::ivec{vec_dim};')
+			for vec_dim in vector_dimension_range:
+				op.ln(f'using pds::uvec{vec_dim};')
+			for vec_dim in vector_dimension_range:
+				op.ln(f'using pds::vec{vec_dim};')
+			for vec_dim in vector_dimension_range:
+				op.ln(f'using pds::mat{vec_dim};')
+			op.ln('')
+
+			# inline entity_ref and item_ref
+			op.ln(f'using pds::entity_ref;')
+			op.ln(f'using pds::item_ref;')
+			op.ln('')
+
+			# enum of all data types
+			op.comment_ln('value type index enums')
+			op.ln('using pds::element_type_index;')
+			op.ln('')
+
+			# standard PDS data classes
+			op.comment_ln('data classes')
+			op.ln('using pds::IndexedVector;')
+			op.ln('using pds::ItemTable;')
+			op.ln('using pds::Varying;')
+			op.ln('using pds::DirectedGraph;')
+			op.ln('using pds::BidirectionalMap;')
+			op.ln('')
+
+			# type information on all types
+			#op.comment_ln('type information templates')
+			#op.ln('template <class _Ty> using data_type_information = pds::data_type_information<_Ty>;')
+			#op.ln('template <class _Ty> using combined_type_information = pds::combined_type_information<_Ty>;')
+
+			#op.ln('const pds::EntityManager::PackageRecord *GetPackageRecord();')
+
+	op.write_lines_to_file(f'{package.Path}/fwd.h')
+
+
+def CreatePackageSourceFile( package: Package ):
+
+	op = formatted_output()
+	op.generate_license_header()
+	op.ln()
+	op.comment_ln('Forward declarations and imports from pds')
+	op.ln('#include "fwd.h"')
+	op.ln('#include <pds/EntityWriter.h>')
+	op.ln('#include <pds/EntityReader.h>')
+	op.ln('#include <pds/WriteStream.h>')
+	op.ln('#include <pds/ReadStream.h>')
+	op.ln()
+
+	op.comment_ln('include all versions of this package')
+	for version in package.Versions:
+		subdir_and_prefix = (version.Name + '/' + version.Name + '_' ) if version != release_version else ''
+		for item in version.Items:
+			if not item.IsDeleted:
+				op.ln(f'#include "{subdir_and_prefix}{item.Name}.h"')
+		op.ln()	
+
+	op.write_lines_to_file(f'{package.Path}/{package.Name}.cpp')
+
+
+ 
+	# lines.append('')
+	
+	# lines.append('// All versions of this package')
+	# for version in package.Versions:
+	# 	for item in version.Items:
+	# 		if not item.IsDeleted:
+	# 			lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.h"')
+	# 	lines.append('')
+	
+	# lines.append('// Include all inl implementations of all versions')
+	# for version in package.Versions:		
+	# 	# include inl files for all new items in version
+	# 	for item in version.Items:
+	# 		if not item.IsDeleted and not item.IdenticalToPreviousVersion:
+	# 			lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.inl"')
+	# lines.append('')
+
+	# lines.append('// Include the package handler for this package')
+	# lines.append('')
+	# lines.append(f'#include "{packageName}PackageHandler.inl"')
+
+	# hlp.write_lines_to_file(f"{package.Path}/{packageName}.cpp",lines)
+
+
 
 def ImplementClearCall(item,var):
 	lines = []
@@ -501,7 +707,7 @@ def CreatePackageHandler_inl( package: Package ):
 
 	for version in package.Versions:
 		for item in version.Items:
-			if not item.IsDeleted and not item.IdenticalToPreviousVersion and item.IsEntity:
+			if not item.IsDeleted and not item.IsIdenticalToPreviousVersion and item.IsEntity:
 				lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.h"')
 
 	lines.append('')
@@ -529,7 +735,7 @@ def CreatePackageHandler_inl( package: Package ):
 	# add all (unique) entities of all versions
 	for version in package.Versions:
 		for item in version.Items:
-			if item.IsEntity and not item.IdenticalToPreviousVersion and not item.IsDeleted:
+			if item.IsEntity and not item.IsIdenticalToPreviousVersion and not item.IsDeleted:
 				namespacedItemName = f'{version.Name}::{item.Name}'
 				lines.append(f'    // {namespacedItemName}' )
 				lines.append(f'    static const class _et_{version.Name}_{item.Name}_EntityType : public _entityTypeClass' )
@@ -662,253 +868,66 @@ def CreatePackageHandler_inl( package: Package ):
 	lines.append('#include <pds/_pds_undef_macros.inl>')
 	hlp.write_lines_to_file(f"{package.Path}/{packageName}PackageHandler.inl",lines)
 
-# used by CreatePackageHeader to list all needed defines in pds
-def ListPackageHeaderDefines():
-	lines = []
-
-	# typedef base integer types
-	lines.append(f"\t// scalar types")
-	for bit_size in int_bit_range:
-		lines.append(f"\tusing pds::i{bit_size};")
-	for bit_size in int_bit_range:
-		lines.append(f"\tusing pds::u{bit_size};")
-	lines.append('')
-	lines.append(f"\tusing ctle::status;")
-	lines.append('')
-	lines.append(f"\t// ids, hashes and strings")
-	lines.append(f"\tusing pds::uuid;")
-	lines.append(f"\tusing pds::hash;")
-	lines.append('\tusing std::string;')
-	lines.append('')
-
-	lines.append(f"\t// container types")
-	lines.append('\tusing std::vector;')
-	lines.append('\tusing ctle::idx_vector;')
-	lines.append('\tusing ctle::optional_idx_vector;')
-	lines.append('\tusing ctle::optional_value;')
-	lines.append('\tusing ctle::optional_vector;')
-	lines.append('')
-
-	# typedef vector types
-	lines.append(f"\t// vector types")
-	for bit_size in int_bit_range:
-		for vec_dim in vector_dimension_range:
-			lines.append(f"\tusing pds::i{bit_size}vec{vec_dim};")
-	lines.append('')
-	for bit_size in int_bit_range:
-		for vec_dim in vector_dimension_range:
-			lines.append(f"\tusing pds::u{bit_size}vec{vec_dim};")
-	lines.append('')
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing pds::fvec{vec_dim};")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing pds::dvec{vec_dim};")
-	lines.append('')
+def run(package: Package, 
+		version_str:str = 'Latest',
+		project_name:str = 'Persistent Data Structure framework', 
+		copyright_holder = '2022 Ulrik Lindahl', 
+		license_type:str = 'MIT', 
+		license_link:str = 'https://github.com/Cooolrik/pds/blob/main/LICENSE', 
+		):
 	
-	# typedef matrix types
-	lines.append(f"\t// matrix types")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing pds::fmat{vec_dim};")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing pds::dmat{vec_dim};")
-	lines.append('')
+	set_default_license_header_values( project_name, copyright_holder, license_type, license_link )
 
-	# typedef quaternions
-	lines.append(f"\t// quaternion types")
-	lines.append(f"\tusing pds::fquat;")
-	lines.append(f"\tusing pds::dquat;")
-	lines.append('')
+	# set up the selected version of the package
+	SetupReleaseVersion( package, version_str )
 
-	# typedef standard types
-	lines.append(f"\t// standard types from glm")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing pds::ivec{vec_dim};")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing pds::uvec{vec_dim};")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing pds::vec{vec_dim};")
-	for vec_dim in vector_dimension_range:
-		lines.append(f"\tusing pds::mat{vec_dim};")
-	lines.append('')
-
-	# inline entity_ref and item_ref
-	lines.append(f"\tusing pds::entity_ref;")
-	lines.append(f"\tusing pds::item_ref;")
-	lines.append('')
-
-	# enum of all data types
-	lines.append('\t// value type index enums')
-	lines.append('\tusing pds::data_type_index;')
-	lines.append('')
-
-	# standard PDS data classes
-	lines.append('\t// data classes')
-	lines.append('\tusing pds::IndexedVector;')
-	lines.append('\tusing pds::ItemTable;')
-	lines.append('\tusing pds::Varying;')
-	lines.append('\tusing pds::DirectedGraph;')
-	lines.append('\tusing pds::BidirectionalMap;')
-	lines.append('')
-
-	# type information on all types
-	lines.append('\t// type information templates')
-	lines.append('\ttemplate <class _Ty> using data_type_information = pds::data_type_information<_Ty>;')
-	lines.append('\ttemplate <class _Ty> using combined_type_information = pds::combined_type_information<_Ty>;')
-	
-	# might not need, wait with defining this one
-	#lines.append('\ttemplate <class _Ty> using clear_combined_type = pds::clear_combined_type<_Ty>;')
-	return lines
-
-# create a header for the package, which has all needed references and definitions
-def CreatePackageHeader( package ):
-	packageName = package.Name
-
-	lines = []
-	lines.extend( hlp.generate_header() )
-	lines.append('')
-	lines.append('#pragma once')
-	lines.append('')
-	lines.append(f'#include <pds/pds.h>')
-	lines.append(f'#include <pds/IndexedVector.h>')
-	lines.append(f'#include <pds/ItemTable.h>')
-	lines.append(f'#include <pds/Varying.h>')
-	lines.append(f'#include <pds/DirectedGraph.h>')
-	lines.append(f'#include <pds/BidirectionalMap.h>')
-	lines.append(f'#include <pds/EntityManager.h>')
-	lines.append('')
-		
-	lines.append('')
-	lines.append(f'namespace {packageName}')
-	lines.append('{')
-	lines.extend( ListPackageHeaderDefines() )
-	lines.append('')
-	lines.append('\tconst pds::EntityManager::PackageRecord *GetPackageRecord();')
-	lines.append('}')
-
-	hlp.write_lines_to_file(f"{package.Path}/pdsImportsAndDefines.h",lines)
-
-def CreatePackageSourceFile( package: Package ):
-	packageName = package.Name
-
-	lines = []
-	lines.extend( hlp.generate_header() )
-	lines.append('')
-	lines.append('// All pds imports and typedefs')
-	lines.append(f'#include "pdsImportsAndDefines.h"')
-	lines.append('')
-
-	lines.append('#include <pds/EntityWriter.h>')
-	lines.append('#include <pds/EntityReader.h>')
-	lines.append('#include <pds/MemoryWriteStream.h>')
-	lines.append('#include <pds/MemoryReadStream.h>')
- 
-	lines.append('')
-	
-	lines.append('// All versions of this package')
-	for version in package.Versions:
-		for item in version.Items:
-			if not item.IsDeleted:
-				lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.h"')
-		lines.append('')
-	
-	lines.append('// Include all inl implementations of all versions')
-	for version in package.Versions:		
-		# include inl files for all new items in version
-		for item in version.Items:
-			if not item.IsDeleted and not item.IdenticalToPreviousVersion:
-				lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.inl"')
-	lines.append('')
-
-	lines.append('// Include the package handler for this package')
-	lines.append('')
-	lines.append(f'#include "{packageName}PackageHandler.inl"')
-
-	hlp.write_lines_to_file(f"{package.Path}/{packageName}.cpp",lines)
-
-def CreateDefaultVersionReferencesAndHeaders( version: Version ):
-	package = version.Package
-
-	for item in version.Items:
-		if item.IsEntity and not item.IsDeleted:
-			lines = []
-			
-			# point at the latest implemented version of the entity
-			implementVersionName = version.Name
-			if item.IdenticalToPreviousVersion:
-				implementVersionName = item.PreviousVersion.Version.Name
-
-			lines.extend( hlp.generate_header() )
-			lines.append('')
-			lines.append('#pragma once')
-			lines.append('')
-			lines.append(f'#include "{implementVersionName}/{implementVersionName}_{item.Name}.h"')
-			lines.append(f'namespace {package.Name}')
-			lines.append('\t{')
-			lines.append(f'\tusing {item.Name} = {implementVersionName}::{item.Name};' )
-			lines.append('\t}')
-
-			hlp.write_lines_to_file(f"{package.Path}/{item.Name}.h",lines)
-
-def FindAndCreateDefaultVersionReferencesAndHeaders( package: Package , defaultVersion:str ):
-	# if we want default version headers and references directly in the Package
-	if defaultVersion != None:
-		if defaultVersion == "Latest":
-
-			# look for a version which does not have a later version
-			hasFoundALatest = False
-			for version in package.Versions:	
-				# for each version, check if any other version points at it
-				hasLater = False
-				for laterVersion in package.Versions:	
-					if laterVersion == version:
-						continue
-					if laterVersion.PreviousVersion == version:
-						hasLater = True
-						break
-				if not hasLater:
-					if hasFoundALatest:
-						print('Error: The package has "Latest" set as selected default version, but there are more than one leaf versions.')
-						exit(1)
-					CreateDefaultVersionReferencesAndHeaders( version )
-					hasFoundALatest = True
-					break
-
-			# make sure one was found
-			if not hasFoundALatest:
-				print('Error: The package has "Latest" set as selected default version, but no leaf version was found.')
-				exit(1)
-
-		else:
-			# set a specific version as the latest
-			hasFoundVersion = False
-			for version in package.Versions:
-				if version.Name == defaultVersion:
-					CreateDefaultVersionReferencesAndHeaders( version )
-					hasFoundVersion = True
-					break
-			
-			# make sure one was found
-			if not hasFoundVersion:
-				print(f'Error: The package has "{defaultVersion}" set as selected default version, but no leaf version was found.')
-				exit(1)
-
-
-def run( package: Package, defaultVersion:str = None ):
-	
+	# create folders for the package and all versions
 	os.makedirs(package.Path, exist_ok=True)
 	for version in package.Versions:
 		os.makedirs(package.Path + '/' + version.Name , exist_ok=True)
 
 	CreatePackageHeader( package )
 	CreatePackageSourceFile( package )
-	CreatePackageHandler_inl( package )
+	#CreatePackageHandler_inl( package )
 	
-	# generate all items
+	# generate all items in all version folders
 	for version in package.Versions:
 		for item in version.Items:
-			if not item.IsDeleted:
-				CreateItemHeader( item )
-				CreateMFHeader( item )
-				CreateItemSource( item )
+			if item.IsDeleted:
+				continue
+			CreateItemHeader( item=item, in_version_folder=True )
+			#CreateMFHeader( item )
+			#CreateItemSource( item )
 	
-	FindAndCreateDefaultVersionReferencesAndHeaders( package, defaultVersion )
+	#FindAndCreateDefaultVersionReferencesAndHeaders( package, version_str )
+
+
+
+# 	# create the files for the selected version
+# 	for item in version.Items:
+# 		if not item.IsDeleted:
+
+# 			op = formatted_output()
+# 			op.generate_license_header()
+# 			with op.header_guard( file_name=item.Name, project_name=package.Name ):
+# 				op.ln('hje')
+# 			op.write_lines_to_file(f"{package.Path}/{item.Name}.h")
+
+# 			#lines = []
+			
+# 			## point at the latest implemented version of the entity
+# 			#implementVersionName = version.Name
+# 			#if item.IdenticalToPreviousVersion:
+# 			#	implementVersionName = item.PreviousVersion.Version.Name
+# #
+# 			#lines.extend( hlp.generate_header() )
+# 			#lines.append('')
+# 			#lines.append('#pragma once')
+# 			#lines.append('')
+# 			#lines.append(f'#include "{implementVersionName}/{implementVersionName}_{item.Name}.h"')
+# 			#lines.append(f'namespace {package.Name}')
+# 			#lines.append('\t{')
+# 			#lines.append(f'\tusing {item.Name} = {implementVersionName}::{item.Name};' )
+# 			#lines.append('\t}')
+# #
+# 			#hlp.write_lines_to_file(f"{package.Path}/{item.Name}.h",lines)	

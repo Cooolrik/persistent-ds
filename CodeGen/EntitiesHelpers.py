@@ -30,7 +30,7 @@ class Template:
 		self.Flags = flags
 
 		# create declaration of template
-		self.Declaration = f'            using {self.Name} = pds::{self.Template}<'
+		self.Declaration = f'using {self.Name} = pds::{self.Template}<'
 		has_value = False
 		for ty in self.Types:
 			if has_value:
@@ -148,10 +148,46 @@ class Item:
 	def __init__(self, name:str ):
 		self.Name = name
 		self.IsEntity = False
-		self.IdenticalToPreviousVersion = False
+		self.IsIdenticalToPreviousVersion = False
 		self.IsDeleted = False
 		self.IsDeprecated = False
 		self.IsModifiedFromPreviousVersion = False
+		self.IsReleaseVersion = False
+
+	def GetImplementingItem(self) -> Item:
+		"""return the item in a previous version which implements this item. if this is a new item, return self. if it is deleted, return None"""
+		if self.IsDeleted:
+			return None
+		prev_version = self
+		while prev_version.IsIdenticalToPreviousVersion:
+			prev_version = prev_version.PreviousVersion
+		return prev_version
+
+	def GetImplementingHeaderFilePath(self) -> str:
+		"""return the file path to the item in the previous version which implements this item, relative to this file path. if this is a new item, return self. if it is deleted, return None"""
+		if self.IsReleaseVersion:
+			return "../" + self.Name + ".h"
+		if self.IsDeleted:
+			return None
+		prev_version = self.GetImplementingItem()
+		if prev_version == None:
+			return None
+		return f'../{prev_version.Version.Name}/{prev_version.Version.Name}_{prev_version.Name}.h'
+
+	def GetPathToRoot(self) -> str:
+		"""return the path to the root of the package, relative to this file path"""
+		if self.IsReleaseVersion:
+			return "./"
+		else:
+			return "../" 
+		
+	def GetPathToPreviousVersion(self) -> str:
+		"""return the path to the previous version of the item, relative to this file path"""
+		if self.IsDeleted:
+			return None
+		if not self.IsModifiedFromPreviousVersion:
+			return None
+		return self.GetPathToRoot() + self.PreviousVersion.Version.Name + "/" + self.PreviousVersion.Version.Name + "_" + self.PreviousVersion.Name + ".h"
 
 class NewItem(Item):
 	"""definition of a new item, which does not exist in the previous version"""
@@ -181,7 +217,7 @@ class IdenticalItem(Item):
 	"""an item which is identical to the item in the previous package"""
 	def __init__(self, name:str):
 		super().__init__( name )
-		self.IdenticalToPreviousVersion = True
+		self.IsIdenticalToPreviousVersion = True
 
 class IdenticalEntity(IdenticalItem):
 	"""an entity which is identical to the item in the previous package"""
@@ -269,11 +305,11 @@ class Package:
 	def SetupPreviousVersionsOfItems(self) -> None:
 		for version in self.Versions:
 			for item in version.Items:
-				if item.IdenticalToPreviousVersion or item.IsModifiedFromPreviousVersion:
+				if item.IsIdenticalToPreviousVersion or item.IsModifiedFromPreviousVersion:
 					version = item.Version
 					while version.PreviousVersion != None:
 						version = version.PreviousVersion
-						itmFnd = next( (itm for itm in version.Items if itm.Name == item.Name and not itm.IdenticalToPreviousVersion) , None )
+						itmFnd = next( (itm for itm in version.Items if itm.Name == item.Name and not itm.IsIdenticalToPreviousVersion) , None )
 						if itmFnd != None:
 							if itmFnd.IsEntity != item.IsEntity:
 								raise Exception(f"FindActualItem: In Package: {self.Name}, Version: {item.Version.Name} Found previous a item of the name '{item.Name}', but that item has IsEntity={itmFnd.IsEntity()} which does not match this item's IsEntity={itmFnd.IsEntity()}")

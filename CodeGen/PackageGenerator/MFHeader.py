@@ -2,7 +2,7 @@ from EntitiesHelpers import *
 import os
 import CodeGeneratorHelpers as hlp
 from CodeGeneratorHelpers import int_bit_range, vector_dimension_range, nonconst_const_range
-from ctle_code_gen.formatted_output import formatted_output
+from ctlepy.formatted_output import formatted_output
 
 from ctypes import c_ulonglong 
 from ctypes import c_ubyte
@@ -20,7 +20,7 @@ def CreateMFHeader(item: Item):
 	o.ln('')
 
 	# only implement MF if a new version
-	if not item.IdenticalToPreviousVersion:
+	if not item.IsIdenticalToPreviousVersion:
 
 		# list dependences that needs to be included in the header
 		for dep in item.Dependencies:
