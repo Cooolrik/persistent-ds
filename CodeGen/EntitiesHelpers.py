@@ -44,7 +44,7 @@ class Template:
 			for fl in self.Flags:
 				if has_flag:
 					self.Declaration += '|'
-				self.Declaration += 'pds::' + self.Template + 'Flags::' + fl
+				self.Declaration += 'pds::' + hlp.camel_to_snake(self.Template) + '_flags::' + fl
 				has_flag = True
 			has_value = True
 		self.Declaration += '>;'

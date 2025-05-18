@@ -7,7 +7,10 @@
 #include <Windows.h>
 #endif
 
-#include "TestPackA/fwd.h"
+#include <iostream>
+
+#include "TestPackA/TestEntityA.h"
+#include "TestPackA/v1_0/v1_0_TestEntityA_MF.h"
 //#include "TestPackA/TestEntityB.h"
 
 //#include <pds/ValueTypes.h>
@@ -34,10 +37,14 @@ using namespace pds;
 
 int main()
 	{
-	TestPackA::f32 val;
+	TestPackA::TestEntityA val;
 
-	val = 32.f;
+	val.Name() = "hej";
+
+	//TestPackA::TestEntityA::MF::Clear( val );
 	
+	std::cout << val.Name() << std::endl;
+
 	//auto type = dynamic_types::new_type( element_type_index::dt_bool, container_type_index::ct_vector );
 	//
 	//WriteStream ws;

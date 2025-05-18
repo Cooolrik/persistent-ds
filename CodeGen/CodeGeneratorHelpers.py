@@ -7,6 +7,7 @@ from stat import S_IRUSR, S_IRGRP, S_IROTH, S_IWUSR
 import importlib
 from pathlib import Path
 import shutil
+import re
 
 int_bit_range = [8,16,32,64]
 float_bit_range = [32,64]
@@ -142,6 +143,11 @@ def inline_file( path ):
 		strip_lines.append( str.rstrip() )
 	inlined_file.close()
 	return strip_lines
+
+def camel_to_snake(name):
+    name = re.sub(r'([a-zA-Z])([0-9])', r'\1_\2', name)  # Separate letters and numbers
+    name = re.sub(r'([a-z])([A-Z])', r'\1_\2', name) # Separate camel case with underscore
+    return name.lower() # to lower case all
 
 def generate_header():
 	lines = []

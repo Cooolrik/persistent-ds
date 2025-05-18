@@ -35,8 +35,8 @@ public:
 	using iterator = typename map_type::iterator;
 	using const_iterator = typename map_type::const_iterator;
 
-	static const bool type_no_zero_keys = ( _Flags & ItemTableFlags::ZeroKeys ) == 0;
-	static const bool type_no_null_entities = ( _Flags & ItemTableFlags::NullEntities ) == 0;
+	static const bool type_no_zero_keys = ( uint(_Flags) & uint(item_table_flags::zero_keys) ) == 0;
+	static const bool type_no_null_entities = ( uint(_Flags) & uint(item_table_flags::null_entities) ) == 0;
 
 	class MF;
 	friend MF;

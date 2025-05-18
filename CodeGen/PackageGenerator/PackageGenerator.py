@@ -6,6 +6,7 @@ import CodeGeneratorHelpers as hlp
 from CodeGeneratorHelpers import int_bit_range, float_bit_range, vector_dimension_range
 from ctlepy.formatted_output import formatted_output, set_default_license_header_values
 from EntitiesHelpers import * 
+from pathlib import Path
 
 from .ItemHeader import CreateItemHeader
 from .MFHeader import CreateMFHeader
@@ -66,10 +67,21 @@ def SetupReleaseVersion( package: Package , version_str:str ):
 # create a header for the package, which has all needed references and definitions
 def CreatePackageHeader( package ):
 
+	file_name = f'{package.Name}.h'
+
 	op = formatted_output()
 	op.generate_license_header()
-	with op.header_guard( file_name='fwd.h', project_name=package.Name ):
+	with op.header_guard( file_name=file_name, project_name=package.Name ):
+		op.ln('#include <ctle/optional_value.h>')
+		op.ln('#include <ctle/idx_vector.h>')
+		op.ln('#include <ctle/optional_vector.h>')
+		op.ln('#include <ctle/optional_idx_vector.h>')
+		op.ln('#include <ctle/log.h>')
+		op.ln()
 		op.ln('#include <pds/fwd.h>')
+		op.ln('#include <pds/item_ref.h>')		
+		op.ln('#include <pds/entity_ref.h>')		
+		op.ln('#include <pds/Entity.h>')
 		op.ln()
 		with op.ns(package.Name):
 			op.comment_ln('imports from pds')
@@ -166,7 +178,7 @@ def CreatePackageHeader( package ):
 
 			#op.ln('const pds::EntityManager::PackageRecord *GetPackageRecord();')
 
-	op.write_lines_to_file(f'{package.Path}/fwd.h')
+	op.write_lines_to_file(f'{package.Path}/{file_name}')
 
 
 def CreatePackageSourceFile( package: Package ):
@@ -175,41 +187,29 @@ def CreatePackageSourceFile( package: Package ):
 	op.generate_license_header()
 	op.ln()
 	op.comment_ln('Forward declarations and imports from pds')
-	op.ln('#include "fwd.h"')
+	op.ln(f'#include "{package.Name}.h"')
 	op.ln('#include <pds/EntityWriter.h>')
 	op.ln('#include <pds/EntityReader.h>')
 	op.ln('#include <pds/WriteStream.h>')
 	op.ln('#include <pds/ReadStream.h>')
 	op.ln()
 
-	op.comment_ln('include all versions of this package')
 	for version in package.Versions:
-		subdir_and_prefix = (version.Name + '/' + version.Name + '_' ) if version != release_version else ''
+		op.comment_ln(f'include version {version.Name}')
 		for item in version.Items:
 			if not item.IsDeleted:
-				op.ln(f'#include "{subdir_and_prefix}{item.Name}.h"')
-		op.ln()	
+				op.ln(f'#include "{version.Name}/{version.Name}_{item.Name}.h"')
+		op.ln('')
+
+	for version in package.Versions:
+		op.comment_ln(f'include version {version.Name} source files (only non-aliased)')
+		# include inl files for all new items in version
+		for item in version.Items:
+			if not item.IsDeleted and not item.IsIdenticalToPreviousVersion:
+				op.ln(f'#include "{version.Name}/{version.Name}_{item.Name}.inl"')
+		op.ln('')
 
 	op.write_lines_to_file(f'{package.Path}/{package.Name}.cpp')
-
-
- 
-	# lines.append('')
-	
-	# lines.append('// All versions of this package')
-	# for version in package.Versions:
-	# 	for item in version.Items:
-	# 		if not item.IsDeleted:
-	# 			lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.h"')
-	# 	lines.append('')
-	
-	# lines.append('// Include all inl implementations of all versions')
-	# for version in package.Versions:		
-	# 	# include inl files for all new items in version
-	# 	for item in version.Items:
-	# 		if not item.IsDeleted and not item.IdenticalToPreviousVersion:
-	# 			lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.inl"')
-	# lines.append('')
 
 	# lines.append('// Include the package handler for this package')
 	# lines.append('')
@@ -219,53 +219,41 @@ def CreatePackageSourceFile( package: Package ):
 
 
 
-def ImplementClearCall(item,var):
-	lines = []
-
-	lines.append('')
-	lines.append(f'        // clear variable "{var.Name}"')
+def ImplementClearCall(op: formatted_output, item:Item, var) -> None:
+	op.comment_ln(f'clear variable "{var.Name}"')
 
 	# clear all values, base values and Entities
 	if var.Optional:
-		lines.append(f'        obj.v_{var.Name}.reset();')
+		op.ln(f'obj.v_{var.Name}.reset();')
 	else:
 		base_type,base_variant = hlp.get_base_type_variant(var.Type)
 		if base_type is not None:
 			# we have a base type, add the write code directly
-			lines.append(f'        obj.v_{var.Name} = {{}};')
+			op.ln(f'obj.v_{var.Name} = {{}};')
 		else:
 			# clear through the MF::Clear method of the type
-			lines.append(f'        ctStatusCall({var.Type}::MF::Clear( obj.v_{var.Name} ));')
+			op.ln(f'ctStatusCall({var.Type}::MF::Clear( obj.v_{var.Name} ));')
+	op.ln()
 
-	return lines
+def ImplementDeepCopyCall(op: formatted_output, item:Item, var) -> None:
+	op.comment_ln(f'copy variable "{var.Name}"')
 
-def ImplementDeepCopyCall(item,var):
-	lines = []
-
-	lines.append('')
-	lines.append(f'        // copy variable "{var.Name}"')
-
-	# clear all base values, Entities will clear themselves
 	# deep copy all values
 	if var.IsBaseType:
 		# we have a base type, add the copy code directly
-		lines.append(f'        dest.v_{var.Name} = source->v_{var.Name};')
+		op.ln(f'dest.v_{var.Name} = source->v_{var.Name};')
 	else:
 		# this is an item type
 		if var.Optional:
-			lines.append(f'        if( source->v_{var.Name}.has_value() )')
-			lines.append('            {')
-			lines.append(f'            dest.v_{var.Name}.set();')
-			lines.append(f'            ctStatusCall( {var.Type}::MF::DeepCopy( dest.v_{var.Name}.value() , &(source->v_{var.Name}.value()) ));')
-			lines.append('            }')
-			lines.append(f'        else')
-			lines.append('            {')
-			lines.append(f'            dest.v_{var.Name}.reset();')			
-			lines.append('            }')
+			op.ln(f'if( source->v_{var.Name}.has_value() )')
+			with op.blk():
+				op.ln(f'dest.v_{var.Name}.set();')
+				op.ln(f'ctStatusCall( {var.Type}::MF::DeepCopy( dest.v_{var.Name}.value() , &(source->v_{var.Name}.value()) ));')
+			op.ln(f'else')
+			with op.blk():
+				op.ln(f'dest.v_{var.Name}.reset();')			
 		else:
-			lines.append(f'        ctStatusCall( {var.Type}::MF::DeepCopy( dest.v_{var.Name} , &(source->v_{var.Name} ) ));')
-
-	return lines
+			op.ln(f'ctStatusCall( {var.Type}::MF::DeepCopy( dest.v_{var.Name} , &(source->v_{var.Name} ) ));')
 
 def ImplementEqualsCall(item,var):
 	lines = []
@@ -448,49 +436,13 @@ def ImplementFromPreviousCall(item:Item , mapping:Mapping):
 
 	return lines
 
+def CreateItemClassImpl(op: formatted_output, item: Item) -> None:
+	package = item.Package
+	version = item.Version
 
-def CreateItemSource(item):
-	packageName = item.Package.Name
-	versionName = item.Version.Name
-
-	# if this is an aliased entity, dont generate an inl file
-	if item.IdenticalToPreviousVersion:
-		return
-
-	lines = []
-	lines.extend( hlp.generate_header() )
-	lines.append('')
-
-	#lines.extend( hlp.generate_push_and_disable_warnings( [] , ["-Wno-volatile"] ) )
-	#lines.append('#include <glm/glm.hpp>')
-	#lines.extend( hlp.generate_pop_warnings() )
-	lines.append('')	
-	lines.append(f'#include <pds/EntityWriter.h>')
-	lines.append(f'#include <pds/EntityReader.h>')
-	lines.append(f'#include <pds/EntityValidator.h>')
-	lines.append('')
-	lines.append(f'#include "{versionName}_{item.Name}.h"')
-		
-	# include dependences that were forward referenced in the header
-	for dep in item.Dependencies:
-		if not dep.IncludeInHeader:
-			if dep.PDSType:
-				lines.append(f'#include <pds/{dep.Name}_MF.h>')
-			else:
-				lines.append(f'#include "{versionName}_{dep.Name}.h"')
-
-	lines.append('')
-	lines.append('#include <pds/_pds_macros.inl>')
-	lines.append('')
-	lines.append(f'namespace {packageName}')
-	lines.append('{')
-	lines.append(f'namespace {versionName}')
-	lines.append('{')
-
-	lines.append('')
 	if item.IsEntity:
-		lines.append(f'    const char *{item.Name}::EntityTypeString() const {{ return {item.Name}::ItemTypeString; }}')
-		lines.append('')
+		op.ln(f'const char *{item.Name}::EntityTypeString() const {{ return {item.Name}::ItemTypeString; }}')
+		op.ln()
 
 	# check if there are entities in the variable list, which means we need to add entity writers/readers/validators
 	vars_have_item = False
@@ -501,146 +453,186 @@ def CreateItemSource(item):
 			break
 	
 	# clear code
-	lines.append(f'    status {item.Name}::MF::Clear( {item.Name} &obj )')
-	lines.append('        {')
-	lines.append('        // direct clear calls on variables and Entities')
-	for var in item.Variables:
-		lines.extend(ImplementClearCall(item,var))
-	lines.append('        return status::ok;')
-	lines.append('        }')
-	lines.append('')
+	op.ln(f'status {item.Name}::MF::Clear( {item.Name} &obj )')
+	with op.blk():
+		op.comment_ln('direct clear calls on variables and Entities')
+		op.ln('')
+		for var in item.Variables:
+			ImplementClearCall(op,item,var)
+		op.ln('return status::ok;')
+	op.ln('')
 
 	# deep copy code
-	lines.append(f'    status {item.Name}::MF::DeepCopy( {item.Name} &dest, const {item.Name} *source )')
-	lines.append('        {')
-	lines.append('        // just call Clear if source is nullptr')
-	lines.append('        if( !source )')
-	lines.append('            {')
-	lines.append('            ctStatusCall( MF::Clear( dest ) );')
-	lines.append('        	  return status::ok;')
-	lines.append('            }')
-	for var in item.Variables:
-		lines.extend(ImplementDeepCopyCall(item,var))
-	lines.append('        return status::ok;')
-	lines.append('        }')
-	lines.append('')
+	op.ln(f'status {item.Name}::MF::DeepCopy( {item.Name} &dest, const {item.Name} *source )')
+	with op.blk():
+		op.comment_ln('just call Clear if source is nullptr')
+		op.ln('if( !source )')
+		with op.blk():
+			op.ln('ctStatusCall( MF::Clear( dest ) );')
+			op.ln('return status::ok;')
+		op.ln('')
+		for var in item.Variables:
+			op.ln(ImplementDeepCopyCall(op,item,var))
+		op.ln('return status::ok;')
+	op.ln()
 
-	# equals code
-	lines.append(f'    bool {item.Name}::MF::Equals( const {item.Name} *lvar, const {item.Name} *rvar )')
-	lines.append('        {')
-	lines.append('        // early out if pointers are equal')
-	lines.append('        if( lvar == rvar )')
-	lines.append('            return true;')
-	lines.append('')
-	lines.append('        // early out if one of the pointers is nullptr')
-	lines.append('        if( !lvar || !rvar )')
-	lines.append('            return false;')
-	lines.append('')
-	for var in item.Variables:
-		lines.extend(ImplementEqualsCall(item,var))
-	lines.append('        return true;')
-	lines.append('        }')
-	lines.append('')
+	# # equals code
+	# lines.append(f'    bool {item.Name}::MF::Equals( const {item.Name} *lvar, const {item.Name} *rvar )')
+	# lines.append('        {')
+	# lines.append('        // early out if pointers are equal')
+	# lines.append('        if( lvar == rvar )')
+	# lines.append('            return true;')
+	# lines.append('')
+	# lines.append('        // early out if one of the pointers is nullptr')
+	# lines.append('        if( !lvar || !rvar )')
+	# lines.append('            return false;')
+	# lines.append('')
+	# for var in item.Variables:
+	# 	lines.extend(ImplementEqualsCall(item,var))
+	# lines.append('        return true;')
+	# lines.append('        }')
+	# lines.append('')
 
-	# writer code
-	lines.append(f'    status {item.Name}::MF::Write( const {item.Name} &obj, pds::EntityWriter &writer )')
-	lines.append('        {')
-	lines.append('        bool success = true;')
-	if vars_have_item:
-		lines.append('        pds::EntityWriter *section_writer = nullptr;')
-	lines.append('')
-	for var in item.Variables:
-		lines.extend(ImplementWriterCall(item,var))
-	lines.append('        return status::ok;')
-	lines.append('        }')
-	lines.append('')
+	# # writer code
+	# lines.append(f'    status {item.Name}::MF::Write( const {item.Name} &obj, pds::EntityWriter &writer )')
+	# lines.append('        {')
+	# lines.append('        bool success = true;')
+	# if vars_have_item:
+	# 	lines.append('        pds::EntityWriter *section_writer = nullptr;')
+	# lines.append('')
+	# for var in item.Variables:
+	# 	lines.extend(ImplementWriterCall(item,var))
+	# lines.append('        return status::ok;')
+	# lines.append('        }')
+	# lines.append('')
 	
-	# reader code
-	lines.append(f'    status {item.Name}::MF::Read( {item.Name} &obj, pds::EntityReader &reader )')
-	lines.append('        {')
-	lines.append('        bool success = true;')
-	if vars_have_item:
-		lines.append('        pds::EntityReader *section_reader = nullptr;')
-	lines.append('')
-	for var in item.Variables:
-		lines.extend(ImplementReaderCall(item,var))
-	lines.append('        return status::ok;')
-	lines.append('        }')
-	lines.append('')
+	# # reader code
+	# lines.append(f'    status {item.Name}::MF::Read( {item.Name} &obj, pds::EntityReader &reader )')
+	# lines.append('        {')
+	# lines.append('        bool success = true;')
+	# if vars_have_item:
+	# 	lines.append('        pds::EntityReader *section_reader = nullptr;')
+	# lines.append('')
+	# for var in item.Variables:
+	# 	lines.extend(ImplementReaderCall(item,var))
+	# lines.append('        return status::ok;')
+	# lines.append('        }')
+	# lines.append('')
 
-	# setup validation lines first, and see if there are any lines generated
-	validation_lines = []
-	for var in item.Variables:
-		validation_lines.extend(ImplementVariableValidatorCall(item,var))
-	for validation in item.Validations:
-		validation_lines.extend( validation.GenerateValidationCode(item,'        ') )
-		validation_lines.append('')
+	# # setup validation lines first, and see if there are any lines generated
+	# validation_lines = []
+	# for var in item.Variables:
+	# 	validation_lines.extend(ImplementVariableValidatorCall(item,var))
+	# for validation in item.Validations:
+	# 	validation_lines.extend( validation.GenerateValidationCode(item,'        ') )
+	# 	validation_lines.append('')
 
-	# if we have validation lines, setup the support code else use empty call
-	if len(validation_lines) > 0:
-		# validator code
-		lines.append(f'    status {item.Name}::MF::Validate( const {item.Name} &obj, pds::EntityValidator &validator )')
-		lines.append('        {')
-		lines.append('')
-		lines.extend( validation_lines )
-		lines.append('')
-	else:
-		lines.append(f'    status {item.Name}::MF::Validate( const {item.Name} &/*obj*/, pds::EntityValidator &/*validator*/ )')
-		lines.append('        {')
-		lines.append('        // no validation defined in this class, just return ok')
+	# # if we have validation lines, setup the support code else use empty call
+	# if len(validation_lines) > 0:
+	# 	# validator code
+	# 	lines.append(f'    status {item.Name}::MF::Validate( const {item.Name} &obj, pds::EntityValidator &validator )')
+	# 	lines.append('        {')
+	# 	lines.append('')
+	# 	lines.extend( validation_lines )
+	# 	lines.append('')
+	# else:
+	# 	lines.append(f'    status {item.Name}::MF::Validate( const {item.Name} &/*obj*/, pds::EntityValidator &/*validator*/ )')
+	# 	lines.append('        {')
+	# 	lines.append('        // no validation defined in this class, just return ok')
 
-	lines.append('        return status::ok;')
-	lines.append('        }')
-	lines.append('')
+	# lines.append('        return status::ok;')
+	# lines.append('        }')
+	# lines.append('')
 
-	# entity code
-	if item.IsEntity:
-		lines.append(f'    const {item.Name} *{item.Name}::MF::EntitySafeCast( const pds::Entity *srcEnt )')
-		lines.append('        {')
-		lines.append(f'        if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
-		lines.append('            {')
-		lines.append(f'            return (const {item.Name} *)(srcEnt);')
-		lines.append('            }')
-		lines.append('        return nullptr;')
-		lines.append('        }')
-		lines.append('')
-		lines.append(f'    std::shared_ptr<const {item.Name}> {item.Name}::MF::EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt )')
-		lines.append('        {')
-		lines.append(f'        if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
-		lines.append('            {')
-		lines.append(f'            return std::static_pointer_cast<const {item.Name}>(srcEnt);')
-		lines.append('            }')
-		lines.append('        return nullptr;')
-		lines.append('        }')
-		lines.append('')
+	# # entity code
+	# if item.IsEntity:
+	# 	lines.append(f'    const {item.Name} *{item.Name}::MF::EntitySafeCast( const pds::Entity *srcEnt )')
+	# 	lines.append('        {')
+	# 	lines.append(f'        if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
+	# 	lines.append('            {')
+	# 	lines.append(f'            return (const {item.Name} *)(srcEnt);')
+	# 	lines.append('            }')
+	# 	lines.append('        return nullptr;')
+	# 	lines.append('        }')
+	# 	lines.append('')
+	# 	lines.append(f'    std::shared_ptr<const {item.Name}> {item.Name}::MF::EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt )')
+	# 	lines.append('        {')
+	# 	lines.append(f'        if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
+	# 	lines.append('            {')
+	# 	lines.append(f'            return std::static_pointer_cast<const {item.Name}>(srcEnt);')
+	# 	lines.append('            }')
+	# 	lines.append('        return nullptr;')
+	# 	lines.append('        }')
+	# 	lines.append('')
 
-	# modified item code
-	if item.IsModifiedFromPreviousVersion:
-		lines.append(f'    status {item.Name}::MF::ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &obj )')
-		lines.append('        {')
-		lines.append('')			
-		for mapping in item.Mappings:
-			lines.extend(ImplementToPreviousCall(item,mapping))	
-		lines.append('')			
-		lines.append('        return status::ok;')
-		lines.append('        }')
-		lines.append('')
-		lines.append(f'    status {item.Name}::MF::FromPrevious( {item.Name} &obj , const {item.PreviousVersion.Version.Name}::{item.Name} &src )')
-		lines.append('        {')
-		lines.append('')			
-		for mapping in item.Mappings:
-			lines.extend(ImplementFromPreviousCall(item,mapping))	
-		lines.append('')			
-		lines.append('        return status::ok;')
-		lines.append('        }')
+	# # modified item code
+	# if item.IsModifiedFromPreviousVersion:
+	# 	lines.append(f'    status {item.Name}::MF::ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &obj )')
+	# 	lines.append('        {')
+	# 	lines.append('')			
+	# 	for mapping in item.Mappings:
+	# 		lines.extend(ImplementToPreviousCall(item,mapping))	
+	# 	lines.append('')			
+	# 	lines.append('        return status::ok;')
+	# 	lines.append('        }')
+	# 	lines.append('')
+	# 	lines.append(f'    status {item.Name}::MF::FromPrevious( {item.Name} &obj , const {item.PreviousVersion.Version.Name}::{item.Name} &src )')
+	# 	lines.append('        {')
+	# 	lines.append('')			
+	# 	for mapping in item.Mappings:
+	# 		lines.extend(ImplementFromPreviousCall(item,mapping))	
+	# 	lines.append('')			
+	# 	lines.append('        return status::ok;')
+	# 	lines.append('        }')
 
-	lines.append('}')
-	lines.append(f'// namespace {versionName}')
-	lines.append('}') 	
-	lines.append(f'// namespace {packageName}')
-	lines.append('')
-	lines.append('#include <pds/_pds_undef_macros.inl>')
-	hlp.write_lines_to_file(f"{item.Package.Path}/{versionName}/{versionName}_{item.Name}.inl",lines)
+
+
+def CreateItemSource(item):
+	package = item.Package
+	version = item.Version
+	version_prefix = version.Name + '_'
+
+	# set up the file path and name
+	file_path = Path(package.Path) / version.Name / f'{version.Name}_{item.Name}.inl'
+	file_name = file_path.name
+
+	# if this is an aliased entity, dont generate an inl file
+	if item.IsIdenticalToPreviousVersion:
+		return
+
+	op = formatted_output()
+	op.generate_license_header()
+
+	op.comment_ln(f'class: {item.Name}')
+	op.comment_ln(f'version: {version.Name}')
+	op.ln()
+
+	op.ln(f'#include "{item.GetImplementingHeaderFilePath()}"')
+	op.ln(f'#include "{version.Name}_{item.Name}_MF.h"')
+
+	# include dependences that were forward referenced in the header
+	for dep in item.Dependencies:
+		if not dep.IncludeInHeader:
+			if dep.PDSType:
+				op.ln(f'#include <pds/{dep.Name}_MF.h>')
+			else:
+				op.ln(f'#include "{version.Name}_{dep.Name}.h"')
+	op.ln()
+
+	with op.ns(package.Name, add_empty_line=False):
+		op.ln()
+		op.ln('#include <pds/_pds_macros.inl>')
+		if item.IsReleaseVersion:
+			op.ln('')
+			CreateItemClassImpl(op, item)
+		else:
+			with op.ns(version.Name):
+				op.ln('')
+				CreateItemClassImpl(op, item)
+		op.ln('#include <pds/_pds_undef_macros.inl>')
+		op.ln()
+
+	op.write_lines_to_file(str(file_path))
 
 
 # static and constant hash table for entity lookup, (must be larger than the number of entities to add)
@@ -895,9 +887,9 @@ def run(package: Package,
 		for item in version.Items:
 			if item.IsDeleted:
 				continue
-			CreateItemHeader( item=item, in_version_folder=True )
-			#CreateMFHeader( item )
-			#CreateItemSource( item )
+			CreateItemHeader( item=item )
+			CreateMFHeader( item )
+			CreateItemSource( item )
 	
 	#FindAndCreateDefaultVersionReferencesAndHeaders( package, version_str )
 

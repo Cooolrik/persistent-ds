@@ -72,7 +72,7 @@ def CreateItemClass(op: formatted_output, item: Item) -> None:
 				op.ln('')
 
 
-def CreateItemHeader(item: Item, in_version_folder:bool ) -> None:
+def CreateItemHeader(item: Item) -> None:
 	package = item.Package
 	version = item.Version
 	version_prefix = version.Name + '_'
@@ -120,7 +120,7 @@ def CreateItemHeader(item: Item, in_version_folder:bool ) -> None:
 		op.ln('')
 
 		# include forward declaration of the classes and pds types
-		op.ln(f'#include "{item.GetPathToRoot()}fwd.h"')
+		op.ln(f'#include "{item.GetPathToRoot()}{package.Name}.h"')
 		#if item.IsModifiedFromPreviousVersion:
 		#	op.ln(f'#include "{item.GetPathToPreviousVersion()}"')
 

@@ -21,7 +21,7 @@ v1_0 = Version(
 				Dependency( "TestItemA", include_in_header = True ) 
 				],
 			templates = [ 
-				Template( "test_table", template = "ItemTable", types = ["item_ref","TestItemA"] , flags = ['ZeroKeys'] ) 
+				Template( "test_table", template = "ItemTable", types = ["item_ref","TestItemA"] , flags = ['zero_keys'] ) 
 				],
 			variables = [ 				
 				Variable( "test_table", name = "TestVariableA", optional = True ),
@@ -32,7 +32,7 @@ v1_0 = Version(
 		NewEntity( 
 			name = "TestEntityC", 
 			variables = [ 
-				Variable("uint", "Age") 
+				Variable("u32", "Age") 
 				]
 			),			
 		]
@@ -57,7 +57,7 @@ v1_1 = Version(
 		ModifiedEntity( 			
 			name = "TestEntityC",
 			variables = [ 
-				Variable("uint", "Age"),
+				Variable("u32", "Age"),
 				Variable("string", "NameC") 
 				],
 			mappings = [

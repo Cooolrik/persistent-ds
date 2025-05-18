@@ -58,17 +58,21 @@ namespace pds
 }
 // namespace pds
 
-#ifdef PDS_IMPLEMENTATION
-
 // std::hash generation implementation
-template<>
-struct std::hash<pds::item_ref>
+namespace std
 {
-	std::size_t operator()(pds::item_ref const& val) const noexcept
+template<> 
+struct hash<pds::item_ref>
+{
+	inline std::size_t operator()(pds::item_ref const& val) const noexcept
 	{
 		return std::hash<ctle::uuid>{}( ctle::uuid(val) );
 	}
 };
+}
+// namespace std
+
+#ifdef PDS_IMPLEMENTATION
 
 // ctle::to_string implementation
 template <>
