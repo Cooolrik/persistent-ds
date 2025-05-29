@@ -61,7 +61,7 @@ def CreateItemMFClass(op: formatted_output, item: Item) -> None:
   
 
 
-def CreateMFHeader(item: Item):
+def CreateItemMFHeader(item: Item):
 	package = item.Package
 	version = item.Version
 

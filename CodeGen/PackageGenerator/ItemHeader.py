@@ -25,26 +25,26 @@ def CreateItemClass(op: formatted_output, item: Item) -> None:
 		# initalization of the class
 		op.ln('public:')
 		with op.tab():
+			op.ln('class MF; friend MF; // forward declaration and friend definition of the management function class')
+			op.ln(f'static constexpr const char *ItemTypeString = "{package.Name}.{version.Name}.{item.Name}"; // item type and version string')
+			if item.IsEntity:
+				op.ln(f'virtual const char *EntityTypeString() const; // entity type and version string, to fetch the type from the entity interface')
+			op.ln()
 
 			# list typedefs of templates
 			if len(item.Templates) > 0:
+				op.comment_ln('typedefs for templates')
 				for typ in item.Templates:
 					op.ln(typ.Declaration)
 				op.ln()
 
-			op.ln('class MF;')
-			op.ln('friend MF;')
-			op.ln(f'static constexpr const char *ItemTypeString = "{package.Name}.{version.Name}.{item.Name}";')
-			if item.IsEntity:
-				op.ln(f'virtual const char *EntityTypeString() const;')
-			op.ln()
-
-			op.ln(f'{item.Name}() = default;')
-			op.ln(f'{item.Name}( const {item.Name} &rval );')
-			op.ln(f'{item.Name} &operator=( const {item.Name} &rval );')
-			op.ln(f'{item.Name}( {item.Name} &&rval ) = default;')
-			op.ln(f'{item.Name} &operator=( {item.Name} &&rval ) = default;')
-			op.ln(f'{"virtual " if item.IsEntity else ""}~{item.Name}() = default;')
+			op.comment_ln('ctor/dtor')
+			op.ln(f'{item.Name}();')
+			op.ln(f'{item.Name}( const {item.Name} & );')
+			op.ln(f'{item.Name} &operator=( const {item.Name} & );')
+			op.ln(f'{item.Name}( {item.Name} && );')
+			op.ln(f'{item.Name} &operator=( {item.Name} && );')
+			op.ln(f'{"virtual " if item.IsEntity else ""}~{item.Name}();')
 			op.ln()
 
 			op.comment_ln('value compare operators')
