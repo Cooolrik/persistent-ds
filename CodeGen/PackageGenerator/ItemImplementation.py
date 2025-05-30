@@ -10,9 +10,8 @@ from ctypes import c_ubyte
 
 
 def ImplementClearCall(op: formatted_output, item:Item, var) -> None:
-	op.comment_ln(f'clear variable "{var.Name}"')
-
 	# clear all values, base values and Entities
+	op.comment_ln(f'clear variable "{var.Name}"')
 	if var.Optional:
 		op.ln(f'obj.v_{var.Name}.reset();')
 	else:
@@ -23,12 +22,10 @@ def ImplementClearCall(op: formatted_output, item:Item, var) -> None:
 		else:
 			# clear through the MF::Clear method of the type
 			op.ln(f'ctStatusCall({var.Type}::MF::Clear( obj.v_{var.Name} ));')
-	op.ln()
 
 def ImplementDeepCopyCall(op: formatted_output, item:Item, var) -> None:
-	op.comment_ln(f'copy variable "{var.Name}"')
-
 	# deep copy all values
+	op.comment_ln(f'copy variable "{var.Name}"')
 	if var.IsBaseType:
 		# we have a base type, add the copy code directly
 		op.ln(f'dest.v_{var.Name} = source->v_{var.Name};')
@@ -45,130 +42,129 @@ def ImplementDeepCopyCall(op: formatted_output, item:Item, var) -> None:
 		else:
 			op.ln(f'ctStatusCall( {var.Type}::MF::DeepCopy( dest.v_{var.Name} , &(source->v_{var.Name} ) ));')
 
-def ImplementEqualsCall(item,var):
-	lines = []
-
-	lines.append(f'        // check variable "{var.Name}"')
-
-	# do we have a base type or item?
+def ImplementEqualsCall(op: formatted_output, item:Item, var) -> None:
+	op.comment_ln(f'check variable "{var.Name}"')
 	if var.IsBaseType:
 		# we have a base type, do the compare directly
-		lines.append(f'        if( lvar->v_{var.Name} != rvar->v_{var.Name} )')
-		lines.append(f'            return false;')
+		op.ln(f'if( lvar->v_{var.Name} != rvar->v_{var.Name} )')
+		with op.blk():
+			op.ln(f'return false;')
 	else:
 		# not a base type, so an item. check item
 		if var.Optional:
-			lines.append(f'        if( !{item.Name}::{var.Type}::MF::Equals(')
-			lines.append(f'            lvar->v_{var.Name}.has_value() ? &lvar->v_{var.Name}.value() : nullptr,  ')
-			lines.append(f'            rvar->v_{var.Name}.has_value() ? &rvar->v_{var.Name}.value() : nullptr')
-			lines.append(f'            ) )')
-			lines.append('            return false;')
+			op.ln(f'if( !{item.Name}::{var.Type}::MF::Equals(')
+			with op.tab():
+				op.ln(f'(lvar->v_{var.Name}.has_value()) ? (&lvar->v_{var.Name}.value()) : (nullptr),')
+				op.ln(f'(rvar->v_{var.Name}.has_value()) ? (&rvar->v_{var.Name}.value()) : (nullptr)')
+			op.ln(f') )')
+			with op.blk():
+				op.ln('return false;')
 		else:
-			lines.append(f'        if( !{item.Name}::{var.Type}::MF::Equals( &lvar->v_{var.Name} , &rvar->v_{var.Name} ) )')
-			lines.append('            return false;')
+			op.ln(f'if( !{item.Name}::{var.Type}::MF::Equals( &lvar->v_{var.Name} , &rvar->v_{var.Name} ) )')
+			with op.blk():
+				op.ln('return false;')
 
-	lines.append('')
-
-	return lines
-
-def ImplementWriterCall(item,var):
-	lines = []
-
-	# do we have a base type or item?
+def ImplementWriterCall(op: formatted_output, item:Item, var):
 	if var.IsBaseType:
 		# we have a base type, add the write code directly
-		lines.append(f'        // write variable "{var.Name}"')
-		lines.append(f'        success = writer.Write<{var.TypeString}>( pdsKeyMacro({var.Name}) , obj.v_{var.Name} );')
-		lines.append(f'        if( !success )')
-		lines.append(f'            return status::cant_write;')
-		lines.append('')
+		op.comment_ln(f'write variable "{var.Name}"')
+		op.ln(f'ctStatusCall( writer.Write<{var.TypeString}>( pdsKeyMacro({var.StorageName}) , obj.v_{var.Name} ) );')
 	else:
 		# not a base type, so an item. add a block
-		lines.append(f'        // write section "{var.Name}"')
-		lines.append(f'        success = (section_writer = writer.BeginWriteSection( pdsKeyMacro({var.Name}) ));')
-		lines.append('        if( !success )')
-		lines.append('            return status::cant_write;')
+		op.comment_ln(f'write section "{var.Name}"')
+		op.ln(f'ctStatusReturnCall( section_writer, writer.BeginWriteSection( pdsKeyMacro({var.StorageName}) ) );')
 		if var.Optional:
-			lines.append(f'        if( obj.v_{var.Name}.has_value() )')
-			lines.append('            {')
-			lines.append(f'            ctStatusCall( {item.Name}::{var.Type}::MF::Write( obj.v_{var.Name}.value(), *section_writer ) );')
-			lines.append('            }')
+			op.ln(f'if( obj.v_{var.Name}.has_value() )')
+			with op.blk():
+				op.ln(f'ctStatusCall( {item.Name}::{var.Type}::MF::Write( obj.v_{var.Name}.value(), *section_writer ) );')
 		else:
-			lines.append(f'        ctStatusCall( {item.Name}::{var.Type}::MF::Write( obj.v_{var.Name}, *section_writer ) );')
-		lines.append('        writer.EndWriteSection( section_writer );')
-		lines.append('        section_writer = nullptr;')
-		lines.append('')
+			op.ln(f'ctStatusCall( {item.Name}::{var.Type}::MF::Write( obj.v_{var.Name}, *section_writer ) );')
+		op.ln('ctStatusCall( writer.EndWriteSection( section_writer ) );')
 
-	return lines
-
-def ImplementReaderCall(item,var):
-	lines = []
-
-	if var.Optional:
-		value_can_be_null = "true"
-	else:
-		value_can_be_null = "false"
-
-	# do we have a base type or item?
+def ImplementReaderCall(op: formatted_output, item:Item, var):
 	if var.IsBaseType:
 		# we have a base type, add the read code directly
-		lines.append(f'        // read variable "{var.Name}"')
-		lines.append(f'        success = reader.Read<{var.TypeString}>( pdsKeyMacro({var.Name}) , obj.v_{var.Name} );')
-		lines.append(f'        if( !success )')
-		lines.append(f'            return status::cant_read;')
-		lines.append('')
+		op.comment_ln(f'read variable "{var.Name}"')
+		op.ln(f'ctStatusCall( reader.Read<{var.TypeString}>( pdsKeyMacro({var.StorageName}) , obj.v_{var.Name} ) );')
 	else:
 		# not a base type, so an item. add a block
-		lines.append(f'        // read section "{var.Name}"')
-		lines.append(f'        std::tie(section_reader,success) = reader.BeginReadSection( pdsKeyMacro({var.Name}) , {value_can_be_null} );')
-		lines.append('        if( !success )')
-		lines.append('            return status::cant_read;')
-		lines.append('        if( section_reader )')
-		lines.append('            {')
+		op.comment_ln(f'read section "{var.Name}"')
+		op.ln(f'ctStatusReturnCall( section_reader, reader.BeginReadSection( pdsKeyMacro({var.StorageName}) , {"true" if var.Optional else "false"} ) );')
+		op.ln('if( section_reader )')
+		with op.blk():
+			if var.Optional:
+				op.ln(f'obj.v_{var.Name}.set();')
+				op.ln(f'ctStatusCall( {item.Name}::{var.Type}::MF::Read( obj.v_{var.Name}.value(), *section_reader ) );')
+			else:
+				op.ln(f'ctStatusCall( {item.Name}::{var.Type}::MF::Read( obj.v_{var.Name}, *section_reader ) );')
+			op.ln(f'reader.EndReadSection( section_reader );')
 		if var.Optional:
-			lines.append(f'            obj.v_{var.Name}.set();')
-			lines.append(f'            ctStatusCall( {item.Name}::{var.Type}::MF::Read( obj.v_{var.Name}.value(), *section_reader ) );')
-		else:
-			lines.append(f'            ctStatusCall( {item.Name}::{var.Type}::MF::Read( obj.v_{var.Name}, *section_reader ) );')
-		lines.append('            reader.EndReadSection( section_reader );')
-		lines.append('            section_reader = nullptr;')
-		lines.append('            }')
-		if var.Optional:
-			lines.append('        else')
-			lines.append(f'            obj.v_{var.Name}.reset();')
-		lines.append('')
+			op.ln(f'else')
+			with op.blk():
+				op.ln(f'obj.v_{var.Name}.reset();')
 
-	return lines
-
-def ImplementVariableValidatorCall(item,var):
-	lines = []
-
-	# validate all values, base values and Entities
+def ImplementVariableValidatorCall(op: formatted_output, item:Item, var) -> bool:
 	base_type,base_variant = hlp.get_base_type_variant(var.Type)
+	if op is None:
+		return base_type is None # report if the function will generate code or not
+	
 	if base_type is None:
-		lines.append(f'        // validate variable "{var.Name}"')
+		op.comment_ln(f'validate variable "{var.Name}"')
 		if var.Optional:
-			lines.append(f'        if( obj.v_{var.Name}.has_value() )')
-			lines.append('            {')
-			lines.append(f'            ctStatusCall( {var.Type}::MF::Validate( obj.v_{var.Name}.value() , validator ) );')
-			lines.append('            }')
+			op.ln(f'if( obj.v_{var.Name}.has_value() )')
+			with op.blk():
+				op.ln(f'ctStatusCall( {var.Type}::MF::Validate( obj.v_{var.Name}.value() , validator ) );')
 		else:
-			lines.append(f'        ctStatusCall( {var.Type}::MF::Validate( obj.v_{var.Name} , validator ) );')
-		lines.append('')
+			op.ln(f'ctStatusCall( {var.Type}::MF::Validate( obj.v_{var.Name} , validator ) );')
+	else:
+		op.comment_ln(f'variable "{var.Name}" has no validation defined')
 
-	return lines
-
-def ImplementToPreviousCall(item:Item , mapping:Mapping):
-	lines = []	
-
+def ImplementToPreviousCall(op:formatted_output, item:Item, mapping:Mapping) -> None:
 	# if code inject, do that and return
 	if type(mapping) is CustomCodeMapping:
-		lines.append(mapping.ToPrevious)
-		return lines
+		op.comment_ln(f'custom mapping of {item.Name}')
+		op.ln(mapping.ToPrevious)
+		return
+	
+	# if it is a deleted variable, just return empty
+	if type(mapping) is DeletedVariable:
+		op.comment_ln(f'{item.Name} is deleted in current version, so no value to copy')
+		return
+
+	
+	# not custom code, so there is exactly one variable
+	variableName = mapping.Variables[0]
+	
+	# find variable in item
+	variable = next( (var for var in item.Variables if var.Name == variableName) , None )
+	if variable == None:
+		return
+
+	# if this is a new variable, not much we can do converting back
+	if type(mapping) is NewVariable: 
+		op.comment_ln(f'{variable.Name} is a new variable in the current version, so cant copy to previous')
+		return
+	
+	# validate all values, base values and Entities
+	base_type,base_variant = hlp.get_base_type_variant(variable.Type)
+	if issubclass(type(mapping),RenamedVariable): # renamed or same variable, copy to the previous name in the previous version (dest)
+		op.comment_ln(f'copy current "{variable.Name}" to previous "{mapping.PreviousName}"')
+		if base_type is None:
+			op.ln(f'ctStatusCall( {variable.Type}::MF::Copy( dest.{mapping.PreviousName}() , obj.v_{variable.Name} ) );')
+		else:
+			op.ln(f'dest.{mapping.PreviousName}() = obj.v_{variable.Name};')
+
+def ImplementFromPreviousCall(op:formatted_output, item:Item , mapping:Mapping) -> None:
+	# if code inject, do that and return
+	if type(mapping) is CustomCodeMapping:
+		op.comment_ln(f'custom mapping of {item.Name}')
+		op.ln(mapping.FromPrevious)
+		return
 
 	# if it is a deleted variable, just return empty
 	if type(mapping) is DeletedVariable:
-		return []
+		op.comment_ln(f'{item.Name} is deleted in this version, so do nothing')
+		return
 
 	# not custom code, so there is exactly one variable
 	variableName = mapping.Variables[0]
@@ -176,55 +172,22 @@ def ImplementToPreviousCall(item:Item , mapping:Mapping):
 	# find variable in item
 	variable = next( (var for var in item.Variables if var.Name == variableName) , None )
 	if variable == None:
-		return []
+		return
 
-	# validate all values, base values and Entities
-	base_type,base_variant = hlp.get_base_type_variant(variable.Type)
-
-	if type(mapping) is NewVariable: # if this is a new variable, not much we can do converting back
-		return []
-
-	if type(mapping) is RenamedVariable: # renamed or same variable, copy to the previous name in the dest
-		if base_type is None:
-			lines.append(f'        ctStatusCall( {variable.Type}::MF::Copy( dest.{mapping.PreviousName}() , obj.v_{variable.Name} ) );')
-		else:
-			lines.append(f'        dest.{mapping.PreviousName}() = obj.v_{variable.Name};')
-
-	return lines
-
-def ImplementFromPreviousCall(item:Item , mapping:Mapping):
-	lines = []	
-
-	# if code inject, do that and return
-	if type(mapping) is CustomCodeMapping:
-		lines.append(mapping.FromPrevious)
-		return lines
-
-	# if it is a deleted variable, just return empty
-	if type(mapping) is DeletedVariable:
-		return []
-
-	# not custom code, so there is exactly one variable
-	variableName = mapping.Variables[0]
+	# if this is a new variable, clear it
+	if type(mapping) is NewVariable: 
+		op.comment_ln(f'{variable.Name} is new for this version, so clear value')
+		ImplementClearCall(op, item, variable)
+		return
 	
-	# find variable in item
-	variable = next( (var for var in item.Variables if var.Name == variableName) , None )
-	if variable == None:
-		return []
-
 	# validate all values, base values and Entities
 	base_type,base_variant = hlp.get_base_type_variant(variable.Type)
-
-	if type(mapping) is NewVariable: # if this is a new variable, clear it
-		return ImplementClearCall(item,variable)
-
-	if type(mapping) is RenamedVariable: # renamed or same variable, copy to the previous name in the dest
+	if issubclass(type(mapping),RenamedVariable): # renamed or same variable, copy to the previous name in the dest
+		op.comment_ln(f'copy previous "{mapping.PreviousName}" to current "{variable.Name}"')
 		if base_type is None:
-			lines.append(f'        ctStatusCall( {variable.Type}::MF::Copy( obj.v_{variable.Name} , src.{mapping.PreviousName}() ) );')
+			op.ln(f'ctStatusCall( {variable.Type}::MF::Copy( obj.v_{variable.Name} , src.{mapping.PreviousName}() ) );')
 		else:
-			lines.append(f'        obj.v_{variable.Name} = src.{mapping.PreviousName}();')
-
-	return lines
+			op.ln(f'obj.v_{variable.Name} = src.{mapping.PreviousName}();')
 
 def CreateItemClassImpl(op: formatted_output, item: Item) -> None:
 	package = item.Package
@@ -242,6 +205,29 @@ def CreateItemClassImpl(op: formatted_output, item: Item) -> None:
 			vars_have_item = True
 			break
 	
+	# ctors and copy operator code
+	op.ln(f'{item.Name}::{item.Name}() = default;')
+	op.ln()
+	op.ln(f'{item.Name}::{item.Name}( const {item.Name} &rval )')
+	with op.blk():
+		op.ln('MF::DeepCopy( *this , &rval );')
+	op.ln()
+	op.ln(f'{item.Name} &{item.Name}::operator=( const {item.Name} &rval )')
+	with op.blk():
+		op.ln('MF::DeepCopy( *this , &rval );')
+		op.ln('return *this;')
+	op.ln()
+	op.ln(f'{item.Name}::~{item.Name}() = default;')
+	op.ln()
+	op.ln(f'bool {item.Name}::operator==( const {item.Name} &rval ) const')
+	with op.blk():
+		op.ln('return MF::Equals( this, &rval );')
+	op.ln()
+	op.ln(f'bool {item.Name}::operator!=( const {item.Name} &rval ) const')
+	with op.blk():
+		op.ln('return !(MF::Equals( this, &rval ));')
+	op.ln()
+
 	# clear code
 	op.ln(f'status {item.Name}::MF::Clear( {item.Name} &obj )')
 	with op.blk():
@@ -249,6 +235,7 @@ def CreateItemClassImpl(op: formatted_output, item: Item) -> None:
 		op.ln('')
 		for var in item.Variables:
 			ImplementClearCall(op,item,var)
+			op.ln()
 		op.ln('return status::ok;')
 	op.ln('')
 
@@ -262,120 +249,109 @@ def CreateItemClassImpl(op: formatted_output, item: Item) -> None:
 			op.ln('return status::ok;')
 		op.ln('')
 		for var in item.Variables:
-			op.ln(ImplementDeepCopyCall(op,item,var))
+			ImplementDeepCopyCall(op,item,var)
+			op.ln()
 		op.ln('return status::ok;')
 	op.ln()
 
-	# # equals code
-	# lines.append(f'    bool {item.Name}::MF::Equals( const {item.Name} *lvar, const {item.Name} *rvar )')
-	# lines.append('        {')
-	# lines.append('        // early out if pointers are equal')
-	# lines.append('        if( lvar == rvar )')
-	# lines.append('            return true;')
-	# lines.append('')
-	# lines.append('        // early out if one of the pointers is nullptr')
-	# lines.append('        if( !lvar || !rvar )')
-	# lines.append('            return false;')
-	# lines.append('')
-	# for var in item.Variables:
-	# 	lines.extend(ImplementEqualsCall(item,var))
-	# lines.append('        return true;')
-	# lines.append('        }')
-	# lines.append('')
+	# deep copy code
+	op.ln(f'bool {item.Name}::MF::Equals( const {item.Name} *lvar, const {item.Name} *rvar )')
+	with op.blk():
+		op.comment_ln('early out if pointers are equal')
+		op.ln('if( lvar == rvar )')
+		with op.blk():
+			op.ln('return true;')
+		op.ln('')
+		op.comment_ln('early out if one of the pointers is nullptr')
+		op.ln('if( !lvar || !rvar )')
+		with op.blk():
+			op.ln('return false;')
+		op.ln('')
+		for var in item.Variables:
+			ImplementEqualsCall(op,item,var)
+			op.ln()
+		op.ln('return true;')
+	op.ln()
 
-	# # writer code
-	# lines.append(f'    status {item.Name}::MF::Write( const {item.Name} &obj, pds::EntityWriter &writer )')
-	# lines.append('        {')
-	# lines.append('        bool success = true;')
-	# if vars_have_item:
-	# 	lines.append('        pds::EntityWriter *section_writer = nullptr;')
-	# lines.append('')
-	# for var in item.Variables:
-	# 	lines.extend(ImplementWriterCall(item,var))
-	# lines.append('        return status::ok;')
-	# lines.append('        }')
-	# lines.append('')
+	# writer code
+	op.ln(f'status {item.Name}::MF::Write( const {item.Name} &obj, pds::EntityWriter &writer )')
+	with op.blk():
+		if vars_have_item:
+			op.ln('pds::EntityWriter *section_writer;')
+		op.ln()
+		for var in item.Variables:
+			ImplementWriterCall(op,item,var)
+			op.ln()
+		op.ln('return status::ok;')
+	op.ln()
 	
-	# # reader code
-	# lines.append(f'    status {item.Name}::MF::Read( {item.Name} &obj, pds::EntityReader &reader )')
-	# lines.append('        {')
-	# lines.append('        bool success = true;')
-	# if vars_have_item:
-	# 	lines.append('        pds::EntityReader *section_reader = nullptr;')
-	# lines.append('')
-	# for var in item.Variables:
-	# 	lines.extend(ImplementReaderCall(item,var))
-	# lines.append('        return status::ok;')
-	# lines.append('        }')
-	# lines.append('')
+	# reader code
+	op.ln(f'status {item.Name}::MF::Read( {item.Name} &obj, pds::EntityReader &reader )')
+	with op.blk():
+		if vars_have_item:
+			op.ln('pds::EntityReader *section_reader = nullptr;')
+		op.ln()
+		for var in item.Variables:
+			ImplementReaderCall(op,item,var)
+			op.ln()
+		op.ln('return status::ok;')
+	op.ln()
 
-	# # setup validation lines first, and see if there are any lines generated
-	# validation_lines = []
-	# for var in item.Variables:
-	# 	validation_lines.extend(ImplementVariableValidatorCall(item,var))
-	# for validation in item.Validations:
-	# 	validation_lines.extend( validation.GenerateValidationCode(item,'        ') )
-	# 	validation_lines.append('')
+	# check if validation will generate code
+	will_generate_validation_code = False
+	for var in item.Variables:
+		if ImplementVariableValidatorCall(None,item,var):
+			will_generate_validation_code = True
+			break
 
-	# # if we have validation lines, setup the support code else use empty call
-	# if len(validation_lines) > 0:
-	# 	# validator code
-	# 	lines.append(f'    status {item.Name}::MF::Validate( const {item.Name} &obj, pds::EntityValidator &validator )')
-	# 	lines.append('        {')
-	# 	lines.append('')
-	# 	lines.extend( validation_lines )
-	# 	lines.append('')
-	# else:
-	# 	lines.append(f'    status {item.Name}::MF::Validate( const {item.Name} &/*obj*/, pds::EntityValidator &/*validator*/ )')
-	# 	lines.append('        {')
-	# 	lines.append('        // no validation defined in this class, just return ok')
+	# if we have validation lines, setup the support code else use empty call
+	if will_generate_validation_code:
+		# validator code
+		op.ln(f'status {item.Name}::MF::Validate( const {item.Name} &obj, pds::EntityValidator &validator )')
+		with op.blk():
+			for var in item.Variables:
+				ImplementVariableValidatorCall(op,item,var)
+				op.ln()
+			op.ln('return status::ok;')
+	else:
+		op.ln(f'status {item.Name}::MF::Validate( const {item.Name} &/*obj*/, pds::EntityValidator &/*validator*/ )')
+		with op.blk():
+			op.comment_ln('no validation defined in this class, just return ok')
+			op.ln('return status::ok;')
+	op.ln()
 
-	# lines.append('        return status::ok;')
-	# lines.append('        }')
-	# lines.append('')
+	# entity code
+	if item.IsEntity:
+		op.ln(f'const {item.Name} *{item.Name}::MF::EntitySafeCast( const pds::Entity *srcEnt )')
+		with op.blk():
+			op.ln(f'if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
+			with op.blk():
+				op.ln(f'return (const {item.Name} *)(srcEnt);')
+			op.ln('return nullptr;')
+		op.ln()
+		op.ln(f'std::shared_ptr<const {item.Name}> {item.Name}::MF::EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt )')
+		with op.blk():
+			op.ln(f'if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
+			with op.blk():
+				op.ln(f'return std::static_pointer_cast<const {item.Name}>(srcEnt);')
+			op.ln('return nullptr;')
+		op.ln()
 
-	# # entity code
-	# if item.IsEntity:
-	# 	lines.append(f'    const {item.Name} *{item.Name}::MF::EntitySafeCast( const pds::Entity *srcEnt )')
-	# 	lines.append('        {')
-	# 	lines.append(f'        if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
-	# 	lines.append('            {')
-	# 	lines.append(f'            return (const {item.Name} *)(srcEnt);')
-	# 	lines.append('            }')
-	# 	lines.append('        return nullptr;')
-	# 	lines.append('        }')
-	# 	lines.append('')
-	# 	lines.append(f'    std::shared_ptr<const {item.Name}> {item.Name}::MF::EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt )')
-	# 	lines.append('        {')
-	# 	lines.append(f'        if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
-	# 	lines.append('            {')
-	# 	lines.append(f'            return std::static_pointer_cast<const {item.Name}>(srcEnt);')
-	# 	lines.append('            }')
-	# 	lines.append('        return nullptr;')
-	# 	lines.append('        }')
-	# 	lines.append('')
-
-	# # modified item code
-	# if item.IsModifiedFromPreviousVersion:
-	# 	lines.append(f'    status {item.Name}::MF::ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &obj )')
-	# 	lines.append('        {')
-	# 	lines.append('')			
-	# 	for mapping in item.Mappings:
-	# 		lines.extend(ImplementToPreviousCall(item,mapping))	
-	# 	lines.append('')			
-	# 	lines.append('        return status::ok;')
-	# 	lines.append('        }')
-	# 	lines.append('')
-	# 	lines.append(f'    status {item.Name}::MF::FromPrevious( {item.Name} &obj , const {item.PreviousVersion.Version.Name}::{item.Name} &src )')
-	# 	lines.append('        {')
-	# 	lines.append('')			
-	# 	for mapping in item.Mappings:
-	# 		lines.extend(ImplementFromPreviousCall(item,mapping))	
-	# 	lines.append('')			
-	# 	lines.append('        return status::ok;')
-	# 	lines.append('        }')
-
-
+	# modified item code
+	if item.IsModifiedFromPreviousVersion:
+		op.ln(f'status {item.Name}::MF::ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &obj )')
+		with op.blk():
+			for mapping in item.Mappings:
+				ImplementToPreviousCall(op,item,mapping)
+				op.ln()
+			op.ln('return status::ok;')
+		op.ln()
+		op.ln(f'status {item.Name}::MF::FromPrevious( {item.Name} &obj , const {item.PreviousVersion.Version.Name}::{item.Name} &src )')
+		with op.blk():
+			for mapping in item.Mappings:
+				ImplementFromPreviousCall(op,item,mapping)
+				op.ln();
+			op.ln('return status::ok;')
 
 def CreateItemImplementation(item):
 	package = item.Package

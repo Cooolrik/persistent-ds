@@ -41,9 +41,14 @@ int main()
 
 	val.Name() = "hej";
 
+	TestPackA::TestEntityA val2 = val;
+
+	bool eq = (val2 == val);
+
 	//TestPackA::TestEntityA::MF::Clear( val );
 	
 	std::cout << val.Name() << std::endl;
+	std::cout << eq << std::endl;
 
 	//auto type = dynamic_types::new_type( element_type_index::dt_bool, container_type_index::ct_vector );
 	//

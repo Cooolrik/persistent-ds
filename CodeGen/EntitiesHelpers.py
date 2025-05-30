@@ -51,12 +51,13 @@ class Template:
 
 class Variable:
 	"""a variable in the item/entity"""
-	def __init__(self, type, name, optional = False, vector = False, indexed = False ):
+	def __init__(self, type, name, optional = False, vector = False, indexed = False, storageName:str = None ):
 		self.Type = type
 		self.Name = name
 		self.Optional = optional
 		self.Vector = vector
 		self.IndexedVector = indexed
+		self.StorageName = storageName if storageName is not None else name
 		if self.IndexedVector and not self.Vector:
 			sys.exit("Variable.__init__: IndexedVector requires Vector flag to be set as well")
 

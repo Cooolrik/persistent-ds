@@ -24,9 +24,9 @@ v1_0 = Version(
 				Template( "test_table", template = "ItemTable", types = ["item_ref","TestItemA"] , flags = ['zero_keys'] ) 
 				],
 			variables = [ 				
-				Variable( "test_table", name = "TestVariableA", optional = True ),
+				Variable( "test_table", name = "TestVariableA", optional = True, storageName="TstVarA" ),
 				Variable( "string", name = "Name"),
-				Variable( "string", name = "OptionalText", optional = True ) 
+				Variable( "string", name = "OptionalText", optional = True, storageName="OptTxt" ) 
 				]
 			),
 		NewEntity( 

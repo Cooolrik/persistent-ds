@@ -34,31 +34,6 @@ def CreateItemMFClass(op: formatted_output, item: Item) -> None:
 				op.ln(f'static status FromPrevious( {item.Name} &dest , const {item.PreviousVersion.Version.Name}::{item.Name} &source );')
 				op.ln('')
 	op.ln('')
-	
-	# 	## ctors and copy operator code
-	# 	#o.ln(f'    inline {item.Name}::{item.Name}( const {item.Name} &rval )')
-	# 	#o.ln('        {')
-	# 	#o.ln('        MF::DeepCopy( *this , &rval );')
-	# 	#o.ln('        }')
-	# 	#o.ln('')
-	# 	#o.ln(f'    inline {item.Name} &{item.Name}::operator=( const {item.Name} &rval )')
-	# 	#o.ln('        {')
-	# 	#o.ln('        MF::DeepCopy( *this , &rval );')
-	# 	#o.ln('        return *this;')
-	# 	#o.ln('        }')
-	# 	#o.ln('')
-	# 	#o.ln(f'    inline bool {item.Name}::operator==( const {item.Name} &rval ) const')
-	# 	#o.ln('        {')
-	# 	#o.ln('        return MF::Equals( this, &rval );')
-	# 	#o.ln('        }')
-	# 	#o.ln('')
-	# 	#o.ln(f'    inline bool {item.Name}::operator!=( const {item.Name} &rval ) const')
-	# 	#o.ln('        {')
-	# 	#o.ln('        return !(MF::Equals( this, &rval ));')
-	# 	#o.ln('        }')
-	# 	#o.ln('')
-
-  
 
 
 def CreateItemMFHeader(item: Item):

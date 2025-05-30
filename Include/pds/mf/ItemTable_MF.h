@@ -122,9 +122,8 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, Entit
 	keys.clear();
 
 	// create a sections array for the entities
-	EntityWriter *section_writer = writer.BeginWriteSectionsArray( pdsKeyMacro( Entities ), obj.v_Entries.size() );
-	if( !section_writer )
-		return status::cant_write;
+	EntityWriter *section_writer;
+	ctStatusReturnCall( section_writer, writer.BeginWriteSectionsArray( pdsKeyMacro( Ents ), obj.v_Entries.size() ) );
 
 	// write out all the entities as an array
 	// for each non-empty entity, call the write method of the entity
@@ -145,8 +144,7 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, Entit
 	ctSanityCheck( index == obj.v_Entries.size() );
 
 	// end the Entries sections array
-	if( !writer.EndWriteSectionsArray( section_writer ) )
-		return status::cant_write;
+	ctStatusCall( writer.EndWriteSectionsArray( section_writer ) );
 
 	return status::ok;
 }
@@ -165,9 +163,7 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader
 		return status::cant_read;
 
 	// begin the named sections array
-	std::tie( section_reader, map_size, success ) = reader.BeginReadSectionsArray( pdsKeyMacro( Entities ), false );
-	if( !success )
-		return status::cant_read;
+	ctStatusReturnCall( section_reader, reader.BeginReadSectionsArray( pdsKeyMacro( Ents ), false ) );
 	ctSanityCheck( section_reader );
 	if( map_size != keys.size() )
 	{
@@ -216,9 +212,9 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, En
 	// check if a zero key exists in the dictionary
 	if( _MgmCl::type_no_zero_keys )
 	{
-		if( obj.v_Entries.find( data_type_information<_Kty>::zero ) != obj.v_Entries.end() )
+		if( obj.v_Entries.find( element_type_information<_Kty>::zero ) != obj.v_Entries.end() )
 		{
-			pdsValidationError( ValidationError::NullNotAllowed ) << "This Directory has a zero-value key, which is not allowed. (DictionaryFlags::NoZeroKeys)" << pdsValidationErrorEnd;
+			pdsValidationError( validation_error_flags::null_not_allowed ) << "This Directory has a zero-value key, which is not allowed. (item_table_flags::zero_keys is not set)" << pdsValidationErrorEnd;
 		}
 	}
 
@@ -232,7 +228,7 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, En
 		else if( _MgmCl::type_no_null_entities )
 		{
 			// value is empty, and this is not allowed in this dictionary
-			pdsValidationError( ValidationError::NullNotAllowed ) << "Non allocated entities (values) are not allowed in this Directory. (DictionaryFlags::NoNullEntities)" << pdsValidationErrorEnd;
+			pdsValidationError( validation_error_flags::null_not_allowed ) << "Non allocated entities (values) are not allowed in this Directory. (item_table_flags::null_entities is not set)" << pdsValidationErrorEnd;
 		}
 	}
 
@@ -247,7 +243,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::ValidateAllKeysAreContainedInTabl
 	{
 		if( !_Table::MF::ContainsKey( otherTable, it->first ) )
 		{
-			pdsValidationError( ValidationError::MissingObject ) << "The key " << it->first << " is missing in " << otherTableName << pdsValidationErrorEnd;
+			pdsValidationError( validation_error_flags::missing_object ) << "The key " << it->first << " is missing in " << otherTableName << pdsValidationErrorEnd;
 		}
 	}
 	return true;

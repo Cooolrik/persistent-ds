@@ -78,6 +78,7 @@ def CreatePackageHeader( package ):
 		op.ln('#include <ctle/optional_vector.h>')
 		op.ln('#include <ctle/optional_idx_vector.h>')
 		op.ln('#include <ctle/log.h>')
+		op.ln('#include <ctle/status_return.h>')
 		op.ln()
 		op.ln('#include <pds/fwd.h>')
 		op.ln('#include <pds/item_ref.h>')		
@@ -193,6 +194,9 @@ def CreatePackageSourceFile( package: Package ):
 	op.ln('#include <pds/EntityReader.h>')
 	op.ln('#include <pds/WriteStream.h>')
 	op.ln('#include <pds/ReadStream.h>')
+	op.ln('#include <pds/element_types.h>')
+	op.ln('#include <pds/value_types.h>')
+	op.ln('#include <pds/element_value_ptrs.h>')	
 	op.ln()
 
 	for version in package.Versions:
