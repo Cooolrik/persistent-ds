@@ -75,7 +75,11 @@ public:
 
 };
 
-
 }
 // namespace pds
+
+#ifdef PDS_IMPLEMENTATION
+#include "EntityManager.inl"
+#endif//PDS_IMPLEMENTATION
+
 #endif//__PDS__ENTITYMANAGER_H__

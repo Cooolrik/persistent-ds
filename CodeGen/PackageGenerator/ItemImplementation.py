@@ -121,73 +121,64 @@ def ImplementVariableValidatorCall(op: formatted_output, item:Item, var) -> bool
 
 def ImplementToPreviousCall(op:formatted_output, item:Item, mapping:Mapping) -> None:
 	# if code inject, do that and return
-	if type(mapping) is CustomCodeMapping:
+	if mapping.ToPreviousCode is not None:
 		op.comment_ln(f'custom mapping of {item.Name}')
-		op.ln(mapping.ToPrevious)
+		op.ln(mapping.ToPreviousCode)
 		return
 	
 	# if it is a deleted variable, just return empty
-	if type(mapping) is DeletedVariable:
+	if mapping.IsDeleted:
 		op.comment_ln(f'{item.Name} is deleted in current version, so no value to copy')
 		return
 
-	
-	# not custom code, so there is exactly one variable
-	variableName = mapping.Variables[0]
-	
 	# find variable in item
-	variable = next( (var for var in item.Variables if var.Name == variableName) , None )
+	variable = item.FindVariable( mapping.Name )
 	if variable == None:
 		return
 
 	# if this is a new variable, not much we can do converting back
-	if type(mapping) is NewVariable: 
+	if mapping.IsNew():
 		op.comment_ln(f'{variable.Name} is a new variable in the current version, so cant copy to previous')
 		return
 	
 	# validate all values, base values and Entities
 	base_type,base_variant = hlp.get_base_type_variant(variable.Type)
-	if issubclass(type(mapping),RenamedVariable): # renamed or same variable, copy to the previous name in the previous version (dest)
-		op.comment_ln(f'copy current "{variable.Name}" to previous "{mapping.PreviousName}"')
-		if base_type is None:
-			op.ln(f'ctStatusCall( {variable.Type}::MF::Copy( dest.{mapping.PreviousName}() , obj.v_{variable.Name} ) );')
-		else:
-			op.ln(f'dest.{mapping.PreviousName}() = obj.v_{variable.Name};')
+	op.comment_ln(f'copy current "{variable.Name}" to previous "{mapping.PreviousName}"')
+	if base_type is None:
+		op.ln(f'ctStatusCall( {variable.Type}::MF::Copy( dest.{mapping.PreviousName}() , obj.v_{variable.Name} ) );')
+	else:
+		op.ln(f'dest.{mapping.PreviousName}() = obj.v_{variable.Name};')
 
 def ImplementFromPreviousCall(op:formatted_output, item:Item , mapping:Mapping) -> None:
 	# if code inject, do that and return
-	if type(mapping) is CustomCodeMapping:
+	if mapping.FromPreviousCode is not None:
 		op.comment_ln(f'custom mapping of {item.Name}')
-		op.ln(mapping.FromPrevious)
+		op.ln(mapping.FromPreviousCode)
 		return
 
 	# if it is a deleted variable, just return empty
-	if type(mapping) is DeletedVariable:
+	if mapping.IsDeleted:
 		op.comment_ln(f'{item.Name} is deleted in this version, so do nothing')
 		return
 
-	# not custom code, so there is exactly one variable
-	variableName = mapping.Variables[0]
-	
 	# find variable in item
-	variable = next( (var for var in item.Variables if var.Name == variableName) , None )
+	variable = item.FindVariable( mapping.Name )
 	if variable == None:
 		return
 
 	# if this is a new variable, clear it
-	if type(mapping) is NewVariable: 
+	if mapping.IsNew():
 		op.comment_ln(f'{variable.Name} is new for this version, so clear value')
 		ImplementClearCall(op, item, variable)
 		return
 	
 	# validate all values, base values and Entities
 	base_type,base_variant = hlp.get_base_type_variant(variable.Type)
-	if issubclass(type(mapping),RenamedVariable): # renamed or same variable, copy to the previous name in the dest
-		op.comment_ln(f'copy previous "{mapping.PreviousName}" to current "{variable.Name}"')
-		if base_type is None:
-			op.ln(f'ctStatusCall( {variable.Type}::MF::Copy( obj.v_{variable.Name} , src.{mapping.PreviousName}() ) );')
-		else:
-			op.ln(f'obj.v_{variable.Name} = src.{mapping.PreviousName}();')
+	op.comment_ln(f'copy previous "{mapping.PreviousName}" to current "{variable.Name}"')
+	if base_type is None:
+		op.ln(f'ctStatusCall( {variable.Type}::MF::Copy( obj.v_{variable.Name} , src.{mapping.PreviousName}() ) );')
+	else:
+		op.ln(f'obj.v_{variable.Name} = src.{mapping.PreviousName}();')
 
 def CreateItemClassImpl(op: formatted_output, item: Item) -> None:
 	package = item.Package

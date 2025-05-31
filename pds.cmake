@@ -20,8 +20,9 @@ set(
 
 	./Include/pds/fileops_common.h		
 
-	#./Include/pds/EntityManager.h
-	#./Include/pds/EntityManager.inl
+	./Include/pds/Entity.h
+	./Include/pds/EntityManager.h
+	./Include/pds/EntityManager.inl
 	./Include/pds/EntityReader.h
 	./Include/pds/EntityReader.inl
 	./Include/pds/EntityValidator.h
@@ -113,7 +114,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 		tests
 
 		${pds_library_files}
-
+		
 		./Tests/Tests.h 
 		./Tests/Tests.cpp 
 		./Tests/HeaderLibraries.cpp 

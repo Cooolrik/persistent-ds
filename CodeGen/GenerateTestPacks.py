@@ -3,104 +3,177 @@
 
 from EntitiesHelpers import *
 
+# v1_0 = Version( 
+# 	name = "v1_0", 
+# 	previousVersion = None, 
+# 	items = [
+# 		NewItem( 
+# 			name = "TestItemA",
+# 			variables = [ 
+# 				Variable("string", "Name"),
+# 				Variable("string", "OptionalText", optional = True ) 
+# 				] 
+# 			),
+# 		NewEntity( 
+# 			name = "TestEntityA", 
+# 			dependencies = [ 
+# 				Dependency( "ItemTable", include_in_header = True ),
+# 				Dependency( "TestItemA", include_in_header = True ) 
+# 				],
+# 			templates = [ 
+# 				Template( "test_table", template = "ItemTable", types = ["item_ref","TestItemA"] , flags = ['zero_keys'] ) 
+# 				],
+# 			variables = [ 				
+# 				Variable( "test_table", name = "TestVariableA", optional = True, storageName="TstVarA" ),
+# 				Variable( "string", name = "Name"),
+# 				Variable( "string", name = "OptionalText", optional = True, storageName="OptTxt" ) 
+# 				]
+# 			),
+# 		NewEntity( 
+# 			name = "TestEntityC", 
+# 			variables = [ 
+# 				Variable("u32", "Age") 
+# 				]
+# 			),			
+# 		]
+# 	) 
+
+# v1_1 = Version( 
+# 	name = "v1_1", 
+# 	previousVersion = v1_0, 
+# 	items = [
+# 		IdenticalItem( 
+# 			name = "TestItemA" 
+# 			),
+# 		IdenticalEntity( 
+# 			name = "TestEntityA" 
+# 			),
+# 		NewEntity( 
+# 			name = "TestEntityB", 
+# 			variables = [ 
+# 				Variable("string", "Name") 
+# 				]
+# 			),
+# 		ModifiedEntity( 			
+# 			name = "TestEntityC",
+# 			variables = [ 
+# 				Variable("u32", "Age"),
+# 				Variable("string", "NameC") 
+# 				],
+# 			mappings = [
+# 				SameVariable("Age"),
+# 				NewVariable("NameC")
+# 				]			
+# 			),
+# 		]
+# 	) 
+
+# v1_2 = Version( 
+# 	name = "v1_2", 
+# 	previousVersion = v1_1, 
+# 	items = [
+# 		IdenticalItem( 
+# 			name = "TestItemA" 
+# 			),
+# 		IdenticalEntity( 
+# 			name = "TestEntityA" 
+# 			),
+# 		ModifiedEntity( 
+# 			name = "TestEntityB", 
+# 			variables = [ 
+# 				Variable("string", "Name2") 
+# 				],
+# 			mappings = [ 
+# 				RenamedVariable("Name2", "Name") 
+# 				]
+# 			),
+# 		DeletedEntity(
+# 			name = "TestEntityC" 
+# 			),
+# 		]
+# 	) 
+
 v1_0 = Version( 
 	name = "v1_0", 
 	previousVersion = None, 
-	items = [
-		NewItem( 
+	mods = [
+		AddItem( 
 			name = "TestItemA",
 			variables = [ 
 				Variable("string", "Name"),
 				Variable("string", "OptionalText", optional = True ) 
-				] 
-			),
-		NewEntity( 
+			] 
+		),
+		AddEntity( 
 			name = "TestEntityA", 
 			dependencies = [ 
 				Dependency( "ItemTable", include_in_header = True ),
 				Dependency( "TestItemA", include_in_header = True ) 
-				],
+			],
 			templates = [ 
 				Template( "test_table", template = "ItemTable", types = ["item_ref","TestItemA"] , flags = ['zero_keys'] ) 
-				],
+			],
 			variables = [ 				
 				Variable( "test_table", name = "TestVariableA", optional = True, storageName="TstVarA" ),
 				Variable( "string", name = "Name"),
 				Variable( "string", name = "OptionalText", optional = True, storageName="OptTxt" ) 
-				]
-			),
-		NewEntity( 
+			]
+		),
+		AddEntity( 
 			name = "TestEntityC", 
 			variables = [ 
 				Variable("u32", "Age") 
-				]
-			),			
-		]
-	) 
+			]
+		),			
+	]
+) 
 
 v1_1 = Version( 
-	name = "v1_1", 
-	previousVersion = v1_0, 
-	items = [
-		IdenticalItem( 
-			name = "TestItemA" 
-			),
-		IdenticalEntity( 
-			name = "TestEntityA" 
-			),
-		NewEntity( 
+	name = "v1_1",
+	previousVersion = v1_0,
+	mods = [
+		AddEntity( 
 			name = "TestEntityB", 
 			variables = [ 
 				Variable("string", "Name") 
-				]
-			),
-		ModifiedEntity( 			
+			]
+		),
+		ModifyEntity(
 			name = "TestEntityC",
-			variables = [ 
-				Variable("u32", "Age"),
+			addVariables=[
 				Variable("string", "NameC") 
-				],
-			mappings = [
-				SameVariable("Age"),
-				NewVariable("NameC")
-				]			
-			),
-		]
-	) 
+			],
+		),
+	]
+)
 
 v1_2 = Version( 
-	name = "v1_2", 
-	previousVersion = v1_1, 
-	items = [
-		IdenticalItem( 
-			name = "TestItemA" 
-			),
-		IdenticalEntity( 
-			name = "TestEntityA" 
-			),
-		ModifiedEntity( 
-			name = "TestEntityB", 
-			variables = [ 
-				Variable("string", "Name2") 
-				],
-			mappings = [ 
-				RenamedVariable("Name2", "Name") 
-				]
-			),
-		DeletedEntity(
-			name = "TestEntityC" 
-			),
-		]
-	) 
+	name = "v1_2",
+	previousVersion = v1_1,
+	mods = [
+		DeleteEntity(
+			name = "TestEntityC"
+		),
+		ModifyEntity(
+			name = "TestEntityB",
+			renameVariables=[
+				("Name","Name2")
+			]
+		)
+	]
+)
+
 
 TestPackA = Package( "TestPackA", 
 	path = "../Tests/TestPackA", 
 	versions = [  
 		v1_0,
 		v1_1,
-		v1_2,
+		v1_2
 		] 
 	)
+
+print(TestPackA)
 
 hlp.run_module('PackageGenerator.PackageGenerator', TestPackA, "Latest" )
 

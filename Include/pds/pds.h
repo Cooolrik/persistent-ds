@@ -20,7 +20,7 @@
 #include "EntityWriter.h"
 #include "EntityReader.h"
 #include "EntityValidator.h"
-////#include "EntityManager.h"
+#include "EntityManager.h"
 
 #include "dynamic_types.h"
 

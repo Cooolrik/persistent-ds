@@ -10,9 +10,6 @@
 #define PDS_IMPLEMENTATION
 #define CTLE_IMPLEMENTATION
 
-//// used by ctle for hash<256> calculation
-//#include <picosha2.h>
-//
 #include <ctle/base_types.h>
 #include <ctle/uuid.h>
 #include <ctle/digest.h>

@@ -6,6 +6,7 @@
 #include <pds/EntityValidator.h>
 
 #include "TestPackA/TestEntityA.h"
+#include "TestPackA/v1_0/v1_0_TestEntityA_MF.h"
 
 TEST( EntityTests, EntityManagementBasicTests )
 {

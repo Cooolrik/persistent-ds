@@ -153,18 +153,17 @@ template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	EntityReader *section_reader = {};
-	size_t map_size = {};
 	bool success = {};
 	typename _MgmCl::iterator it = {};
 
 	// read in the keys as a vector
 	std::vector<_Kty> keys;
-	if( !reader.Read( pdsKeyMacro( IDs ), keys ) )
-		return status::cant_read;
+	ctStatusCall( reader.Read( pdsKeyMacro( IDs ), keys ) );
 
 	// begin the named sections array
 	ctStatusReturnCall( section_reader, reader.BeginReadSectionsArray( pdsKeyMacro( Ents ), false ) );
 	ctSanityCheck( section_reader );
+	const size_t map_size = reader.GetReadSectionsArraySize();
 	if( map_size != keys.size() )
 	{
 		ctLogError << "Invalid size in ItemTable, the Keys and Entities arrays do not match in size." << ctLogEnd;
