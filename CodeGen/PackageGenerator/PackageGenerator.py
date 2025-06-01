@@ -84,6 +84,7 @@ def CreatePackageHeader( package ):
 		op.ln('#include <pds/item_ref.h>')		
 		op.ln('#include <pds/entity_ref.h>')		
 		op.ln('#include <pds/Entity.h>')
+		op.ln('#include <pds/EntityManager.h>')
 		op.ln()
 		with op.ns(package.Name):
 			op.comment_ln('imports from pds')
@@ -174,11 +175,11 @@ def CreatePackageHeader( package ):
 			op.ln('')
 
 			# type information on all types
-			#op.comment_ln('type information templates')
-			#op.ln('template <class _Ty> using data_type_information = pds::data_type_information<_Ty>;')
-			#op.ln('template <class _Ty> using combined_type_information = pds::combined_type_information<_Ty>;')
+			op.comment_ln('type information templates')
+			op.ln('template <class _Ty> using element_type_information = pds::element_type_information<_Ty>;')
+			op.ln('template <class _Ty> using value_type_information = pds::value_type_information<_Ty>;')
 
-			#op.ln('const pds::EntityManager::PackageRecord *GetPackageRecord();')
+			op.ln('const pds::EntityManager::PackageRecord *GetPackageRecord();')
 
 	op.write_lines_to_file(f'{package.Path}/{file_name}')
 
@@ -214,15 +215,9 @@ def CreatePackageSourceFile( package: Package ):
 				op.ln(f'#include "{version.Name}/{version.Name}_{item.Name}.inl"')
 		op.ln('')
 
+	op.comment_ln(f'package handler for the package, to be used by the EntityManager')
+	op.ln(f'#include "{package.Name}PackageHandler.inl"')	
 	op.write_lines_to_file(f'{package.Path}/{package.Name}.cpp')
-
-	# lines.append('// Include the package handler for this package')
-	# lines.append('')
-	# lines.append(f'#include "{packageName}PackageHandler.inl"')
-
-	# hlp.write_lines_to_file(f"{package.Path}/{packageName}.cpp",lines)
-
-
 
 # static and constant hash table for entity lookup, (must be larger than the number of entities to add)
 # Fowler–Noll–Vo FNV-1a hash function  https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
@@ -273,181 +268,155 @@ class EntityHashTable:
 		# fill up hash table, only fill with entities
 		for version in package.Versions:
 			for item in version.Items:
-				if item.IsEntity and not item.IdenticalToPreviousVersion and not item.IsDeleted:
+				if item.IsEntity and not item.IsIdenticalToPreviousVersion and not item.IsDeleted:
 					self.insert_into_table( package.Name , version.Name , item.Name );
 
 def CreatePackageHandler_inl( package: Package ):
 	packageName = package.Name
 
-	lines = []
-	lines.extend( hlp.generate_header() )
-	lines.append('')
-	lines.append('#include <pds/pds.h>')
-	lines.append('#include <pds/Varying.h>')
-	lines.append('')
+	op = formatted_output()
+	op.generate_license_header()
+	op.ln()
+	op.ln('#include <pds/pds.h>')
+	op.ln('#include <pds/Varying.h>')
+	op.ln('#include <pds/EntityManager.h>')
+	op.ln()
 
 	for version in package.Versions:
 		for item in version.Items:
 			if not item.IsDeleted and not item.IsIdenticalToPreviousVersion and item.IsEntity:
-				lines.append(f'#include "{version.Name}/{version.Name}_{item.Name}.h"')
+				op.ln(f'#include "{version.Name}/{version.Name}_{item.Name}.h"')
 
-	lines.append('')
-	lines.append('#include <pds/_pds_macros.inl>')
-	lines.append('')
-	lines.append(f'namespace {packageName}')
-	lines.append('{')
-	lines.append('namespace entity_types')
-	lines.append('{')
-	
-	lines.append('    // dynamic allocation functors for items')
-	lines.append('    class _entityTypeClass')
-	lines.append('        {')
-	lines.append('        public:')
-	lines.append('            virtual const char *EntityTypeString() const = 0;')
-	lines.append('            virtual std::shared_ptr<pds::Entity> New() const = 0;')
-	lines.append('            virtual void Clear( pds::Entity *obj ) const = 0;')
-	lines.append('            virtual bool Equals( const pds::Entity *lval , const pds::Entity *rval ) const = 0;')
-	lines.append('            virtual bool Write( const pds::Entity *obj, pds::EntityWriter &writer ) const = 0;')
-	lines.append('            virtual bool Read( pds::Entity *obj, pds::EntityReader &reader ) const = 0;')
-	lines.append('            virtual bool Validate( const pds::Entity *obj, pds::EntityValidator &validator ) const = 0;')
-	lines.append('        };')
-	lines.append('')
+	op.ln()
+	op.ln('#include <pds/_pds_macros.inl>')
+	op.ln()
+	with op.ns(packageName):
+		with op.ns("entity_types"):
 
-	# add all (unique) entities of all versions
-	for version in package.Versions:
-		for item in version.Items:
-			if item.IsEntity and not item.IsIdenticalToPreviousVersion and not item.IsDeleted:
-				namespacedItemName = f'{version.Name}::{item.Name}'
-				lines.append(f'    // {namespacedItemName}' )
-				lines.append(f'    static const class _et_{version.Name}_{item.Name}_EntityType : public _entityTypeClass' )
-				lines.append(f'        {{' )
-				lines.append(f'        public:' )
-				lines.append(f'            virtual const char *EntityTypeString() const {{ return {namespacedItemName}::ItemTypeString; }}' )
-				lines.append(f'            virtual std::shared_ptr<pds::Entity> New() const {{ return std::make_shared<{namespacedItemName}>(); }}')
-				lines.append(f'            virtual void Clear( pds::Entity *obj ) const {{ {namespacedItemName}::MF::Clear( *(({namespacedItemName}*)obj) ); }}')
-				lines.append(f'            virtual bool Equals( const pds::Entity *lval , const pds::Entity *rval ) const {{ return {namespacedItemName}::MF::Equals( (({namespacedItemName}*)lval) , (({namespacedItemName}*)rval) ); }}')
-				lines.append(f'            virtual bool Write( const pds::Entity *obj, pds::EntityWriter &writer ) const {{ return {namespacedItemName}::MF::Write( *(({namespacedItemName}*)obj) , writer ); }}')
-				lines.append(f'            virtual bool Read( pds::Entity *obj, pds::EntityReader &reader ) const {{ return {namespacedItemName}::MF::Read( *(({namespacedItemName}*)obj) , reader ); }}')
-				lines.append(f'            virtual bool Validate( const pds::Entity *obj, pds::EntityValidator &validator ) const {{ return {namespacedItemName}::MF::Validate( *(({namespacedItemName}*)obj) , validator ); }}')
-				lines.append(f'        }} _et_{version.Name}_{item.Name}_EntityTypeObject;' )
-				lines.append('')
+			op.comment_ln('dynamic allocation functors for items')
+			op.ln('class _entityTypeClass')
+			with op.blk( add_semicolon=True ):
+				op.ln('public:')
+				op.ln('virtual const char *EntityTypeString() const = 0;')
+				op.ln('virtual std::shared_ptr<pds::Entity> New() const = 0;')
+				op.ln('virtual status Clear( pds::Entity *obj ) const = 0;')
+				op.ln('virtual bool Equals( const pds::Entity *lval , const pds::Entity *rval ) const = 0;')
+				op.ln('virtual status Write( const pds::Entity *obj, pds::EntityWriter &writer ) const = 0;')
+				op.ln('virtual status Read( pds::Entity *obj, pds::EntityReader &reader ) const = 0;')
+				op.ln('virtual status Validate( const pds::Entity *obj, pds::EntityValidator &validator ) const = 0;')
+			op.ln()
 
-	# allocate and print hash table
-	hash_table = EntityHashTable( package )
+			# add all (unique) entities of all versions
+			for version in package.Versions:
+				for item in version.Items:
+					if item.IsEntity and not item.IsIdenticalToPreviousVersion and not item.IsDeleted:
+						namespacedItemName = f'{version.Name}::{item.Name}'
+						op.comment_ln( namespacedItemName )
+						op.ln(f'static const class _et_{version.Name}_{item.Name}_EntityType : public _entityTypeClass' )
+						with op.blk():
+							op.ln('public:')
+							op.ln(f'virtual const char *EntityTypeString() const {{ return {namespacedItemName}::ItemTypeString; }}' )
+							op.ln(f'virtual std::shared_ptr<pds::Entity> New() const {{ return std::make_shared<{namespacedItemName}>(); }}')
+							op.ln(f'virtual status Clear( pds::Entity *obj ) const {{ return {namespacedItemName}::MF::Clear( *(({namespacedItemName}*)obj) ); }}')
+							op.ln(f'virtual bool Equals( const pds::Entity *lval , const pds::Entity *rval ) const {{ return {namespacedItemName}::MF::Equals( (({namespacedItemName}*)lval) , (({namespacedItemName}*)rval) ); }}')
+							op.ln(f'virtual status Write( const pds::Entity *obj, pds::EntityWriter &writer ) const {{ return {namespacedItemName}::MF::Write( *(({namespacedItemName}*)obj) , writer ); }}')
+							op.ln(f'virtual status Read( pds::Entity *obj, pds::EntityReader &reader ) const {{ return {namespacedItemName}::MF::Read( *(({namespacedItemName}*)obj) , reader ); }}')
+							op.ln(f'virtual status Validate( const pds::Entity *obj, pds::EntityValidator &validator ) const {{ return {namespacedItemName}::MF::Validate( *(({namespacedItemName}*)obj) , validator ); }}')
+						op.ln(f'_et_{version.Name}_{item.Name}_EntityTypeObject;' )
+						op.ln()
 
-	# print it 
-	lines.append('    // Hash table with the type entity handler objects')
-	lines.append(f'    static const _entityTypeClass *_entityTypeClassHashTable[{hash_table.hash_table_size}] = ')
-	lines.append('        {')
-	for row_start in range(0,hash_table.hash_table_size,10):
-		row_str = ''
-		row_end = min(row_start+10,hash_table.hash_table_size)
-		for idx in range(row_start,row_end):
-			if hash_table.hash_table[idx] == None:
-				row_str += 'nullptr,'
-			else:
-				row_str += f'&_et_{hash_table.hash_table[idx]}_EntityTypeObject,'
-		lines.append('        ' + row_str + f' // items {row_start} to {row_end-1}' )
-	lines.append('        };')
-	lines.append('')
-	lines.append('    // hash table lookup of entityType')
-	lines.append('    static const _entityTypeClass *_findEntityTypeClass( const char *typeNameString )')
-	lines.append('        {')
-	lines.append('        // calculate hash value using Fowler-Noll-Vo FNV-1a hash function')
-	lines.append('        u64 hash = 0xcbf29ce484222325;')
-	lines.append('        for( const char *chP = typeNameString ; *chP != \'\\0\' ; ++chP )')
-	lines.append('            {')
-	lines.append('            hash ^= (u8)(*chP);')
-	lines.append('            hash *= (u64)(0x00000100000001B3);')
-	lines.append('            }')
-	lines.append('')
-	lines.append('        // look for entry in table. ')
-	lines.append(f'        u64 hashValue = hash % {hash_table.hash_table_size};')
-	lines.append('        while( _entityTypeClassHashTable[hashValue] != nullptr )')
-	lines.append('            {')
-	lines.append('            if( strcmp( _entityTypeClassHashTable[hashValue]->EntityTypeString() , typeNameString ) == 0 )')
-	lines.append('                return _entityTypeClassHashTable[hashValue];')
-	lines.append('            ++hashValue;')
-	lines.append(f'            if(hashValue >= {hash_table.hash_table_size})')
-	lines.append('                hashValue = 0;')
-	lines.append('            }')
-	lines.append('')
-	lines.append('        // entity was not found (this should never happen unless testing)')
-	lines.append('        ctLogError << "_findEntityTypeClass: Invalid entity parameter { " << typeNameString << " } " << ctLogEnd;')
-	lines.append('        return nullptr;')
-	lines.append('        }')
-	lines.append('')
-	
-	lines.append('}')
-	lines.append(f'// namespace entity_types')	
- 
-	lines.append("""
-	static const class CreatePackageHandler : public pds::EntityManager::PackageRecord
-		{
-		public:
-			virtual std::shared_ptr<pds::Entity> New( const char *entityTypeString ) const
-				{
-				if( !entityTypeString )
-					{
-					ctLogError << "Invalid parameter, data must be name of entity type" << ctLogEnd;
-					return nullptr;
-					}
-				const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( entityTypeString );
-				if( !ta )
-					return nullptr;
-				return ta->New();
-				}
+			# allocate and print hash table
+			hash_table = EntityHashTable( package )
+
+			# print it 
+			op.comment_ln( 'Hash table with the type entity handler objects')
+			op.ln(f'static const _entityTypeClass *_entityTypeClassHashTable[{hash_table.hash_table_size}] = ')
+			with op.blk( add_semicolon=True ):
+				for row_start in range(0,hash_table.hash_table_size,10):
+					row_str = ''
+					row_end = min(row_start+10,hash_table.hash_table_size)
+					for idx in range(row_start,row_end):
+						if hash_table.hash_table[idx] == None:
+							row_str += 'nullptr,'
+						else:
+							row_str += f'&_et_{hash_table.hash_table[idx]}_EntityTypeObject,'
+					op.ln( row_str + f' // items {row_start} to {row_end-1}' )
+			op.ln()
+
+			op.comment_ln( 'hash table lookup of entityType')
+			op.ln('static const _entityTypeClass *_findEntityTypeClass( const char *typeNameString )')
+			with op.blk():
+				op.comment_ln( 'calculate hash value using Fowler-Noll-Vo FNV-1a hash function')
+				op.ln('u64 hash = 0xcbf29ce484222325;')
+				op.ln('for( const char *chP = typeNameString ; *chP != \'\\0\' ; ++chP )')
+				with op.blk():
+					op.ln('hash ^= (u8)(*chP);')
+					op.ln('hash *= (u64)(0x00000100000001B3);')
+				op.ln()
+				op.comment_ln( 'look for entry in table. ')
+				op.ln(f'u64 hashValue = hash % {hash_table.hash_table_size};')
+				op.ln('while( _entityTypeClassHashTable[hashValue] != nullptr )')
+				with op.blk():
+					op.ln('if( strcmp( _entityTypeClassHashTable[hashValue]->EntityTypeString() , typeNameString ) == 0 )')
+					with op.blk():
+						op.ln('return _entityTypeClassHashTable[hashValue];')
+					op.ln('++hashValue;')
+					op.ln(f'if(hashValue >= {hash_table.hash_table_size})')
+					with op.blk():
+						op.ln('hashValue = 0;')
+				op.ln()
+				op.comment_ln( 'entity was not found')
+				op.ln('return nullptr;')
+			op.ln()
+
+		# add the static code for the package handler 
+		op.ln("""
+static const class CreatePackageHandler : public pds::EntityManager::PackageRecord
+{
+public:
+	virtual pds::status_return<std::shared_ptr<pds::Entity>> New( const char *entityTypeString ) const
+	{
+		ctValidate( entityTypeString, status::invalid_param ) << "Invalid parameter, data must be name of entity type" << ctValidateEnd;
+		const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( entityTypeString );
+		if( !ta )
+			return status::not_found;
+		return ta->New();
+	}
+
+	virtual status Write( const pds::Entity *obj, pds::EntityWriter &writer ) const
+	{
+		ctValidate( obj, status::invalid_param ) << "Invalid parameter, must have an object in obj" << ctValidateEnd;
+		const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
+		if( !ta )
+			return status::not_found;
+		return ta->Write( obj , writer );
+	}
+
+	virtual status Read( pds::Entity *obj, pds::EntityReader &reader ) const
+	{
+		ctValidate( obj, status::invalid_param ) << "Invalid parameter, must have an object in obj" << ctValidateEnd;
+		const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
+		if( !ta )
+			return status::not_found;
+		return ta->Read( obj , reader );
+	}
+
+	virtual status Validate( const pds::Entity *obj, pds::EntityValidator &validator ) const
+	{
+		ctValidate( obj, status::invalid_param ) << "Invalid parameter, must have an object in obj" << ctValidateEnd;
+		const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
+		if( !ta )
+			return status::not_found;
+		return ta->Validate( obj , validator );
+	}
 		
-			virtual bool Write( const pds::Entity *obj, pds::EntityWriter &writer ) const
-				{
-				if( !obj )
-					{
-					ctLogError << "Invalid parameter, data must be a pointer to allocated object" << ctLogEnd;
-					return false;
-					}
-				const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
-				if( !ta )
-					return false;
-				return ta->Write( obj , writer );
-				}
+} _createPackageHandlerObject;
 		
-			virtual bool Read( pds::Entity *obj, pds::EntityReader &reader ) const
-				{
-				if( !obj )
-					{
-					ctLogError << "Invalid parameter, data must be a pointer to allocated object" << ctLogEnd;
-					return false;
-					}
-				const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
-				if( !ta )
-					return false;
-				return ta->Read( obj , reader );
-				}
-		
-			virtual bool Validate( const pds::Entity *obj, pds::EntityValidator &validator ) const
-				{
-				if( !obj )
-					{
-					ctLogError << "Invalid parameter, data must be a pointer to allocated object" << ctLogEnd;
-					return false;
-					}
-				const entity_types::_entityTypeClass *ta = entity_types::_findEntityTypeClass( obj->EntityTypeString() );
-				if( !ta )
-					return false;
-				return ta->Validate( obj , validator );
-				}
-				
-		} _createPackageHandlerObject;
+const pds::EntityManager::PackageRecord *GetPackageRecord() { return &_createPackageHandlerObject; }
+""")
 
-	const pds::EntityManager::PackageRecord *GetPackageRecord() { return &_createPackageHandlerObject; }
-	""")
+	op.write_lines_to_file(f'{package.Path}/{packageName}PackageHandler.inl')
 
-	# end of namespace
-	lines.append('}')
-	lines.append(f'// namespace {packageName}')
-	lines.append('')
-	lines.append('#include <pds/_pds_undef_macros.inl>')
-	hlp.write_lines_to_file(f"{package.Path}/{packageName}PackageHandler.inl",lines)
 
 def run(package: Package, 
 		version_str:str = 'Latest',
@@ -480,35 +449,3 @@ def run(package: Package,
 			CreateItemMFHeader( item )
 			CreateItemImplementation( item )
 	
-	#FindAndCreateDefaultVersionReferencesAndHeaders( package, version_str )
-
-
-
-# 	# create the files for the selected version
-# 	for item in version.Items:
-# 		if not item.IsDeleted:
-
-# 			op = formatted_output()
-# 			op.generate_license_header()
-# 			with op.header_guard( file_name=item.Name, project_name=package.Name ):
-# 				op.ln('hje')
-# 			op.write_lines_to_file(f"{package.Path}/{item.Name}.h")
-
-# 			#lines = []
-			
-# 			## point at the latest implemented version of the entity
-# 			#implementVersionName = version.Name
-# 			#if item.IdenticalToPreviousVersion:
-# 			#	implementVersionName = item.PreviousVersion.Version.Name
-# #
-# 			#lines.extend( hlp.generate_header() )
-# 			#lines.append('')
-# 			#lines.append('#pragma once')
-# 			#lines.append('')
-# 			#lines.append(f'#include "{implementVersionName}/{implementVersionName}_{item.Name}.h"')
-# 			#lines.append(f'namespace {package.Name}')
-# 			#lines.append('\t{')
-# 			#lines.append(f'\tusing {item.Name} = {implementVersionName}::{item.Name};' )
-# 			#lines.append('\t}')
-# #
-# 			#hlp.write_lines_to_file(f"{package.Path}/{item.Name}.h",lines)	

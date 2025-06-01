@@ -12,6 +12,7 @@
 #define CTLE_IMPLEMENTATION
 
 #include <xxhash.h>
+#include <xxhash.c>
 
 #include <ctle/base_types.h>
 #include <ctle/uuid.h>

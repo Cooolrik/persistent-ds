@@ -10,45 +10,32 @@
 #include <iostream>
 
 #include "TestPackA/TestEntityA.h"
-#include "TestPackA/v1_0/v1_0_TestEntityA_MF.h"
-//#include "TestPackA/TestEntityB.h"
+#include "TestPackA/TestItemA.h"
+#include "TestPackA/TestEntityB.h"
 
-//#include <pds/ValueTypes.h>
-//#include <pds/Varying.h>
-
-//using namespace TestPackA;
-
-//#include <ctle/ntup.h>
-//#include <pds/pds.h>
-//#include <pds/ValueTypes.h>
-
-//#include <pds/writer_templates.h>
-//#include <pds/reader_templates.h>
-
-//#include <pds/dynamic_types.h>
-//#include <pds/element_types.h>
-//#include <pds/container_types.h>
-
+#include <pds/EntityManager.h>
 #include <pds/WriteStream.h>
 #include <pds/EntityWriter.h>
 
 using namespace pds;
 #include <pds/_pds_macros.inl>
 
+using namespace TestPackA;
+
 int main()
 	{
-	TestPackA::TestEntityA val;
-
-	val.Name() = "hej";
-
-	TestPackA::TestEntityA val2 = val;
-
-	bool eq = (val2 == val);
-
-	//TestPackA::TestEntityA::MF::Clear( val );
-	
-	std::cout << val.Name() << std::endl;
-	std::cout << eq << std::endl;
+	//TestPackA::TestEntityA val;
+	//
+	//val.Name() = "hej";
+	//
+	//TestPackA::TestEntityA val2 = val;
+	//
+	//bool eq = (val2 == val);
+	//
+	////TestPackA::TestEntityA::MF::Clear( val );
+	//
+	//std::cout << val.Name() << std::endl;
+	//std::cout << eq << std::endl;
 
 	//auto type = dynamic_types::new_type( element_type_index::dt_bool, container_type_index::ct_vector );
 	//
@@ -74,25 +61,25 @@ int main()
 	//auto res = write_single_value<serialization_type_index::vt_float, f64>( ws, pdsKeyMacro( Hej ), &val );
 	//
 
-	//pds::EntityManager eh;
-	//
-	//if( eh.Initialize( "./testfolder", { GetPackageRecord() } ) != pds::Status::Ok )
-	//	return -1;
-	//
-	//auto pentA = std::make_shared<TestEntityA>();
-	//TestEntityA &entA = *pentA;
-	//auto pentB = std::make_shared<TestEntityB>();
-	////TestEntityB &entB = *pentB;
-	//
-	//entA.Name() = "hej";
+	pds::EntityManager eh;
+	
+	if( eh.Initialize( "D:/Dev/test", { TestPackA::GetPackageRecord() } ) != status::ok )
+		return -1;
+	
+	auto pentA = std::make_shared<TestEntityA>();
+	TestEntityA &entA = *pentA;
+	auto pentB = std::make_shared<TestEntityB>();
+	TestEntityB &entB = *pentB;
+	
+	entA.Name() = "hej";
 	//entA.TestVariableA().set();
 	//entA.TestVariableA().value().Insert( pds::item_ref_zero );
 	//entA.TestVariableA().value()[pds::item_ref_zero].Name() = "Ullebulle";
 	//
-	////entB.Name() = "hej";
-	//
-	//eh.AddEntity( pentA );
-	//eh.AddEntity( pentB );
+	entB.Name2() = "hej";
+	
+	eh.AddEntity( pentA );
+	eh.AddEntity( pentB );
 
 	//auto e1ref = pds::entity_ref( hex_string_to_value<hash>( "5771e7bb72582619919523b8bc5567a6e17678cdb82f79c2d9e7ce93aa8ddfe6" ) );
 	//auto e2ref = pds::entity_ref( hex_string_to_value<hash>( "89b1d8e9e5ac248c2e154f4c212d5a8ea9b9d43408a502a5e55339feb32e50f0" ) );
