@@ -9,14 +9,21 @@ if(BUILD_PERSISTENT_DS_TESTS)
 
 	include(FetchContent)
 
-	# ctle 
+	# ctle - core dependency of pds
 	FetchContent_Declare(
 		ctle
 		GIT_REPOSITORY https://github.com/Cooolrik/ctle.git
 		GIT_TAG		   smallfixes # (latest)
 	)
+	
+	# xxHash - hashing implementation used by testing
+	FetchContent_Declare( 
+		xxhash
+		GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
+		GIT_TAG		   e626a72bc2321cd320e953a0ccf1584cad60f363 # v0.8.3
+	)
 
-	# googletest
+	# googletest - testing dependency
 	FetchContent_Declare(
 		googletest
 		GIT_REPOSITORY 	https://github.com/google/googletest.git
@@ -25,6 +32,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 
 	FetchContent_MakeAvailable( 
 		ctle 
+		xxhash
 		googletest
 		)
 

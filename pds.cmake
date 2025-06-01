@@ -100,7 +100,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	target_include_directories(	
 		systemtest 
 		PUBLIC ${PROJECT_SOURCE_DIR}/Include
-		PUBLIC ${picosha2_SOURCE_DIR}
+		PUBLIC ${xxhash_SOURCE_DIR}
 		PUBLIC ${ctle_SOURCE_DIR}/include
 		PUBLIC ${PROJECT_SOURCE_DIR}/Tests 
 		) 
@@ -141,9 +141,9 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	target_include_directories( 
 		tests 
 		PUBLIC ${PROJECT_SOURCE_DIR}/Include
-		PUBLIC ${picosha2_SOURCE_DIR}
 		PUBLIC ${ctle_SOURCE_DIR}/include
 		PUBLIC ${PROJECT_SOURCE_DIR}/Tests	
+		PUBLIC ${xxhash_SOURCE_DIR}
 		)
 
 	target_link_libraries( 	

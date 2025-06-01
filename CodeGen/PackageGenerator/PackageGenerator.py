@@ -469,7 +469,7 @@ def run(package: Package,
 
 	CreatePackageHeader( package )
 	CreatePackageSourceFile( package )
-	#CreatePackageHandler_inl( package )
+	CreatePackageHandler_inl( package )
 	
 	# generate all items in all version folders
 	for version in package.Versions:

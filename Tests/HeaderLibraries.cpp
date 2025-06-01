@@ -7,13 +7,17 @@
 #include <Windows.h>
 #endif
 
+// build ctle & pds library implementations in this source file
 #define PDS_IMPLEMENTATION
 #define CTLE_IMPLEMENTATION
+
+#include <xxhash.h>
 
 #include <ctle/base_types.h>
 #include <ctle/uuid.h>
 #include <ctle/digest.h>
 #include <ctle/string_funcs.h>
 #include <ctle/ntup.h>
+#include <ctle/hasher.h>
 
 #include <pds/pds.h>
