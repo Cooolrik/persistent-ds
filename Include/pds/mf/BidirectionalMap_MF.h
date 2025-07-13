@@ -1,13 +1,14 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__BIDIRECTIONALMAP_MF_H__
+#define __PDS__BIDIRECTIONALMAP_MF_H__
 
-#include "BidirectionalMap.h"
+#include "../BidirectionalMap.h"
 
 namespace pds 
 {
-#include "_pds_macros.inl"
+#include "../_pds_macros.inl"
 
 
 template<class _Kty, class _Vty, class _Base>
@@ -77,9 +78,9 @@ status BidirectionalMap<_Kty, _Vty, _Base>::MF::Write( const _MgmCl &obj, Entity
 	}
 
 	// write vectors 
-	if( !writer.Write( pdsKeyMacro( "Keys" ), keys ) )
+	if( !writer.Write( pdsKeyMacro( Keys ), keys ) )
 		return status::cant_write;
-	if( !writer.Write( pdsKeyMacro( "Values" ), values ) )
+	if( !writer.Write( pdsKeyMacro( Values ), values ) )
 		return status::cant_write;
 
 	return status::ok;
@@ -94,9 +95,9 @@ status BidirectionalMap<_Kty, _Vty, _Base>::MF::Read( _MgmCl &obj, EntityReader 
 	std::vector<_Vty> values;
 
 	// read in vectors with keys and values
-	if( !reader.Read( pdsKeyMacro( "Keys" ), keys ) )
+	if( !reader.Read( pdsKeyMacro( Keys ), keys ) )
 		return status::cant_read;
-	if( !reader.Read( pdsKeyMacro( "Values" ), values ) )
+	if( !reader.Read( pdsKeyMacro( Values ), values ) )
 		return status::cant_read;
 
 	// insert into map
@@ -121,6 +122,8 @@ bool BidirectionalMap<_Kty, _Vty, _Base>::MF::ContainsKey( const _MgmCl &obj, co
 }
 
 
-#include "_pds_undef_macros.inl"
+#include "../_pds_undef_macros.inl"
 }
 // namespace pds
+
+#endif//__PDS__BIDIRECTIONALMAP_MF_H__

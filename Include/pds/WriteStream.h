@@ -1,9 +1,12 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__WRITESTREAM_H__
+#define __PDS__WRITESTREAM_H__
 
-#include "pds.h"
+#include "fwd.h"
+#include <ctle/uuid.h>
+#include <ctle/digest.h>
 
 namespace pds
 {
@@ -15,7 +18,7 @@ namespace pds
 // the above types.
 // Caveat: The stream is NOT thread safe, and should be accessed by 
 // only one thread at a time.
-class MemoryWriteStream
+class WriteStream
 {
 private:
 	static const u64 InitialAllocationSize = 1024 * 1024 * 64; // 64MB initial size
@@ -26,8 +29,6 @@ private:
 
 	u64 DataReservedSize = 0; // the reserved size of the allocation
 	u32 PageSize = 0; // size of each page of allocation
-
-	bool FlipByteOrder = false; // true if we should flip BE to LE or LE to BE
 
 	// reserve data for at least reserveSize.
 	void ReserveForSize( u64 reserveSize );
@@ -43,8 +44,8 @@ private:
 	template <class T> void WriteValues( const T *src, u64 count );
 
 public:
-	MemoryWriteStream( u64 _InitialAllocationSize = InitialAllocationSize );
-	~MemoryWriteStream();
+	WriteStream( u64 _InitialAllocationSize = InitialAllocationSize );
+	~WriteStream();
 
 	// get a read-only pointer to the data
 	const void *GetData() const { return this->Data; }
@@ -55,10 +56,6 @@ public:
 	// Position is the current data position. the beginning of the stream is position 0. the stream grows whenever the position moves past the current end of the stream.
 	u64 GetPosition() const;
 	void SetPosition( u64 new_pos );
-
-	// FlipByteOrder is set if the stream flips byte order of multibyte values 
-	bool GetFlipByteOrder() const;
-	void SetFlipByteOrder( bool value );
 
 	// write one item to the memory stream. makes sure to convert endianness
 	void Write( const i8 &src );
@@ -89,7 +86,7 @@ public:
 	void Write( const hash *src, u64 count );
 };
 
-inline void MemoryWriteStream::WriteRawData( const void *src, u64 count )
+inline void WriteStream::WriteRawData( const void *src, u64 count )
 {
 	// cap the end position
 	u64 end_pos = this->Position + count;
@@ -103,38 +100,23 @@ inline void MemoryWriteStream::WriteRawData( const void *src, u64 count )
 	this->Position = end_pos;
 }
 
-template <class T> inline void MemoryWriteStream::WriteValues( const T *src, u64 count )
+template <class T> inline void WriteStream::WriteValues( const T *src, u64 count )
 {
-	if( this->FlipByteOrder )
-	{
-		// flip the byte order of the words in the dest 
-		u64 pos = this->Position;
-		this->WriteRawData( src, count * sizeof( T ) );
-		ctle::swap_byte_order<T>( (T *)( &this->Data[pos] ), count );
-	}
-	else
-	{
-		// no flipping, just write as is
-		this->WriteRawData( src, count * sizeof( T ) );
-	}
+	// this intermediate step is kept to allow for adding support for byte flipping (big-endian)
+	this->WriteRawData( src, count * sizeof( T ) );
 }
 
-template <> inline void MemoryWriteStream::WriteValues<u8>( const u8 *src, u64 count )
-{
-	this->WriteRawData( src, count );
-}
-
-inline u64 MemoryWriteStream::GetSize() const
+inline u64 WriteStream::GetSize() const
 {
 	return this->DataSize;
 }
 
-inline u64 MemoryWriteStream::GetPosition() const
+inline u64 WriteStream::GetPosition() const
 {
 	return this->Position;
 }
 
-inline void MemoryWriteStream::SetPosition( u64 new_pos )
+inline void WriteStream::SetPosition( u64 new_pos )
 {
 	if( new_pos > DataSize )
 	{
@@ -143,50 +125,40 @@ inline void MemoryWriteStream::SetPosition( u64 new_pos )
 	this->Position = new_pos;
 }
 
-inline bool MemoryWriteStream::GetFlipByteOrder() const
-{
-	return this->FlipByteOrder;
-}
-
-inline void MemoryWriteStream::SetFlipByteOrder( bool value )
-{
-	this->FlipByteOrder = value;
-}
-
 //// write one item of data, (but using the multi-values method)
-inline void MemoryWriteStream::Write( const i8 &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const i16 &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const i32 &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const i64 &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const u8 &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const u16 &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const u32 &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const u64 &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const float &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const double &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const uuid &src ) { this->Write( &src, 1 ); }
-inline void MemoryWriteStream::Write( const hash &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const i8 &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const i16 &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const i32 &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const i64 &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const u8 &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const u16 &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const u32 &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const u64 &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const float &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const double &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const uuid &src ) { this->Write( &src, 1 ); }
+inline void WriteStream::Write( const hash &src ) { this->Write( &src, 1 ); }
 
 // 8 bit data
-inline void MemoryWriteStream::Write( const i8 *src, u64 count ) { return this->WriteValues<u8>( (const u8*)src, count ); }
-inline void MemoryWriteStream::Write( const u8 *src, u64 count ) { return this->WriteValues<u8>( src, count ); }
+inline void WriteStream::Write( const i8 *src, u64 count ) { return this->WriteValues<u8>( (const u8*)src, count ); }
+inline void WriteStream::Write( const u8 *src, u64 count ) { return this->WriteValues<u8>( src, count ); }
 								   
 // 16 bit data				   
-inline void MemoryWriteStream::Write( const i16 *src, u64 count ) { return this->WriteValues<u16>( (const u16*)src, count ); }
-inline void MemoryWriteStream::Write( const u16 *src, u64 count ) { return this->WriteValues<u16>( src, count ); }
+inline void WriteStream::Write( const i16 *src, u64 count ) { return this->WriteValues<u16>( (const u16*)src, count ); }
+inline void WriteStream::Write( const u16 *src, u64 count ) { return this->WriteValues<u16>( src, count ); }
 								   
 // 32 bit data				   
-inline void MemoryWriteStream::Write( const i32 *src, u64 count ) { return this->WriteValues<u32>( (const u32*)src, count ); }
-inline void MemoryWriteStream::Write( const u32 *src, u64 count ) { return this->WriteValues<u32>( src, count ); }
-inline void MemoryWriteStream::Write( const float *src, u64 count ) { return this->WriteValues<u32>( (const u32*)src, count ); }
+inline void WriteStream::Write( const i32 *src, u64 count ) { return this->WriteValues<u32>( (const u32*)src, count ); }
+inline void WriteStream::Write( const u32 *src, u64 count ) { return this->WriteValues<u32>( src, count ); }
+inline void WriteStream::Write( const float *src, u64 count ) { return this->WriteValues<u32>( (const u32*)src, count ); }
 								   
 // 64 bit data				   
-inline void MemoryWriteStream::Write( const i64 *src, u64 count ) { return this->WriteValues<u64>( (const u64*)src, count ); }
-inline void MemoryWriteStream::Write( const u64 *src, u64 count ) { return this->WriteValues<u64>( src, count ); }
-inline void MemoryWriteStream::Write( const double *src, u64 count ) { return this->WriteValues<u64>( (const u64*)src, count ); }
+inline void WriteStream::Write( const i64 *src, u64 count ) { return this->WriteValues<u64>( (const u64*)src, count ); }
+inline void WriteStream::Write( const u64 *src, u64 count ) { return this->WriteValues<u64>( src, count ); }
+inline void WriteStream::Write( const double *src, u64 count ) { return this->WriteValues<u64>( (const u64*)src, count ); }
 
 // uuids
-inline void MemoryWriteStream::Write( const uuid *src, u64 count )
+inline void WriteStream::Write( const uuid *src, u64 count )
 {
 	static_assert( sizeof( uuid ) == 16, "Invalid size of uuid struct, needs to be exactly 16 bytes." );
 
@@ -197,7 +169,7 @@ inline void MemoryWriteStream::Write( const uuid *src, u64 count )
 }
 
 // hashes
-inline void MemoryWriteStream::Write( const hash *src, u64 count )
+inline void WriteStream::Write( const hash *src, u64 count )
 {
 	static_assert( sizeof( hash ) == 32, "Invalid size of hash struct, needs to be exactly 32 bytes." );
 
@@ -209,3 +181,9 @@ inline void MemoryWriteStream::Write( const hash *src, u64 count )
 
 }
 // namespace pds
+
+#ifdef PDS_IMPLEMENTATION
+#include "WriteStream.inl"
+#endif//PDS_IMPLEMENTATION
+
+#endif//__PDS__WRITESTREAM_H__
