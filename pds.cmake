@@ -74,7 +74,7 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	)
 	message(STATUS "Result of GenerateTestPacks.py: ${py_result}")
 	
-	set (CMAKE_CXX_STANDARD 14)
+	set (CMAKE_CXX_STANDARD 17)
 
 	# lots of warnings, big object files
 	if(MSVC)

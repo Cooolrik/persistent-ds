@@ -8,6 +8,7 @@
 #endif
 
 #include <iostream>
+#include <filesystem>
 
 #include "TestPackA/TestEntityA.h"
 #include "TestPackA/TestItemA.h"
@@ -21,49 +22,15 @@ using namespace pds;
 #include <pds/_pds_macros.inl>
 
 using namespace TestPackA;
+namespace fs = std::filesystem;
 
 int main()
-	{
-	//TestPackA::TestEntityA val;
-	//
-	//val.Name() = "hej";
-	//
-	//TestPackA::TestEntityA val2 = val;
-	//
-	//bool eq = (val2 == val);
-	//
-	////TestPackA::TestEntityA::MF::Clear( val );
-	//
-	//std::cout << val.Name() << std::endl;
-	//std::cout << eq << std::endl;
-
-	//auto type = dynamic_types::new_type( element_type_index::dt_bool, container_type_index::ct_vector );
-	//
-	//WriteStream ws;
-	//EntityWriter ew(ws);
-   	//
-	//auto section = ew.BeginWriteSection( pdsKeyMacro(Hej) );
-	//
-	//f32 val = 123;
-	//section->Write( pdsKeyMacro(Hoj), val );
-	//
-	//ew.EndWriteSection(section);
-
-	//std::vector<int> myvec = {1,2,3};
-	
-	//pds::clear_value_type( myvec );
-
-	//pds::clear_combined_type( myvec );
-
-	//WriteStream ws;
-	//
-	//f64 val = 12.3f;
-	//auto res = write_single_value<serialization_type_index::vt_float, f64>( ws, pdsKeyMacro( Hej ), &val );
-	//
-
+{
 	pds::EntityManager eh;
 	
-	if( eh.Initialize( "D:/Dev/test", { TestPackA::GetPackageRecord() } ) != status::ok )
+	auto testfolder = fs::absolute("./testfolder");
+	fs::create_directory(testfolder);
+	if( eh.Initialize( testfolder.u8string(), { TestPackA::GetPackageRecord() } ) != status::ok )
 		return -1;
 	
 	auto pentA = std::make_shared<TestEntityA>();
@@ -72,32 +39,25 @@ int main()
 	TestEntityB &entB = *pentB;
 	
 	entA.Name() = "hej";
-	//entA.TestVariableA().set();
-	//entA.TestVariableA().value().Insert( pds::item_ref_zero );
-	//entA.TestVariableA().value()[pds::item_ref_zero].Name() = "Ullebulle";
-	//
-	entB.Name2() = "hej";
+	entB.Name2() = "hej2";
 	
-	eh.AddEntity( pentA );
-	eh.AddEntity( pentB );
+	auto refA = eh.AddEntity( pentA ).value();
+	auto refB = eh.AddEntity( pentB ).value();
 
-	//auto e1ref = pds::entity_ref( hex_string_to_value<hash>( "5771e7bb72582619919523b8bc5567a6e17678cdb82f79c2d9e7ce93aa8ddfe6" ) );
-	//auto e2ref = pds::entity_ref( hex_string_to_value<hash>( "89b1d8e9e5ac248c2e154f4c212d5a8ea9b9d43408a502a5e55339feb32e50f0" ) );
-	//
-	//eh.LoadEntity( e1ref );
-	//eh.LoadEntity( e2ref );
-	//
-	//auto l1 = eh.GetLoadedEntity( e1ref );
-	//auto l2 = eh.GetLoadedEntity( e2ref );
-	//
-	//auto pentA = TestEntityA::MF::EntitySafeCast( l1 );
-	//auto pentB = TestEntityB::MF::EntitySafeCast( l2 );
+	pentA.reset();
+	pentB.reset();
+
+	eh.UnloadNonReferencedEntities();
+
+	eh.LoadEntity( refA );
+	eh.LoadEntity( refB );
+
+	auto l1 = eh.GetLoadedEntity( refA );
+	auto l2 = eh.GetLoadedEntity( refB );
 	
-	////auto t3ent = std::make_shared<tp3::TestEntity>();
-	////t3ent->Name3() = te->Name2();
-	////t3ent->OptionalText3() = te->OptionalText2();
-	////auto e3ref = eh.AddEntity( t3ent ).first;
-
+	auto pentA2 = TestEntityA::EntitySafeCast( l1 );
+	auto pentB2 = TestEntityB::EntitySafeCast( l2 );
+	
 	return 0;
-	}
+}
 

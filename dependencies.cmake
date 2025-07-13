@@ -8,12 +8,12 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	message(STATUS "Fetching needed libraries for building the persistent-ds tests...")
 
 	include(FetchContent)
-
+	
 	# ctle - core dependency of pds
 	FetchContent_Declare(
 		ctle
 		GIT_REPOSITORY https://github.com/Cooolrik/ctle.git
-		GIT_TAG		   smallfixes # (latest)
+		GIT_TAG		   fbd88c7c214e0413bba01a22dfa1d1de7b9e58d8 # v1.7.4
 	)
 	
 	# xxHash - hashing implementation used by testing

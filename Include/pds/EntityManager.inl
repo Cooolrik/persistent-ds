@@ -14,28 +14,21 @@ namespace pds
 // calculate the hash value of the data, using the selected algo
 static status_return<hash> calculateHash( const u8 *data, size_t count )
 {
+	hash ret;
+
 #ifdef PDS_USE_SHA256
 	// use sha256, cryptographically secure, but slower
-
+	ctle::hasher_sha256 hasher;
 #else
-	// use xxhash128 twice, (second one salted), not cryptographically secure, but faster
-	const static u8 salt[8] = {0x42,0x42,0x42,0x42,0x42,0x42,0x42,0x42};
-	ctle::hasher_xxh128 h1,h2;
-
-	ctStatusCall(h1.update( data, count ));
-	ctStatusAutoReturnCall( digest1, h1.finish() );
-
-	ctStatusCall(h2.update( salt, sizeof(salt) ));
-	ctStatusCall(h2.update( data, count ));
-	ctStatusAutoReturnCall( digest2, h2.finish() );
-
-	hash ret;
-	ret._data_q[0] = digest1._data_q[0];
-	ret._data_q[1] = digest1._data_q[1];
-	ret._data_q[2] = digest2._data_q[0];
-	ret._data_q[3] = digest2._data_q[1];
-	return ret;
+	// use hasher_2x_xxh128_dcb7be9cd0fcf505, which concatenates two 128 bit xxhash hashes into a 256bit hash, with a salt of 'dcb7be9cd0fcf505' on the second hash
+	// caveat, not cryptographically secure, but much faster
+	ctle::hasher_2x_xxh128_dcb7be9cd0fcf505 hasher;
 #endif
+
+	ctStatusCall(hasher.update( data, count ));
+	ctStatusReturnCall( ret, hasher.finish() );
+
+	return ret;
 }
 
 static status_return<std::shared_ptr<Entity>> entityNew( const std::vector<const EntityManager::PackageRecord *> &records, const char *entityTypeString )

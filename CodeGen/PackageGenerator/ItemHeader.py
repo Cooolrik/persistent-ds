@@ -52,6 +52,12 @@ def CreateItemClass(op: formatted_output, item: Item) -> None:
 			op.ln(f'bool operator!=( const {item.Name} &rval ) const;')
 			op.ln()
 
+			if item.IsEntity:
+				op.comment_ln('safe cast to entity')
+				op.ln(f'static const {item.Name} *EntitySafeCast( const pds::Entity *srcEnt );')
+				op.ln(f'static std::shared_ptr<const {item.Name}> EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt );')
+				op.ln('')
+
 		# variable declarations
 		op.ln('private:')
 		with op.tab():

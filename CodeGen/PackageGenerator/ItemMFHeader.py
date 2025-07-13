@@ -25,10 +25,6 @@ def CreateItemMFClass(op: formatted_output, item: Item) -> None:
 			op.ln('')
 			op.ln(f'static status Validate( const {item.Name} &obj, pds::EntityValidator &validator );')
 			op.ln('')
-			if item.IsEntity:
-				op.ln(f'static const {item.Name} *EntitySafeCast( const pds::Entity *srcEnt );')
-				op.ln(f'static std::shared_ptr<const {item.Name}> EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt );')
-				op.ln('')
 			if item.IsModifiedFromPreviousVersion:
 				op.ln(f'static status ToPrevious( {item.PreviousVersion.Version.Name}::{item.Name} &dest , const {item.Name} &source );')
 				op.ln(f'static status FromPrevious( {item.Name} &dest , const {item.PreviousVersion.Version.Name}::{item.Name} &source );')

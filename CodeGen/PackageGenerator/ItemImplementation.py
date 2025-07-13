@@ -219,6 +219,23 @@ def CreateItemClassImpl(op: formatted_output, item: Item) -> None:
 		op.ln('return !(MF::Equals( this, &rval ));')
 	op.ln()
 
+	# entity code
+	if item.IsEntity:
+		op.ln(f'const {item.Name} *{item.Name}::EntitySafeCast( const pds::Entity *srcEnt )')
+		with op.blk():
+			op.ln(f'if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
+			with op.blk():
+				op.ln(f'return (const {item.Name} *)(srcEnt);')
+			op.ln('return nullptr;')
+		op.ln()
+		op.ln(f'std::shared_ptr<const {item.Name}> {item.Name}::EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt )')
+		with op.blk():
+			op.ln(f'if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
+			with op.blk():
+				op.ln(f'return std::static_pointer_cast<const {item.Name}>(srcEnt);')
+			op.ln('return nullptr;')
+		op.ln()
+
 	# clear code
 	op.ln(f'status {item.Name}::MF::Clear( {item.Name} &obj )')
 	with op.blk():
@@ -310,23 +327,6 @@ def CreateItemClassImpl(op: formatted_output, item: Item) -> None:
 			op.comment_ln('no validation defined in this class, just return ok')
 			op.ln('return status::ok;')
 	op.ln()
-
-	# entity code
-	if item.IsEntity:
-		op.ln(f'const {item.Name} *{item.Name}::MF::EntitySafeCast( const pds::Entity *srcEnt )')
-		with op.blk():
-			op.ln(f'if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
-			with op.blk():
-				op.ln(f'return (const {item.Name} *)(srcEnt);')
-			op.ln('return nullptr;')
-		op.ln()
-		op.ln(f'std::shared_ptr<const {item.Name}> {item.Name}::MF::EntitySafeCast( std::shared_ptr<const pds::Entity> srcEnt )')
-		with op.blk():
-			op.ln(f'if( srcEnt && std::string(srcEnt->EntityTypeString()) == {item.Name}::ItemTypeString )')
-			with op.blk():
-				op.ln(f'return std::static_pointer_cast<const {item.Name}>(srcEnt);')
-			op.ln('return nullptr;')
-		op.ln()
 
 	# modified item code
 	if item.IsModifiedFromPreviousVersion:
