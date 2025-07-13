@@ -1,21 +1,22 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__ITEMTABLE_MF_H__
+#define __PDS__ITEMTABLE_MF_H__
 
 #include <ctle/log.h>
 
-#include "ItemTable.h"
+#include "../ItemTable.h"
 
-#include "EntityWriter.h"
-#include "EntityReader.h"
-#include "EntityValidator.h"
+#include "../EntityWriter.h"
+#include "../EntityReader.h"
+#include "../EntityValidator.h"
 
 namespace pds
 {
-#include "_pds_macros.inl"
+#include "../_pds_macros.inl"
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 class ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF
 {
 	using _MgmCl = ItemTable<_Kty, _Ty, _Flags, _MapTy>;
@@ -37,14 +38,14 @@ public:
 	static bool ContainsKey( const _MgmCl &obj, const _Kty &key );
 };
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Clear( _MgmCl &obj )
 {
 	obj.v_Entries.clear();
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::DeepCopy( _MgmCl &dest, const _MgmCl *source )
 {
 	MF::Clear( dest );
@@ -59,7 +60,7 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::DeepCopy( _MgmCl &dest, const _
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Equals( const _MgmCl *lval, const _MgmCl *rval )
 {
 	// early out if the pointers are equal (includes nullptr)
@@ -106,7 +107,7 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Equals( const _MgmCl *lval, const
 }
 
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, EntityWriter &writer )
 {
 	// collect the keys into a vector, and store in stream as an array
@@ -116,14 +117,13 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, Entit
 	{
 		keys[index] = it->first;
 	}
-	if( !writer.Write( pdsKeyMacro( "IDs" ), keys ) )
+	if( !writer.Write( pdsKeyMacro( IDs ), keys ) )
 		return status::cant_write;
 	keys.clear();
 
 	// create a sections array for the entities
-	EntityWriter *section_writer = writer.BeginWriteSectionsArray( pdsKeyMacro( "Entities" ), obj.v_Entries.size() );
-	if( !section_writer )
-		return status::cant_write;
+	EntityWriter *section_writer;
+	ctStatusReturnCall( section_writer, writer.BeginWriteSectionsArray( pdsKeyMacro( Ents ), obj.v_Entries.size() ) );
 
 	// write out all the entities as an array
 	// for each non-empty entity, call the write method of the entity
@@ -144,30 +144,26 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Write( const _MgmCl &obj, Entit
 	ctSanityCheck( index == obj.v_Entries.size() );
 
 	// end the Entries sections array
-	if( !writer.EndWriteSectionsArray( section_writer ) )
-		return status::cant_write;
+	ctStatusCall( writer.EndWriteSectionsArray( section_writer ) );
 
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader &reader )
 {
 	EntityReader *section_reader = {};
-	size_t map_size = {};
 	bool success = {};
 	typename _MgmCl::iterator it = {};
 
 	// read in the keys as a vector
 	std::vector<_Kty> keys;
-	if( !reader.Read( pdsKeyMacro( "IDs" ), keys ) )
-		return status::cant_read;
+	ctStatusCall( reader.Read( pdsKeyMacro( IDs ), keys ) );
 
 	// begin the named sections array
-	std::tie( section_reader, map_size, success ) = reader.BeginReadSectionsArray( pdsKeyMacro( "Entities" ), false );
-	if( !success )
-		return status::cant_read;
+	ctStatusReturnCall( section_reader, reader.BeginReadSectionsArray( pdsKeyMacro( Ents ), false ) );
 	ctSanityCheck( section_reader );
+	const size_t map_size = reader.GetReadSectionsArraySize();
 	if( map_size != keys.size() )
 	{
 		ctLogError << "Invalid size in ItemTable, the Keys and Entities arrays do not match in size." << ctLogEnd;
@@ -209,15 +205,15 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Read( _MgmCl &obj, EntityReader
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, EntityValidator &validator )
 {
 	// check if a zero key exists in the dictionary
 	if( _MgmCl::type_no_zero_keys )
 	{
-		if( obj.v_Entries.find( data_type_information<_Kty>::zero ) != obj.v_Entries.end() )
+		if( obj.v_Entries.find( element_type_information<_Kty>::zero ) != obj.v_Entries.end() )
 		{
-			pdsValidationError( ValidationError::NullNotAllowed ) << "This Directory has a zero-value key, which is not allowed. (DictionaryFlags::NoZeroKeys)" << pdsValidationErrorEnd;
+			pdsValidationError( validation_error_flags::null_not_allowed ) << "This Directory has a zero-value key, which is not allowed. (item_table_flags::zero_keys is not set)" << pdsValidationErrorEnd;
 		}
 	}
 
@@ -231,14 +227,14 @@ status ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::Validate( const _MgmCl &obj, En
 		else if( _MgmCl::type_no_null_entities )
 		{
 			// value is empty, and this is not allowed in this dictionary
-			pdsValidationError( ValidationError::NullNotAllowed ) << "Non allocated entities (values) are not allowed in this Directory. (DictionaryFlags::NoNullEntities)" << pdsValidationErrorEnd;
+			pdsValidationError( validation_error_flags::null_not_allowed ) << "Non allocated entities (values) are not allowed in this Directory. (item_table_flags::null_entities is not set)" << pdsValidationErrorEnd;
 		}
 	}
 
 	return status::ok;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 template<class _Table>
 bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::ValidateAllKeysAreContainedInTable( const _MgmCl &obj, EntityValidator &validator, const _Table &otherTable, const char *otherTableName )
 {
@@ -246,17 +242,21 @@ bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::ValidateAllKeysAreContainedInTabl
 	{
 		if( !_Table::MF::ContainsKey( otherTable, it->first ) )
 		{
-			pdsValidationError( ValidationError::MissingObject ) << "The key " << it->first << " is missing in " << otherTableName << pdsValidationErrorEnd;
+			pdsValidationError( validation_error_flags::missing_object ) << "The key " << it->first << " is missing in " << otherTableName << pdsValidationErrorEnd;
 		}
 	}
 	return true;
 }
 
-template<class _Kty, class _Ty, uint _Flags, class _MapTy>
+template<class _Kty, class _Ty, item_table_flags _Flags, class _MapTy>
 bool ItemTable<_Kty, _Ty, _Flags, _MapTy>::MF::ContainsKey( const _MgmCl &obj, const _Kty &key )
 {
 	return obj.v_Entries.find( key ) != obj.v_Entries.end();
 }
 
-#include "_pds_undef_macros.inl"
-};
+#include "../_pds_undef_macros.inl"
+
+}
+// namespace pds
+
+#endif//__PDS__ITEMTABLE_MF_H__
