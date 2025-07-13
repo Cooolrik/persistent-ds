@@ -1,9 +1,8 @@
 
-#include <pds/ValueTypes.h>
+#include <pds/value_types.h>
 
-#include <string>
-#include <vector>
 #include <set>
+#include <time.h>
 
 using namespace pds;
 
@@ -25,13 +24,19 @@ inline double double_rand() { return double(u64_rand()); }
 
 inline ctle::uuid uuid_rand() 
 	{ 
-	const ctle::uuid id = {u64_rand(),u64_rand()};
+	ctle::uuid id;
+	id._data_q[0] = u64_rand();
+	id._data_q[1] = u64_rand();
 	return id;
 	}
 
 inline hash hash_rand() 
 	{ 
-	const hash hsh = {u64_rand(),u64_rand(),u64_rand(),u64_rand()};
+	hash hsh;
+	hsh._data_q[0] = u64_rand();
+	hsh._data_q[1] = u64_rand();
+	hsh._data_q[2] = u64_rand();
+	hsh._data_q[3] = u64_rand();
 	return hsh;
 	}
 
@@ -67,7 +72,7 @@ template<class T> T random_value( T &dest )
 template<class T> void random_nonzero_value( T &dest )
 	{
 	dest = random_value<T>();
-	while( dest == data_type_information<T>::zero )
+	while( dest == element_type_information<T>::zero )
 		dest = random_value<T>();
 	}
 
@@ -91,7 +96,7 @@ template<class T> void random_optional_value( optional_value<T> &dest )
 template<class T> void random_nonzero_optional_value( optional_value<T> &dest )
 	{
 	dest.set( random_value<T>() );
-	while( dest.value() == data_type_information<T>::zero )
+	while( dest.value() == element_type_information<T>::zero )
 		dest.set( random_value<T>() );
 	}
 

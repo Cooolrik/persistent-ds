@@ -1,14 +1,15 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__ENTITY_H__
+#define __PDS__ENTITY_H__
 
 #include "pds.h"
 
 namespace pds
 {
 
-// Entity is base for all entities (atomic objects in the graph, which ows all values within the object)
+// Entity is base for all entities (atomic objects, which owns all values within the object, and is serialized in one go)
 class Entity
 {
 public:
@@ -24,3 +25,4 @@ public:
 
 }
 // namespace pds
+#endif//__PDS__ENTITY_H__

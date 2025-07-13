@@ -22,7 +22,6 @@ cmake ..
 cd ..
 
 :: build test code for each c++ version
-start "" buildall build_c++11 11 results_c++11
 start "" buildall build_c++14 14 results_c++14
 start "" buildall build_c++17 17 results_c++17
 start "" buildall build_c++20 20 results_c++20

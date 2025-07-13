@@ -1,7 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__ENTITYMANAGER_H__
+#define __PDS__ENTITYMANAGER_H__
 
 #include <future>
 #include <ctle/readers_writer_lock.h>
@@ -19,16 +20,16 @@ public:
 	{
 	public:
 		// create a new writable entity of the named type
-		virtual std::shared_ptr<Entity> New( const char *entityTypeString ) const = 0;
+		virtual status_return<std::shared_ptr<Entity>> New( const char *entityTypeString ) const = 0;
 
 		// write an entity to a stream
-		virtual bool Write( const Entity *obj, EntityWriter &writer ) const = 0;
+		virtual status Write( const Entity *obj, EntityWriter &writer ) const = 0;
 
 		// read an entity from a stream
-		virtual bool Read( Entity *obj, EntityReader &reader ) const = 0;
+		virtual status Read( Entity *obj, EntityReader &reader ) const = 0;
 
 		// validate an entity
-		virtual bool Validate( const Entity *obj, EntityValidator &validator ) const = 0;
+		virtual status Validate( const Entity *obj, EntityValidator &validator ) const = 0;
 	};
 
 private:
@@ -41,7 +42,7 @@ private:
 	void InsertEntity( const entity_ref &ref, const std::shared_ptr<const Entity> &entity );
 
 	static status ReadTask( EntityManager *pThis, const entity_ref ref );
-	static std::pair<entity_ref, status> WriteTask( EntityManager *pThis, std::shared_ptr<const Entity> entity );
+	static status_return<entity_ref> WriteTask( EntityManager *pThis, std::shared_ptr<const Entity> entity );
 
 public:
 	status Initialize( const std::string &path, const std::vector<const PackageRecord *> &records );
@@ -68,12 +69,17 @@ public:
 	// read-only.
 	// Note! If the exact same entity data (same hash of the serialized data) is added, the 
 	// existing reference will be returned and the status will be WAlreadyExists
-	std::future<std::pair<entity_ref, status>> AddEntityAsync( const std::shared_ptr<const Entity> &entity );
-	std::pair<entity_ref, status> AddEntity( const std::shared_ptr<const Entity> &entity );
+	std::future<status_return<entity_ref>> AddEntityAsync( const std::shared_ptr<const Entity> &entity );
+	status_return<entity_ref> AddEntity( const std::shared_ptr<const Entity> &entity );
 
 
 };
 
-
 }
 // namespace pds
+
+#ifdef PDS_IMPLEMENTATION
+#include "EntityManager.inl"
+#endif//PDS_IMPLEMENTATION
+
+#endif//__PDS__ENTITYMANAGER_H__

@@ -1,7 +1,8 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
-
 #pragma once
+#ifndef __PDS__ITEMTABLE_H__
+#define __PDS__ITEMTABLE_H__
 
 #include <unordered_map>
 #include "pds.h"
@@ -12,14 +13,18 @@ namespace pds
 // ItemTable holds a map of key values to unique memory mapped objects. 
 // This table class is the main holder of most objects in ISD.
 
-enum ItemTableFlags : uint
+enum class item_table_flags : uint
 {
-	ZeroKeys = 0x1, // if set, validation will allow zero value keys (0 for ints, all 0 in a uuids, empty strings) 
-	NullEntities = 0x2, // if set, validation will allow that null entities exist in the registry
+	zero_keys = 0x1,		// if set, validation will allow zero value keys (0 for ints, all 0s in uuids, empty strings) 
+	null_entities = 0x02,	// if set, validation will allow that null entities exist in the table
 };
 
-template<class _Kty, class _Ty, uint _Flags = 0, class _MapTy = std::unordered_map<_Kty, std::unique_ptr<_Ty>>>
-class ItemTable
+template<
+	class _Kty, 
+	class _Ty, 
+	item_table_flags _Flags, // = 0, a combination of item_table_flags flags for the behaviour of the item table
+	class _MapTy			 // = std::unordered_map<_Kty, std::unique_ptr<_Ty>>
+> class ItemTable
 {
 public:
 	using key_type = _Kty;
@@ -30,8 +35,8 @@ public:
 	using iterator = typename map_type::iterator;
 	using const_iterator = typename map_type::const_iterator;
 
-	static const bool type_no_zero_keys = ( _Flags & ItemTableFlags::ZeroKeys ) == 0;
-	static const bool type_no_null_entities = ( _Flags & ItemTableFlags::NullEntities ) == 0;
+	static const bool type_no_zero_keys = ( uint(_Flags) & uint(item_table_flags::zero_keys) ) == 0;
+	static const bool type_no_null_entities = ( uint(_Flags) & uint(item_table_flags::null_entities) ) == 0;
 
 	class MF;
 	friend MF;
@@ -72,3 +77,4 @@ public:
 };
 
 };
+#endif//__PDS__ITEMTABLE_H__

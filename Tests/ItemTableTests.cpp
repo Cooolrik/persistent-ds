@@ -6,12 +6,13 @@
 #include <pds/EntityValidator.h>
 #include <pds/EntityWriter.h>
 #include <pds/EntityReader.h>
-#include <pds/MemoryWriteStream.h>
-#include <pds/MemoryReadStream.h>
+#include <pds/WriteStream.h>
+#include <pds/ReadStream.h>
 
-#include <pds/ItemTable_MF.h>
+#include <pds/mf/ItemTable_MF.h>
 
 #include "TestPackA/TestEntityA.h"
+#include "TestPackA/v1_0/v1_0_TestEntityA_MF.h"
 #include "TestHelpers/structure_generation.h"
 
 using pds::ItemTable;
@@ -22,11 +23,11 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 	// check with no validation
 	if( true )
 	{
-		typedef ItemTable<_Kty, TestEntityA, ItemTableFlags::NullEntities | ItemTableFlags::ZeroKeys> Dict;
+		typedef ItemTable<_Kty, TestEntityA, item_table_flags::null_entities | item_table_flags::zero_keys> Dict;
 		Dict dict;
 
 		EntityValidator validator;
-		const _Kty zero = data_type_information<_Kty>::zero;
+		const _Kty zero = element_type_information<_Kty>::zero;
 
 		// add a zero key  with a null value entry
 		dict.Entries()[zero] = std::unique_ptr<TestEntityA>();
@@ -40,11 +41,11 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 	// check zero key validation
 	if( true )
 	{
-		typedef ItemTable<_Kty, TestEntityA, ~ItemTableFlags::ZeroKeys> Dict;
+		typedef ItemTable<_Kty, TestEntityA, (item_table_flags)(~(uint)item_table_flags::zero_keys)> Dict;
 		Dict dict;
 
 		EntityValidator validator;
-		const _Kty zero = data_type_information<_Kty>::zero;
+		const _Kty zero = element_type_information<_Kty>::zero;
 
 		// add a zero key entry (invalid)
 		dict.Entries()[zero] = std::make_unique<TestEntityA>();
@@ -58,11 +59,11 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 	// check null value validation
 	if( true )
 	{
-		typedef ItemTable<_Kty, TestEntityA, ~ItemTableFlags::NullEntities> Dict;
+		typedef ItemTable<_Kty, TestEntityA, (item_table_flags)(~(uint)item_table_flags::null_entities)> Dict;
 		Dict dict;
 
 		EntityValidator validator;
-		const _Kty inf_val = data_type_information<_Kty>::inf;
+		const _Kty inf_val = element_type_information<_Kty>::inf;
 
 		// add a null ptr value entry (invalid)
 		dict.Entries()[inf_val] = std::unique_ptr<TestEntityA>();
@@ -76,7 +77,7 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 	// check all validations
 	if( true )
 	{
-		typedef ItemTable < _Kty, TestEntityA, ~( ItemTableFlags::NullEntities | ItemTableFlags::ZeroKeys ) > Dict;
+		typedef ItemTable < _Kty, TestEntityA, (item_table_flags)(~(uint)(item_table_flags::null_entities | item_table_flags::zero_keys)) > Dict;
 		Dict dict;
 
 		EntityValidator validator;
@@ -86,7 +87,7 @@ template<class _Kty> void ItemTableBasicTests_Validation()
 		for( size_t i = 0; i < cnt; ++i )
 		{
 			const _Kty rand_val = random_value<_Kty>();
-			if( rand_val != data_type_information<_Kty>::zero )
+			if( rand_val != element_type_information<_Kty>::zero )
 			{
 				dict.Entries()[rand_val] = std::make_unique<TestEntityA>();
 			}
@@ -165,7 +166,7 @@ TEST( ItemTableTests, BasicTests )
 	ItemTableBasicTests_Validation<string>();
 }
 
-template<class T> void ItemTableReadWriteTests_TestKeyType( const MemoryWriteStream &ws, EntityWriter &ew )
+template<class T> void ItemTableReadWriteTests_TestKeyType( const WriteStream &ws, EntityWriter &ew )
 {
 	typedef ItemTable<T, TestEntityA> Dict;
 
@@ -184,20 +185,20 @@ template<class T> void ItemTableReadWriteTests_TestKeyType( const MemoryWriteStr
 	EXPECT_TRUE( Dict::MF::Write( random_dict, ew ) );
 
 	// set up a temporary entity reader 
-	MemoryReadStream rs( ws.GetData(), ws.GetSize(), ws.GetFlipByteOrder() );
+	ReadStream rs( ws.GetData(), ws.GetSize() );
 	EntityReader er( rs );
 	rs.SetPosition( start_pos );
 
 	// read back the dictionary 
 	Dict readback_dict;
-	EXPECT_TRUE( Dict::MF::Read( readback_dict, er ) );
+	ASSERT_TRUE( Dict::MF::Read( readback_dict, er ) == status::ok );
 
 	// validate
 	EXPECT_TRUE( Dict::MF::Validate( readback_dict, validator ) );
 	EXPECT_EQ( validator.GetErrorCount(), uint( 0 ) );
 
 	// compare the values in the registries
-	EXPECT_TRUE( random_dict.Entries().size() == readback_dict.Entries().size() );
+	ASSERT_TRUE( random_dict.Entries().size() == readback_dict.Entries().size() );
 	typename Dict::iterator it1 = random_dict.Entries().begin();
 	while( it1 != random_dict.Entries().end() )
 	{
@@ -221,12 +222,10 @@ TEST( ItemTableTests, ReadWriteTests )
 {
 	setup_random_seed();
 
-	for( uint pass_index = 0; pass_index < ( 2 * global_number_of_passes ); ++pass_index )
+	for( uint pass_index = 0; pass_index < global_number_of_passes; ++pass_index )
 	{
-		MemoryWriteStream ws;
+		WriteStream ws;
 		EntityWriter ew( ws );
-
-		ws.SetFlipByteOrder( ( pass_index & 0x1 ) != 0 );
 
 		ItemTableReadWriteTests_TestKeyType<i8>( ws, ew );
 		ItemTableReadWriteTests_TestKeyType<i16>( ws, ew );

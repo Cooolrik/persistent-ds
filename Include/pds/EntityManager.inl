@@ -1,89 +1,97 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
-#include "EntityManager.h"
-
 #include <ctle/file_funcs.h>
+#include <ctle/hasher.h>
+#include <ctle/log.h>
+
+#include "Entity.h"
 
 namespace pds
 {
 #include "_pds_macros.inl"
 
-
-static std::shared_ptr<Entity> entityNew( const std::vector<const EntityManager::PackageRecord *> &records, const char *entityTypeString )
+// calculate the hash value of the data, using the selected algo
+static status_return<hash> calculateHash( const u8 *data, size_t count )
 {
-	if( !entityTypeString )
-	{
-		ctLogError << "Invalid parameter, entityTypeString must be a pointer to a string" << ctLogEnd;
-		return nullptr;
-	}
+	hash ret;
 
+#ifdef PDS_USE_SHA256
+	// use sha256, cryptographically secure, but slower
+	ctle::hasher_sha256 hasher;
+#else
+	// use hasher_2x_xxh128_dcb7be9cd0fcf505, which concatenates two 128 bit xxhash hashes into a 256bit hash, with a salt of 'dcb7be9cd0fcf505' on the second hash
+	// caveat, not cryptographically secure, but much faster
+	ctle::hasher_2x_xxh128_dcb7be9cd0fcf505 hasher;
+#endif
+
+	ctStatusCall(hasher.update( data, count ));
+	ctStatusReturnCall( ret, hasher.finish() );
+
+	return ret;
+}
+
+static status_return<std::shared_ptr<Entity>> entityNew( const std::vector<const EntityManager::PackageRecord *> &records, const char *entityTypeString )
+{
+	ctValidate( entityTypeString, status::invalid_param ) << "Invalid parameter, entityTypeString must be a pointer to a string" << ctValidateEnd;
 	for( size_t i = 0; i < records.size(); ++i )
 	{
 		auto ret = records[i]->New( entityTypeString );
-		if( ret )
-			return ret;
+		if( ret.status() == status::not_found ) // not_found == not the correct package, continue looking
+			continue;
+		return ret; // correct package, return ok with pointer, or error 
 	}
 
-	ctLogError << "Unrecognized entity, cannot allocate entity of type: " << entityTypeString << " is not registered with any package." << ctLogEnd;
-	return nullptr;
+	ctLogError << "Unrecognized entity, '" << entityTypeString << "' is not registered with any package." << ctLogEnd;
+	return status::not_found;
 }
 
-static bool entityWrite( const std::vector<const EntityManager::PackageRecord *> &records, const Entity *obj, EntityWriter &writer )
+static status entityWrite( const std::vector<const EntityManager::PackageRecord *> &records, const Entity *obj, EntityWriter &writer )
 {
-	if( !obj )
-	{
-		ctLogError << "Invalid parameter, obj must be a pointer to an allocated object" << ctLogEnd;
-		return false;
-	}
+	ctValidate( obj, status::invalid_param ) << "obj must be a pointer to an allocated object" << ctValidateEnd;
 
 	for( size_t i = 0; i < records.size(); ++i )
 	{
 		auto ret = records[i]->Write( obj, writer );
-		if( ret )
-			return ret;
+		if( ret == status::not_found ) // not_found == not the correct package, continue looking
+			continue;
+		return ret; // correct package, return ok or error
 	}
 
-	ctLogError << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << ctLogEnd;
-	return false;
+	ctLogError << "Unrecognized entity, '" << obj->EntityTypeString() << "' is not registered with any package." << ctLogEnd;
+	return status::not_found;
 }
 
-static bool entityRead( const std::vector<const EntityManager::PackageRecord *> &records, Entity *obj, EntityReader &reader )
+static status entityRead( const std::vector<const EntityManager::PackageRecord *> &records, Entity *obj, EntityReader &reader )
 {
-	if( !obj )
-	{
-		ctLogError << "Invalid parameter, obj must be a pointer to an allocated object" << ctLogEnd;
-		return false;
-	}
+	ctValidate( obj, status::invalid_param ) << "obj must be a pointer to an allocated object" << ctValidateEnd;
 
 	for( size_t i = 0; i < records.size(); ++i )
 	{
 		auto ret = records[i]->Read( obj, reader );
-		if( ret )
-			return ret;
+		if( ret == status::not_found ) // not_found == not the correct package, continue looking
+			continue;
+		return ret; // correct package, return ok or error
 	}
 
-	ctLogError << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << ctLogEnd;
-	return false;
+	ctLogError << "Unrecognized entity, '" << obj->EntityTypeString() << "' is not registered with any package." << ctLogEnd;
+	return status::not_found;
 }
 
-static bool entityValidate( const std::vector<const EntityManager::PackageRecord *> &records, const Entity *obj, EntityValidator &validator )
+static status entityValidate( const std::vector<const EntityManager::PackageRecord *> &records, const Entity *obj, EntityValidator &validator )
 {
-	if( !obj )
-	{
-		ctLogError << "Invalid parameter, obj must be a pointer to an allocated object" << ctLogEnd;
-		return false;
-	}
+	ctValidate( obj, status::invalid_param ) << "obj must be a pointer to an allocated object" << ctValidateEnd;
 
 	for( size_t i = 0; i < records.size(); ++i )
 	{
 		auto ret = records[i]->Validate( obj, validator );
-		if( ret )
-			return ret;
+		if( ret == status::not_found ) // not_found == not the correct package, continue looking
+			continue;
+		return ret; // correct package, return ok or error
 	}
 
-	ctLogError << "Unrecognized entity, " << obj->EntityTypeString() << " is not registered with any package." << ctLogEnd;
-	return false;
+	ctLogError << "Unrecognized entity, '" << obj->EntityTypeString() << "' is not registered with any package." << ctLogEnd;
+	return status::not_found;
 }
 
 void EntityManager::InsertEntity( const entity_ref &ref, const std::shared_ptr<const Entity> &entity )
@@ -154,8 +162,7 @@ status EntityManager::ReadTask( EntityManager *pThis, const entity_ref ref )
 	u64 total_size = allocation.size();
 
 	// calculate the sha256 hash on the data, and make sure it compares correctly with the hash
-	hash digest = {};
-	ctle::calculate_sha256_hash( digest, buffer, total_size );
+	ctStatusAutoReturnCall( digest, calculateHash( buffer, total_size) );
 	if( digest != hash( ref ) )
 	{
 		// sha hash does not compare correctly, file is corrupted
@@ -163,28 +170,16 @@ status EntityManager::ReadTask( EntityManager *pThis, const entity_ref ref )
 	}
 
 	// set up a memory stream and deserializer
-	MemoryReadStream rstream( buffer, total_size, false );
+	ReadStream rstream( buffer, total_size );
 	EntityReader reader( rstream );
 
 	// read file header and deserialize the entity
-	bool result = {};
-	EntityReader *sectionReader;
-	std::tie( sectionReader, result ) = reader.BeginReadSection( pdsKeyMacro( "EntityFile" ), false );
-	if( !result )
-		return status::corrupted;
 	std::string entityTypeString;
-	result = sectionReader->Read<std::string>( pdsKeyMacro( "EntityType" ), entityTypeString );
-	if( !result )
-		return status::corrupted;
-	std::shared_ptr<Entity> entity = entityNew( pThis->Records, entityTypeString.c_str() );
-	if( !entity )
-		return status::not_initialized;
-	result = entityRead( pThis->Records, entity.get(), *sectionReader );
-	if( !result )
-		return status::corrupted;
-	result = reader.EndReadSection( sectionReader );
-	if( !result )
-		return status::corrupted;
+	ctStatusAutoReturnCall( sectionReader, reader.BeginReadSection( pdsKeyMacro( EntityFile ), false ) )
+	ctStatusCall( sectionReader->Read<std::string>( pdsKeyMacro( EntityType ), entityTypeString ) )
+	ctStatusAutoReturnCall( entity, entityNew( pThis->Records, entityTypeString.c_str() ) );
+	ctStatusCall( entityRead( pThis->Records, entity.get(), *sectionReader ) );
+	ctStatusCall( reader.EndReadSection( sectionReader ) );
 
 	// transfer into the Entities map 
 	pThis->InsertEntity( ref, entity );
@@ -245,62 +240,50 @@ std::shared_ptr<const Entity> EntityManager::GetLoadedEntity( const entity_ref &
 	return it->second;
 }
 
-std::pair<entity_ref, status> EntityManager::WriteTask( EntityManager *pThis, std::shared_ptr<const Entity> entity )
+status_return<entity_ref> EntityManager::WriteTask( EntityManager *pThis, std::shared_ptr<const Entity> entity )
 {
 	EntityValidator validator;
-	MemoryWriteStream wstream;
+	WriteStream wstream;
 	EntityWriter writer( wstream );
 
 	// make sure the entity is valid
-	if( !entityValidate( pThis->Records, entity.get(), validator ) )
-		return std::pair<entity_ref, status>( {}, status::corrupted );
-	if( validator.GetErrorCount() > 0 )
-		return std::pair<entity_ref, status>( {}, status::invalid );
+	ctStatusCall(entityValidate( pThis->Records, entity.get(), validator ) );
+	ctValidate( validator.GetErrorCount() == 0, status::invalid ) << "Validation failed on Entity before writing" << ctValidateEnd;
 
 	// serialize to a stream
-	EntityWriter *sectionWriter = writer.BeginWriteSection( pdsKeyMacro( "EntityFile" ) );
-	if( !sectionWriter )
-		return std::pair<entity_ref, status>( {}, status::undefined_error );
-	sectionWriter->Write<std::string>( pdsKeyMacro( "EntityType" ), entity->EntityTypeString() );
-	if( !entityWrite( pThis->Records, entity.get(), *sectionWriter ) )
-		return std::pair<entity_ref, status>( {}, status::undefined_error );
-	if( !writer.EndWriteSection( sectionWriter ) )
-		return std::pair<entity_ref, status>( {}, status::undefined_error );
-
-	// calculate the sha256 hash on the data
-	hash digest = {};
-	ctle::calculate_sha256_hash( digest, (u8 *)wstream.GetData(), wstream.GetSize() );
+	ctStatusAutoReturnCall( sectionWriter, writer.BeginWriteSection( pdsKeyMacro( EntityFile ) ) );
+	ctStatusCall( sectionWriter->Write<std::string>( pdsKeyMacro( EntityType ), entity->EntityTypeString() ) );
+	ctStatusCall( entityWrite( pThis->Records, entity.get(), *sectionWriter ) );
+	ctStatusCall( writer.EndWriteSection( sectionWriter ) );
 
 	// get file data
 	const u8 *writeBuffer = (u8 *)wstream.GetData();
 	const u64 totalBytesToWrite = wstream.GetSize();
 
+	// calculate the hash on the data
+	ctStatusAutoReturnCall( digest, calculateHash( writeBuffer, totalBytesToWrite ) );
+	
 	// create the file name and path from the hash
 	const std::string fileName = to_string( digest ) + ".dat";
 	const std::string filePath = pThis->Path + "/" + fileName;
 
 	// if the file does not exist, create and write it
 	if( !ctle::file_exists( filePath ) )
-	{
-		if( !ctle::write_file( filePath, writeBuffer, (size_t)totalBytesToWrite, true ) )
-		{
-			return std::pair<entity_ref, status>( {}, status::cant_write );
-		}
-	}
+		ctStatusCall( ctle::write_file( filePath, writeBuffer, (size_t)totalBytesToWrite, true ) );
 
 	// transfer into the Entities map 
 	pThis->InsertEntity( entity_ref( digest ), entity );
 
 	// done
-	return std::pair<entity_ref, status>( entity_ref( digest ), status::ok );
+	return entity_ref( digest );
 }
 
-std::future<std::pair<entity_ref, status>> EntityManager::AddEntityAsync( const std::shared_ptr<const Entity> &entity )
+std::future<status_return<entity_ref>> EntityManager::AddEntityAsync( const std::shared_ptr<const Entity> &entity )
 {
 	return std::async( WriteTask, this, entity );
 }
 
-std::pair<entity_ref, status> EntityManager::AddEntity( const std::shared_ptr<const Entity> &entity )
+status_return<entity_ref> EntityManager::AddEntity( const std::shared_ptr<const Entity> &entity )
 {
 	auto futr = this->AddEntityAsync( entity );
 	futr.wait();

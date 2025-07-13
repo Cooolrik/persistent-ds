@@ -4,7 +4,7 @@
 #include "Tests.h"
 
 #include <pds/EntityReader.h>
-#include <pds/MemoryReadStream.h>
+#include <pds/ReadStream.h>
 
 TEST( RandomFileDataReadTest, Test_EntityReader_with_random_file_fuzzing_expect_no_exceptions )
 {
@@ -15,18 +15,21 @@ TEST( RandomFileDataReadTest, Test_EntityReader_with_random_file_fuzzing_expect_
 		std::vector<u8> random_file_data;
 		random_vector( random_file_data, 10000, 50000 );
 
-		MemoryReadStream rs( random_file_data.data(), random_file_data.size(), ( pass_index & 0x1 ) != 0 );
+		ReadStream rs( random_file_data.data(), random_file_data.size() );
 		EntityReader er( rs );
 
 		// try reading some values. calls are allowed to fail with error, but not crash
 		for( size_t i = 0; i < 1000; ++i )
 		{
 			i32 v;
-			er.Read( "i", 1, v );
+			auto res = er.Read( "i", 1, v );
+			EXPECT_TRUE( res == status::ok || res == status::cant_read );
 			std::vector<i8> dv;
-			er.Read( "dv", 2, dv );
+			res = er.Read( "dv", 2, dv );
+			EXPECT_TRUE( res == status::ok || res == status::cant_read );
 			std::string ds;
-			er.Read( "ds", 2, ds );
+			res = er.Read( "ds", 2, ds );
+			EXPECT_TRUE( res == status::ok || res == status::cant_read );
 		}
 	}
 }

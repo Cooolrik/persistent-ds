@@ -8,22 +8,22 @@ if(BUILD_PERSISTENT_DS_TESTS)
 	message(STATUS "Fetching needed libraries for building the persistent-ds tests...")
 
 	include(FetchContent)
-
-	# ctle 
+	
+	# ctle - core dependency of pds
 	FetchContent_Declare(
 		ctle
 		GIT_REPOSITORY https://github.com/Cooolrik/ctle.git
-		GIT_TAG		   main # (latest)
-	)
-
-	# picosha2 
-	FetchContent_Declare( 
-		picosha2
-		GIT_REPOSITORY https://github.com/okdshin/PicoSHA2.git
-		GIT_TAG		   27fcf6979298949e8a462e16d09a0351c18fcaf2 # (2022 Aug 08)
+		GIT_TAG		   fbd88c7c214e0413bba01a22dfa1d1de7b9e58d8 # v1.7.4
 	)
 	
-	# googletest
+	# xxHash - hashing implementation used by testing
+	FetchContent_Declare( 
+		xxhash
+		GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
+		GIT_TAG		   e626a72bc2321cd320e953a0ccf1584cad60f363 # v0.8.3
+	)
+
+	# googletest - testing dependency
 	FetchContent_Declare(
 		googletest
 		GIT_REPOSITORY 	https://github.com/google/googletest.git
@@ -32,9 +32,8 @@ if(BUILD_PERSISTENT_DS_TESTS)
 
 	FetchContent_MakeAvailable( 
 		ctle 
-		picosha2 
-		googletest 
+		xxhash
+		googletest
 		)
 
 endif() #BUILD_PERSISTENT_DS_TESTS
-
