@@ -1,13 +1,5 @@
 #!/bin/bash
 
-echo "Building & testing C++11"
-mkdir build_c++11
-cd build_c++11
-cmake .. -DCMAKE_CXX_STANDARD=11 -DBUILD_PERSISTENT_DS_TESTS=ON
-cmake --build .
-./tests > ../results_c++11
-cd ..
-
 echo "Building & testing C++14"
 mkdir build_c++14
 cd build_c++14

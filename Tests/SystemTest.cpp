@@ -1,63 +1,63 @@
 // pds - Persistent data structure framework, Copyright (c) 2022 Ulrik Lindahl
 // Licensed under the MIT license https://github.com/Cooolrik/pds/blob/main/LICENSE
 
-//#include "TestPackA/TestEntityA.h"
-//#include "TestPackA/TestEntityB.h"
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#endif
 
-//#include <pds/ValueTypes.h>
-//#include <pds/Varying.h>
+#include <iostream>
+#include <filesystem>
 
-//using namespace TestPackA;
+#include "TestPackA/TestEntityA.h"
+#include "TestPackA/TestItemA.h"
+#include "TestPackA/TestEntityB.h"
 
-#include <pds/pds.h>
-#include <pds/ValueTypes.h>
+#include <pds/EntityManager.h>
+#include <pds/WriteStream.h>
+#include <pds/EntityWriter.h>
 
 using namespace pds;
+#include <pds/_pds_macros.inl>
+
+using namespace TestPackA;
+namespace fs = std::filesystem;
 
 int main()
-	{
-	std::vector<int> myvec = {1,2,3};
-
-	pds::clear_combined_type( myvec );
-
-
-	//pds::EntityManager eh;
-	//
-	//if( eh.Initialize( "./testfolder", { GetPackageRecord() } ) != pds::Status::Ok )
-	//	return -1;
-	//
-	//auto pentA = std::make_shared<TestEntityA>();
-	//TestEntityA &entA = *pentA;
-	//auto pentB = std::make_shared<TestEntityB>();
-	////TestEntityB &entB = *pentB;
-	//
-	//entA.Name() = "hej";
-	//entA.TestVariableA().set();
-	//entA.TestVariableA().value().Insert( pds::item_ref_zero );
-	//entA.TestVariableA().value()[pds::item_ref_zero].Name() = "Ullebulle";
-	//
-	////entB.Name() = "hej";
-	//
-	//eh.AddEntity( pentA );
-	//eh.AddEntity( pentB );
-
-	//auto e1ref = pds::entity_ref( hex_string_to_value<hash>( "5771e7bb72582619919523b8bc5567a6e17678cdb82f79c2d9e7ce93aa8ddfe6" ) );
-	//auto e2ref = pds::entity_ref( hex_string_to_value<hash>( "89b1d8e9e5ac248c2e154f4c212d5a8ea9b9d43408a502a5e55339feb32e50f0" ) );
-	//
-	//eh.LoadEntity( e1ref );
-	//eh.LoadEntity( e2ref );
-	//
-	//auto l1 = eh.GetLoadedEntity( e1ref );
-	//auto l2 = eh.GetLoadedEntity( e2ref );
-	//
-	//auto pentA = TestEntityA::MF::EntitySafeCast( l1 );
-	//auto pentB = TestEntityB::MF::EntitySafeCast( l2 );
+{
+	pds::EntityManager eh;
 	
-	////auto t3ent = std::make_shared<tp3::TestEntity>();
-	////t3ent->Name3() = te->Name2();
-	////t3ent->OptionalText3() = te->OptionalText2();
-	////auto e3ref = eh.AddEntity( t3ent ).first;
+	auto testfolder = fs::absolute("./testfolder");
+	fs::create_directory(testfolder);
+	if( eh.Initialize( testfolder.u8string(), { TestPackA::GetPackageRecord() } ) != status::ok )
+		return -1;
+	
+	auto pentA = std::make_shared<TestEntityA>();
+	TestEntityA &entA = *pentA;
+	auto pentB = std::make_shared<TestEntityB>();
+	TestEntityB &entB = *pentB;
+	
+	entA.Name() = "hej";
+	entB.Name2() = "hej2";
+	
+	auto refA = eh.AddEntity( pentA ).value();
+	auto refB = eh.AddEntity( pentB ).value();
 
+	pentA.reset();
+	pentB.reset();
+
+	eh.UnloadNonReferencedEntities();
+
+	eh.LoadEntity( refA );
+	eh.LoadEntity( refB );
+
+	auto l1 = eh.GetLoadedEntity( refA );
+	auto l2 = eh.GetLoadedEntity( refB );
+	
+	auto pentA2 = TestEntityA::EntitySafeCast( l1 );
+	auto pentB2 = TestEntityB::EntitySafeCast( l2 );
+	
 	return 0;
-	}
+}
 

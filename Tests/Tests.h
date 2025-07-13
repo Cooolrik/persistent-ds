@@ -15,7 +15,7 @@
 #include <Windows.h>
 #endif
 
-#include <picosha2.h>
+//#include <picosha2.h>
 
 #include <pds/pds.h>
 
@@ -32,7 +32,7 @@ using namespace pds;
 #include "TestHelpers/random_vals.h"
 
 // set this to a higher number to run more passes where the values are randomized
-const size_t global_number_of_passes = 1;
+const size_t global_number_of_passes = 10;
 
 // method which creates an inversed map, where the values of the original map points at the keys of the original map
 template<typename K, typename V>
